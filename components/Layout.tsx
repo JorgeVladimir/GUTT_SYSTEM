@@ -39,7 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-100 overflow-hidden">
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
@@ -116,7 +116,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-100">
            {children}
         </div>
       </main>

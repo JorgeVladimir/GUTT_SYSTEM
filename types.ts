@@ -68,6 +68,10 @@ export interface Transaction {
 export interface User {
   id: string; 
   name: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  onlyOneName?: boolean;
   pin: string;
   role: UserRole;
   accounts: Account[];
@@ -80,9 +84,10 @@ export interface User {
   address?: string;
   birthDate?: string;
   profession?: string;
-  // Campos técnicos Imagen 2
+  // Campos técnicos Imagen 2 & SEPS
   memberNumber?: string;
   office?: string;
+  residenceCountry?: string;
   residenceType?: 'LOCAL' | 'NACIONAL' | 'EXTERIOR';
   nationality?: string;
   province?: string;
@@ -121,7 +126,6 @@ export enum AppView {
   TELLER_OPERATIONS = 'TELLER_OPERATIONS',
   CHART_OF_ACCOUNTS = 'CHART_OF_ACCOUNTS',
   ADMIN_HUB = 'ADMIN_HUB',
-  // Fix: Renamed CREDIT_OFF_HUB to CREDIT_OFFICER_HUB to fix errors in App.tsx and match usage
   CREDIT_OFFICER_HUB = 'CREDIT_OFFICER_HUB',
   REPORTS = 'REPORTS',
   CHANGE_PIN = 'CHANGE_PIN'

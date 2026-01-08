@@ -55,7 +55,6 @@ export default function App() {
     { id: 'admin', name: 'Administrador General', pin: '1234', role: UserRole.ADMIN, accounts: [], transactions: [], loans: [] },
     { id: 'cont', name: 'Contador Institucional', pin: '1234', role: UserRole.ACCOUNTANT, accounts: [], transactions: [], loans: [] },
     { id: 'caja', name: 'Cajero Matriz', pin: '1234', role: UserRole.TELLER, accounts: [], transactions: [], loans: [] },
-    // Fix: Added missing 'loans' property to the credit officer object to comply with the User interface definition.
     { id: 'asesor', name: 'Asesor de Crédito', pin: '1234', role: UserRole.CREDIT_OFFICER, accounts: [], transactions: [], loans: [] }
   ];
 
@@ -141,7 +140,6 @@ export default function App() {
     const cleanId = id.trim();
     if (users.some(u => u.id === cleanId)) return alert("Socio ya existe.");
     
-    // Creación de cuentas iniciales con aporte de $5 si autorizó
     const savAcc = { 
       id: `sav-${cleanId}`, 
       type: AccountType.SAVINGS, 
@@ -172,6 +170,17 @@ export default function App() {
     setUsers([...users, newUser]);
     setCurrentUser(newUser);
     setView(AppView.DASHBOARD);
+  };
+
+  const handleUpdateUser = (updatedUser: User) => {
+    setUsers(prev => {
+      const exists = prev.some(u => u.id === updatedUser.id);
+      if (exists) {
+        return prev.map(u => u.id === updatedUser.id ? updatedUser : u);
+      } else {
+        return [...prev, updatedUser];
+      }
+    });
   };
 
   const handleApproveLoan = (loanId: string, memberId: string, reason: string) => {
@@ -264,7 +273,7 @@ export default function App() {
   return (
     <Layout activeView={view as any} onViewChange={setView as any} onLogout={handleLogout} userName={currentUser?.name || ''} role={currentUser?.role || UserRole.MEMBER}>
       {view === AppView.ADMIN_HUB && <AdminView users={users} rates={interestRates} config={globalConfig} onUpdateRates={setInterestRates} onUpdateConfig={setGlobalConfig} onRestoreDatabase={(d) => setUsers(d.users)} />}
-      {view === AppView.TELLER_OPERATIONS && <TellerView users={users} onUpdateUser={(u) => setUsers(prev => prev.map(x => x.id === u.id ? u : x))} currentUserRole={currentUser?.role} />}
+      {view === AppView.TELLER_OPERATIONS && <TellerView users={users} onUpdateUser={handleUpdateUser} currentUserRole={currentUser?.role} />}
       {view === AppView.DASHBOARD && <Dashboard transactions={currentUser?.transactions || []} totalBalance={currentUser?.accounts[0]?.balance || 0} onNavigate={setView} />}
       {view === AppView.TRANSFERS && <Transfers user={currentUser} />}
       {view === AppView.CREDITS && <CreditsView rates={interestRates} config={globalConfig} onApply={(l) => setUsers(prev => prev.map(u => u.id === l.memberId ? {...u, loans: [...(u.loans || []), l]} : u))} existingLoans={currentUser?.loans || []} memberName={currentUser?.name || ''} memberId={currentUser?.id || ''} />}
