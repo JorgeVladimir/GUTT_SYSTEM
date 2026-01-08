@@ -1,85 +1,111 @@
 
-import React from 'react';
-import { Transaction } from '../types';
+import React, { useMemo } from 'react';
+import { Transaction, AppView } from '../types';
 import { Wallet, ArrowUpRight, ArrowDownLeft, ChevronRight, RefreshCcw, PiggyBank, TrendingUp, Plus } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardProps {
   transactions: Transaction[];
   totalBalance: number;
+  onNavigate: (view: AppView) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance }) => {
-  const chartData = transactions.slice(0, 7).reverse().map((tx, idx) => ({
-    name: tx.date.split('/')[0],
-    value: Math.abs(tx.amount)
-  }));
+export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance, onNavigate }) => {
+  // Use useMemo to calculate chart data from transactions
+  const chartData = useMemo(() => {
+    return transactions.slice(0, 7).reverse().map((tx, idx) => ({
+      name: tx.date.split('/')[0],
+      value: Math.abs(tx.amount)
+    }));
+  }, [transactions]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8">
-      {/* Patate Welcome Banner */}
-      <div className="bg-[#14532D] rounded-[2.5rem] p-6 lg:p-10 text-white relative overflow-hidden shadow-2xl border-b-8 border-[#FACC15]">
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8 animate-in fade-in duration-700">
+      {/* Patate Welcome Banner - Pichincha Style */}
+      <div className="bg-[#14532D] rounded-[2.5rem] p-8 lg:p-12 text-white relative overflow-hidden shadow-2xl border-b-[12px] border-[#FACC15]">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div>
-            <span className="bg-[#FACC15] text-[#14532D] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block shadow-lg">Socio Patate</span>
-            <h1 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Caja de Ahorro Patate</h1>
-            <p className="text-emerald-100/70 text-sm max-w-md font-medium">Llevas un excelente historial de aportaciones en nuestra caja. Sigue creciendo con nosotros.</p>
+            <div className="bg-[#FACC15] text-[#14532D] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block shadow-xl">
+              Socio Patate Activo
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter">Bienvenido a tu Caja</h1>
+            <p className="text-emerald-100/70 text-sm max-w-lg font-medium leading-relaxed">
+              Tu futuro está asegurado. Revisa tus ahorros, realiza transferencias seguras o solicita un crédito inmediato con las mejores tasas del mercado local.
+            </p>
           </div>
-          <div className="flex gap-4">
-            <button className="bg-[#FACC15] hover:bg-yellow-300 text-[#14532D] px-8 py-3.5 rounded-2xl font-black text-sm transition-all shadow-xl hover:-translate-y-1">
-              Simular Crédito
+          <div className="flex gap-4 w-full md:w-auto">
+            <button 
+              onClick={() => onNavigate(AppView.CREDITS)}
+              className="flex-1 md:flex-none bg-[#FACC15] hover:bg-yellow-300 text-[#14532D] px-10 py-4 rounded-2xl font-black text-sm transition-all shadow-2xl hover:-translate-y-1 active:scale-95 whitespace-nowrap"
+            >
+              SIMULAR CRÉDITO
             </button>
           </div>
         </div>
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-[#FACC15]/5 rounded-full blur-2xl"></div>
+        
+        {/* Decorative elements */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-[100px]"></div>
+        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#FACC15]/10 rounded-full blur-[60px]"></div>
+        <div className="absolute right-10 bottom-10 opacity-5">
+           <PiggyBank size={180} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4">
-                 <TrendingUp size={24} className="text-emerald-500/20" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Saldo Card */}
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 group relative overflow-hidden hover:shadow-xl transition-all duration-300">
+              <div className="absolute top-0 right-0 p-6">
+                 <TrendingUp size={32} className="text-emerald-500/10 group-hover:scale-125 transition-transform" />
               </div>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-2xl bg-emerald-50 text-[#14532D]">
-                  <Wallet size={24} />
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aportación Social</p>
-                  <p className="text-3xl font-black text-slate-900 mt-1">
-                    <span className="text-sm font-bold text-slate-400 align-top mr-1">$</span>
+              <div className="flex flex-col h-full justify-between">
+                <div>
+                  <div className="p-4 rounded-2xl bg-emerald-50 text-[#14532D] inline-block mb-6 shadow-inner">
+                    <Wallet size={28} />
+                  </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Disponible Hoy</p>
+                  <p className="text-4xl font-black text-slate-900">
+                    <span className="text-lg font-bold text-slate-300 align-top mr-1">$</span>
                     {totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
+                <div className="mt-8 pt-6 border-t border-slate-50">
+                  <p className="text-xs font-bold text-slate-800">Cuenta de Ahorros Patate</p>
+                  <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Generando intereses diarios</p>
+                </div>
               </div>
-              <p className="text-sm font-bold text-slate-800">Mi Cuenta de Socio Patate</p>
-              <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Generando 6.5% interés</p>
             </div>
             
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-[#14532D] hover:text-[#14532D] transition-all cursor-pointer">
-               <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-2">
-                 <Plus size={24} />
+            {/* Action Card */}
+            <div 
+              onClick={() => onNavigate(AppView.CREDITS)}
+              className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-[#14532D] hover:text-[#14532D] hover:bg-white hover:shadow-xl transition-all cursor-pointer group"
+            >
+               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 group-hover:bg-emerald-50 shadow-sm transition-all group-hover:scale-110">
+                 <Plus size={32} />
                </div>
-               <p className="text-[10px] font-black uppercase tracking-widest">Nueva Inversión Patate</p>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-center">Solicitar Nuevo<br/>Crédito Patate</p>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
+          {/* Activity Chart */}
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[400px]">
+            <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="text-lg font-black text-slate-800">Crecimiento Patrimonial</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Tendencia últimos registros</p>
+                <h3 className="text-xl font-black text-slate-800">Actividad Mensual</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Resumen de transacciones</p>
               </div>
-              <RefreshCcw size={18} className="text-slate-300 animate-spin-slow" />
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <RefreshCcw size={20} className="text-[#14532D]" />
+              </div>
             </div>
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData.length > 0 ? chartData : [{name: '0', value: 0}]}>
+            <div className="h-[250px] w-full" style={{ minWidth: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <AreaChart data={chartData.length > 0 ? chartData : [{name: 'Ene', value: 0}, {name: 'Feb', value: 10}]}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14532D" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#14532D" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#14532D" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
@@ -87,58 +113,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} />
                   <YAxis hide />
                   <Tooltip 
-                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '12px'}} 
+                    cursor={{ stroke: '#14532D', strokeWidth: 1 }}
+                    contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', fontSize: '12px', fontWeight: 'bold'}} 
                   />
-                  <Area type="monotone" dataKey="value" stroke="#14532D" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
+                  <Area type="monotone" dataKey="value" stroke="#14532D" strokeWidth={5} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-           <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 h-full flex flex-col">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-black text-slate-800">Mis Movimientos</h3>
-                <span className="text-[10px] bg-slate-900 text-white px-3 py-1 rounded-full font-black uppercase tracking-tighter">{transactions.length}</span>
+        {/* Historial Corto Side */}
+        <div className="space-y-8">
+           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black text-slate-800">Movimientos</h3>
+                <span className="text-[10px] bg-slate-900 text-white px-3 py-1 rounded-full font-black uppercase tracking-widest">{transactions.length}</span>
               </div>
               
-              <div className="space-y-4 flex-1">
-                {transactions.length > 0 ? transactions.slice(0, 7).map((t) => (
-                  <div key={t.id} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-50 p-2 rounded-2xl transition-all">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              <div className="space-y-5 flex-1 overflow-y-auto max-h-[400px] pr-2 scrollbar-hide">
+                {transactions.length > 0 ? transactions.slice(0, 10).map((t) => (
+                  <div key={t.id} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-50 p-3 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
                       t.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
                     }`}>
-                      {t.type === 'CREDIT' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                      {t.type === 'CREDIT' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate leading-none">{t.description}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">{t.date}</p>
+                      <p className="text-sm font-bold text-slate-800 truncate leading-none mb-1">{t.description}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{t.date}</p>
                     </div>
                     <div className="text-right">
                       <p className={`text-sm font-black ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                        {t.type === 'CREDIT' ? '+' : ''}{t.amount.toFixed(2)}
+                        {t.type === 'CREDIT' ? '+' : '-'}${Math.abs(t.amount).toFixed(2)}
                       </p>
                     </div>
                   </div>
                 )) : (
                   <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
-                    <PiggyBank size={48} className="mb-2" />
-                    <p className="text-xs font-bold uppercase tracking-widest">Sin registros</p>
+                    <PiggyBank size={64} className="mb-4" />
+                    <p className="text-xs font-black uppercase tracking-widest">Esperando Actividad...</p>
                   </div>
                 )}
               </div>
               
-              <div className="mt-8 bg-[#14532D] rounded-[2rem] p-5 relative overflow-hidden group shadow-xl">
+              <div className="mt-10 bg-[#14532D] rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl border-b-4 border-[#FACC15]">
                  <div className="relative z-10">
-                   <p className="text-[#FACC15] font-black text-[10px] uppercase tracking-widest mb-1">Capacidad Patate</p>
-                   <p className="text-white text-xs font-medium mb-3">Tus aportes en nuestra caja están asegurados por el fondo común.</p>
-                   <button className="text-[10px] font-black text-white flex items-center gap-1 group-hover:gap-2 transition-all">
-                     MÁS INFORMACIÓN <ChevronRight size={14} className="text-[#FACC15]" />
+                   <p className="text-[#FACC15] font-black text-[10px] uppercase tracking-[0.2em] mb-2">Tu Patrimonio</p>
+                   <p className="text-white text-[11px] font-medium mb-4 leading-relaxed">Tus aportes están protegidos y respaldados por la caja central.</p>
+                   <button className="text-[10px] font-black text-white flex items-center gap-2 group-hover:gap-3 transition-all bg-white/10 px-4 py-2 rounded-full border border-white/5">
+                     VER BENEFICIOS <ChevronRight size={14} className="text-[#FACC15]" />
                    </button>
                  </div>
-                 <div className="absolute -right-4 -bottom-4 text-white/5 w-24 h-24 transform rotate-12">
-                   <PiggyBank size={96} />
+                 <div className="absolute -right-8 -bottom-8 text-white/5 w-32 h-32 transform rotate-12">
+                   <PiggyBank size={120} />
                  </div>
               </div>
            </div>

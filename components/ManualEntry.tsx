@@ -6,9 +6,11 @@ import { Transaction } from '../types';
 interface ManualEntryProps {
   onAdd: (transaction: Transaction) => void;
   onClose: () => void;
+  // Added accountId to props to satisfy Transaction interface requirement
+  accountId: string;
 }
 
-export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose }) => {
+export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose, accountId }) => {
   const [amount, setAmount] = useState('');
   const [desc, setDesc] = useState('');
   const [type, setType] = useState<'CREDIT' | 'DEBIT'>('CREDIT');
@@ -18,13 +20,15 @@ export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose }) => {
     e.preventDefault();
     if (!amount || !desc) return;
 
+    // Fixed: Added missing accountId property to match Transaction interface
     const newTx: Transaction = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString('es-EC'),
       description: desc,
       amount: parseFloat(amount) * (type === 'DEBIT' ? -1 : 1),
       type: type,
-      category: category
+      category: category,
+      accountId: accountId
     };
 
     onAdd(newTx);
@@ -34,7 +38,7 @@ export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative w-full max-w-lg bg-white rounded-t-[3rem] sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
+      <div className="relative w-full max-lg bg-white rounded-t-[3rem] sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
         <div className="absolute top-0 left-0 right-0 h-2 bg-[#FACC15]"></div>
         
         <div className="p-8 border-b border-slate-100 flex justify-between items-center">
@@ -67,7 +71,7 @@ export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose }) => {
 
           <div className="space-y-4">
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Monto Patate ($)</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Monto Patate ($)</label>
               <input 
                 autoFocus
                 type="number" 
@@ -76,28 +80,28 @@ export const ManualEntry: React.FC<ManualEntryProps> = ({ onAdd, onClose }) => {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl text-4xl font-black focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all text-center placeholder:text-slate-200"
+                className="w-full px-6 py-5 bg-white border border-slate-300 rounded-2xl text-4xl font-black text-[#14532D] focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all text-center placeholder:text-slate-200"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Descripción</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Descripción</label>
               <input 
                 type="text" 
                 required
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 placeholder="Ej. Aporte Mensual Patate"
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all"
+                className="w-full px-6 py-4 bg-white border border-slate-300 rounded-2xl font-bold text-[#14532D] focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all placeholder:text-slate-300"
               />
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Clasificación</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Clasificación</label>
               <select 
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all appearance-none cursor-pointer"
+                className="w-full px-6 py-4 bg-white border border-slate-300 rounded-2xl font-bold text-[#14532D] focus:ring-4 focus:ring-[#14532D]/10 focus:border-[#14532D] outline-none transition-all appearance-none cursor-pointer"
               >
                 <option>Aportación Patate</option>
                 <option>Depósito Voluntario</option>

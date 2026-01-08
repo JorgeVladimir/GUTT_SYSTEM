@@ -5,52 +5,57 @@ import {
   ArrowRightLeft, 
   PiggyBank, 
   CreditCard, 
-  User, 
-  LogOut,
-  Bell,
-  Search,
-  ChevronRight,
   ShieldCheck,
+  Briefcase,
   TrendingUp,
-  Wallet,
-  UserPlus
+  FileCheck,
+  FileBarChart
 } from 'lucide-react';
+import { UserRole, GlobalConfig } from './types';
 
 export const COLORS = {
-  primary: '#14532D', // Patate Deep Green
-  secondary: '#FACC15', // Patate Yellow Accent
+  primary: '#14532D', 
+  secondary: '#FACC15',
   background: '#F8FAFC',
   text: '#1E293B'
 };
 
-export const NAV_ITEMS = [
-  { id: 'DASHBOARD', label: 'Resumen Patate', icon: <LayoutDashboard size={20} /> },
-  { id: 'TRANSFERS', label: 'Transferencias', icon: <ArrowRightLeft size={20} /> },
-  { id: 'SAVINGS', label: 'Ahorros y Aportes', icon: <PiggyBank size={20} /> },
-  { id: 'SERVICES', label: 'Pagos Patate', icon: <CreditCard size={20} /> },
-];
-
-export const MOCK_USER = {
-  name: 'Socio Patate',
-  lastLogin: '2023-10-27 10:30',
-  accounts: [
-    {
-      id: '1',
-      type: 'Cuenta de Aportes',
-      number: '1792****1234',
-      balance: 1250.50,
-      currency: 'USD'
-    }
+export const NAV_BY_ROLE: Record<string, any[]> = {
+  MEMBER: [
+    { id: 'DASHBOARD', label: 'Resumen Patate', icon: <LayoutDashboard size={20} /> },
+    { id: 'TRANSFERS', label: 'Transferencias', icon: <ArrowRightLeft size={20} /> },
+    { id: 'CREDITS', label: 'Créditos y Simulador', icon: <TrendingUp size={20} /> },
+  ],
+  ADMIN: [
+    { id: 'ADMIN_HUB', label: 'Panel Administrativo', icon: <ShieldCheck size={20} /> },
+    { id: 'REPORTS', label: 'Reportes y SEPS', icon: <FileBarChart size={20} /> },
+    { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
+    { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
+    { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
+  ],
+  TELLER: [
+    { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+  ],
+  ACCOUNTANT: [
+    { id: 'CHART_OF_ACCOUNTS', label: 'Plan Contable', icon: <Briefcase size={20} /> },
+    { id: 'REPORTS', label: 'Reportes Financieros', icon: <FileBarChart size={20} /> },
+  ],
+  CREDIT_OFFICER: [
+    { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
+    { id: 'REPORTS', label: 'Reportes de Riesgo', icon: <FileBarChart size={20} /> },
   ]
 };
 
-export const MOCK_TRANSACTIONS = [
-  {
-    id: '1',
-    date: '27/10/2023',
-    description: 'Aporte Inicial de Capital',
-    amount: 1000.00,
-    type: 'CREDIT',
-    category: 'Aportación Mensual'
-  }
+export const INITIAL_RATES = [
+  { id: 'R1', category: 'Consumo Ordinario', rate: 16.06, maxTerm: 48 },
+  { id: 'R2', category: 'Microcrédito Minorista', rate: 28.23, maxTerm: 24 },
+  { id: 'R3', category: 'Inversión Inmobiliaria', rate: 9.50, maxTerm: 72 },
+  { id: 'R4', category: 'Emergente/Salud', rate: 12.00, maxTerm: 12 },
 ];
+
+export const DEFAULT_CONFIG: GlobalConfig = {
+  minLoanAmount: 100,
+  maxLoanAmount: 100000,
+  maxGlobalTerm: 72
+};

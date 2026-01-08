@@ -2,21 +2,19 @@
 import { GoogleGenAI } from "@google/genai";
 
 export class FinancialAssistant {
-  private ai: GoogleGenAI;
-
-  constructor() {
-    // Correctly initialize GoogleGenAI using a named parameter with process.env.API_KEY
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
+  // Fix: Removed persistent ai property to follow the guideline of creating 
+  // a new instance right before making an API call.
 
   async getAdvice(prompt: string, financialContext: string) {
     try {
-      const response = await this.ai.models.generateContent({
+      // Fix: Initialize GoogleGenAI instance right before the generateContent call.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Eres un asistente financiero experto para una Caja de Ahorro y Crédito. 
-        Contexto del usuario: ${financialContext}. 
-        Responde de forma amable, profesional y concisa a la siguiente duda: ${prompt}`,
+        contents: `Contexto del socio: ${financialContext}. Consulta del socio: ${prompt}`,
         config: {
+          // Fix: Move the persona/expert instruction to systemInstruction for clearer context separation.
+          systemInstruction: 'Eres un asistente financiero experto para una Caja de Ahorro y Crédito. Responde de forma amable, profesional y concisa.',
           temperature: 0.7,
         }
       });

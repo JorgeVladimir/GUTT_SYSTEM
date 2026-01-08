@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { NAV_ITEMS, COLORS } from '../constants';
-import { AppView } from '../types';
+import { NAV_BY_ROLE, COLORS } from '../constants';
+import { AppView, UserRole } from '../types';
 import { 
   Bell, 
   User as UserIcon, 
@@ -9,8 +9,7 @@ import {
   Menu, 
   X, 
   ShieldCheck, 
-  ChevronDown,
-  Info
+  ChevronDown
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -19,19 +18,20 @@ interface LayoutProps {
   onViewChange: (view: AppView) => void;
   onLogout: () => void;
   userName: string;
+  role: UserRole;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChange, onLogout, userName }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChange, onLogout, userName, role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Improved CSS Logo component to match the rectangular shape of the uploaded logo
+  // Filtramos los items del menú basándonos estrictamente en el rol para seguridad de interfaz
+  const navItems = NAV_BY_ROLE[role] || NAV_BY_ROLE.MEMBER;
+
   const CAPLogo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
-    // Increased width to prevent clipping and better match the official logo's aspect ratio
     const dimensions = size === "sm" ? "w-14 h-10" : size === "lg" ? "w-28 h-20" : "w-20 h-14";
     const textSize = size === "sm" ? "text-xl" : size === "lg" ? "text-4xl" : "text-2xl";
     return (
       <div className={`${dimensions} bg-[#14532D] flex flex-col items-center justify-center relative rounded-md shadow-md shrink-0`}>
-        {/* Added pr-1.5 to provide space for the italicized 'P' which often overflows containers */}
         <span className={`font-black text-white ${textSize} tracking-tight mb-1 italic pr-1.5`}>CAP</span>
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#FACC15] rounded-b-md"></div>
       </div>
@@ -52,13 +52,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
           <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-white">
             <CAPLogo size="sm" />
             <div>
-              <h1 className="text-lg font-black text-[#14532D] leading-none">PATATE</h1>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Caja de Ahorro</span>
+              <h1 className="text-xs font-black text-[#14532D] leading-tight uppercase tracking-tighter">Caja de Ahorro<br/>Patate</h1>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Institucional</span>
             </div>
           </div>
 
           <nav className="flex-1 p-4 space-y-1 mt-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
@@ -85,7 +85,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
                </div>
                <div className="flex-1 overflow-hidden">
                  <p className="text-xs font-bold text-slate-800 truncate">{userName}</p>
-                 <p className="text-[10px] text-emerald-600 font-bold uppercase">Socio Patate</p>
+                 <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">{role}</p>
                </div>
             </div>
             <button 
@@ -93,7 +93,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
               className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
             >
               <LogOut size={20} />
-              <span className="text-sm font-medium">Cerrar Sesión</span>
+              <span className="text-sm font-medium">Salir</span>
             </button>
           </div>
         </div>
@@ -106,23 +106,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onViewChan
               <Menu size={24} />
             </button>
             <h2 className="text-lg font-bold text-slate-800 hidden sm:block">
-              {NAV_ITEMS.find(i => i.id === activeView)?.label || 'Caja Patate Online'}
+              Portal {role.replace('_', ' ')}
             </h2>
           </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-[#FACC15]/20 text-[#854d0e] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-[#FACC15]/30">
-              <ShieldCheck size={14} />
-              <span>Seguridad Patate</span>
+          <div className="flex items-center gap-4">
+            <div className="bg-[#FACC15]/20 text-[#14532D] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-[#FACC15]/40 flex items-center gap-2">
+              <ShieldCheck size={14} /> SEGURIDAD ACTIVA
             </div>
-            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full relative">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FACC15] rounded-full border-2 border-white"></span>
-            </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
            {children}
         </div>
       </main>
