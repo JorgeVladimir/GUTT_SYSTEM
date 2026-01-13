@@ -14,6 +14,25 @@ export enum AccountType {
   LOAN = 'PRESTAMO'
 }
 
+export type CreditRating = 'EXCELENTE' | 'BUENO' | 'REGULAR' | 'MALO' | 'NEGADO';
+
+export interface CreditBureauProfile {
+  score: number; // 0 - 1000
+  rating: CreditRating;
+  lastUpdate: string;
+  totalLoans: number;
+  delinquencyDays: number;
+}
+
+export interface FixedAsset {
+  id: string;
+  name: string;
+  category: string;
+  purchaseDate: string;
+  value: number;
+  depreciation: number;
+}
+
 export interface InterestRate {
   id: string;
   category: string;
@@ -65,6 +84,18 @@ export interface Transaction {
   tellerId?: string;
 }
 
+export interface PersonalReference {
+  name: string;
+  phone: string;
+  relationship: string;
+}
+
+export interface Dependent {
+  id: string;
+  name: string;
+  relationship: string;
+}
+
 export interface User {
   id: string; 
   name: string;
@@ -84,28 +115,41 @@ export interface User {
   address?: string;
   birthDate?: string;
   profession?: string;
-  // Campos técnicos Imagen 2 & SEPS
   memberNumber?: string;
   office?: string;
+  // Localización actual (Residencia)
   residenceCountry?: string;
-  residenceType?: 'LOCAL' | 'NACIONAL' | 'EXTERIOR';
-  nationality?: string;
   province?: string;
   city?: string;
   parish?: string;
-  addressReference?: string;
-  instructionLevel?: string;
-  civilStatus?: string;
-  gender?: string;
-  isPeps?: boolean;
-  hasFingerprint?: boolean;
+  // Identidad y Nacimiento (S01)
+  idType?: string;
+  birthCountry?: string;
+  birthProvince?: string;
+  birthCity?: string;
+  birthParish?: string;
+  ethnicity?: string;
+  gender?: 'MASCULINO' | 'FEMENINO' | 'OTRO';
+  maritalStatus?: 'SOLTERO' | 'CASADO' | 'DIVORCIADO' | 'VIUDO' | 'UNIÓN DE HECHO';
+  // Datos Cónyuge
+  spouseId?: string;
+  spouseName?: string;
+  spousePhone?: string;
+  // Dirección Trabajo
   workAddress?: string;
   workProvince?: string;
   workCity?: string;
-  workSector?: string;
-  dependency?: string;
-  familyCharges?: number;
-  disability?: boolean;
+  workParish?: string;
+  // Complementarios
+  dependentsCount?: number;
+  dependents?: Dependent[];
+  instructionLevel?: string;
+  homeCoordinates?: { lat: string; lng: string };
+  workCoordinates?: { lat: string; lng: string };
+  homeSketch?: string[]; // Array para múltiples imágenes base64
+  workSketch?: string; // base64
+  references?: PersonalReference[];
+  bureau?: CreditBureauProfile;
 }
 
 export interface Account {
@@ -128,6 +172,8 @@ export enum AppView {
   ADMIN_HUB = 'ADMIN_HUB',
   CREDIT_OFFICER_HUB = 'CREDIT_OFFICER_HUB',
   REPORTS = 'REPORTS',
+  BI_PANEL = 'BI_PANEL',
+  PROFILE = 'PROFILE',
   CHANGE_PIN = 'CHANGE_PIN'
 }
 

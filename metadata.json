@@ -2,6 +2,7 @@
   "name": "Caja de Ahorro Patate",
   "description": "Plataforma oficial de la Caja de Ahorro Patate, diseñada para el manejo eficiente de aportaciones, créditos y asesoría financiera inteligente.",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "geolocation"
   ]
 }

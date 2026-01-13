@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppView, Transaction, User, UserRole, AccountType, InterestRate, Loan, GlobalConfig, ChartOfAccountEntry } from './types';
+import { AppView, Transaction, User, UserRole, AccountType, InterestRate, GlobalConfig, ChartOfAccountEntry } from './types';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { Transfers } from './components/Transfers';
@@ -9,12 +9,14 @@ import { Register } from './components/Register';
 import { AccountantView } from './components/AccountantView';
 import { TellerView } from './components/TellerView';
 import { AdminView } from './components/AdminView';
+import { BIPanel } from './components/BIPanel';
 import { CreditsView } from './components/CreditsView';
 import { CreditOfficerApproval } from './components/CreditOfficerApproval';
 import { ReportsView } from './components/ReportsView';
+import { ProfileView } from './components/ProfileView';
 import { INITIAL_RATES, DEFAULT_CONFIG } from './constants';
 import { DataService } from './services/dataService';
-import { ArrowRight, ShieldCheck, Lock, User as UserIcon, Eye, EyeOff, UserPlus, KeyRound, Check } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Lock, User as UserIcon, Eye, EyeOff, UserPlus, KeyRound, Check, RefreshCw } from 'lucide-react';
 
 const INITIAL_CHART: ChartOfAccountEntry[] = [
   { code: '1', name: 'ACTIVOS', level: 1, type: 'ASSET', balance: 0 },
@@ -50,6 +52,10 @@ export default function App() {
   const [interestRates, setInterestRates] = useState<InterestRate[]>(INITIAL_RATES);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
   const [users, setUsers] = useState<User[]>([]);
+
+  // Estados para cambio de PIN
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
 
   const getDefaultUsers = (): User[] => [
     { id: 'admin', name: 'Administrador General', pin: '1234', role: UserRole.ADMIN, accounts: [], transactions: [], loans: [] },
@@ -136,6 +142,26 @@ export default function App() {
     }
   };
 
+  const handleChangePin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    if (newPin.length !== 4) return alert("El PIN debe tener exactamente 4 dígitos.");
+    if (newPin !== confirmPin) return alert("Los PIN no coinciden.");
+    if (newPin === '1234') return alert("Debe elegir un PIN distinto al inicial por seguridad.");
+
+    const updatedUser: User = { ...currentUser, pin: newPin, needsPinChange: false };
+    handleUpdateUser(updatedUser);
+    setCurrentUser(updatedUser);
+    
+    if (updatedUser.role === UserRole.ADMIN) setView(AppView.ADMIN_HUB);
+    else if (updatedUser.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
+    else if (updatedUser.role === UserRole.TELLER) setView(AppView.TELLER_OPERATIONS);
+    else if (updatedUser.role === UserRole.CREDIT_OFFICER) setView(AppView.CREDIT_OFFICER_HUB);
+    else setView(AppView.DASHBOARD);
+    
+    alert("¡PIN actualizado con éxito! Bienvenido a su banca virtual.");
+  };
+
   const handleRegister = (name: string, id: string, pin: string, email: string, authorize: boolean) => {
     const cleanId = id.trim();
     if (users.some(u => u.id === cleanId)) return alert("Socio ya existe.");
@@ -219,9 +245,41 @@ export default function App() {
     alert("¡DESEMBOLSO EXITOSO!\nEl crédito ha sido aprobado y el dinero acreditado.");
   };
 
-  const handleLogout = () => { setCurrentUser(null); setView(AppView.LOGIN); };
+  const handleLogout = () => { setCurrentUser(null); setView(AppView.LOGIN); setNewPin(''); setConfirmPin(''); };
 
   if (view === AppView.REGISTER) return <Register onRegister={handleRegister} onBack={() => setView(AppView.LOGIN)} />;
+  
+  if (view === AppView.CHANGE_PIN) return (
+    <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
+      <div className="w-full max-w-[450px] animate-in slide-in-from-bottom duration-700">
+        <div className="bg-white rounded-[3.5rem] shadow-2xl p-12 border-t-[12px] border-[#14532D]">
+          <div className="flex flex-col items-center mb-10 text-center">
+            <CAPLogo size="lg" />
+            <h2 className="text-2xl font-black text-[#14532D] tracking-tight mt-8 uppercase">Cambio de PIN Obligatorio</h2>
+            <p className="text-slate-400 font-bold text-xs mt-2 leading-relaxed">Por su seguridad, debe actualizar el PIN temporal antes de continuar.</p>
+          </div>
+          <form className="space-y-6" onSubmit={handleChangePin}>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nuevo PIN (4 dígitos)</label>
+              <div className="relative">
+                <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input required type="password" maxLength={4} value={newPin} onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))} placeholder="••••" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-black text-[#14532D] text-center text-3xl tracking-[0.4em]" />
+              </div>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Confirmar Nuevo PIN</label>
+              <div className="relative">
+                <RefreshCw size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input required type="password" maxLength={4} value={confirmPin} onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))} placeholder="••••" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-black text-[#14532D] text-center text-3xl tracking-[0.4em]" />
+              </div>
+            </div>
+            <button className="w-full py-5 bg-[#14532D] text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-[#1b5e20] transition-all flex items-center justify-center gap-4 group mt-8">
+              ACTUALIZAR PIN <Check size={24} className="text-[#FACC15]" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
   if (view === AppView.LOGIN) return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 relative overflow-hidden">
       <div className="w-full max-w-[450px] animate-in fade-in zoom-in duration-700 relative z-10">
@@ -273,13 +331,15 @@ export default function App() {
   return (
     <Layout activeView={view as any} onViewChange={setView as any} onLogout={handleLogout} userName={currentUser?.name || ''} role={currentUser?.role || UserRole.MEMBER}>
       {view === AppView.ADMIN_HUB && <AdminView users={users} rates={interestRates} config={globalConfig} onUpdateRates={setInterestRates} onUpdateConfig={setGlobalConfig} onRestoreDatabase={(d) => setUsers(d.users)} />}
+      {view === AppView.BI_PANEL && <BIPanel users={users} currentUserRole={currentUser?.role} />}
       {view === AppView.TELLER_OPERATIONS && <TellerView users={users} onUpdateUser={handleUpdateUser} currentUserRole={currentUser?.role} />}
       {view === AppView.DASHBOARD && <Dashboard transactions={currentUser?.transactions || []} totalBalance={currentUser?.accounts[0]?.balance || 0} onNavigate={setView} />}
       {view === AppView.TRANSFERS && <Transfers user={currentUser} />}
       {view === AppView.CREDITS && <CreditsView rates={interestRates} config={globalConfig} onApply={(l) => setUsers(prev => prev.map(u => u.id === l.memberId ? {...u, loans: [...(u.loans || []), l]} : u))} existingLoans={currentUser?.loans || []} memberName={currentUser?.name || ''} memberId={currentUser?.id || ''} />}
       {view === AppView.CHART_OF_ACCOUNTS && <AccountantView chart={chartOfAccounts} />}
-      {view === AppView.CREDIT_OFFICER_HUB && <CreditOfficerApproval users={users} onApprove={handleApproveLoan} onReject={(lid, mid, r) => setUsers(prev => prev.map(u => u.id === mid ? {...u, loans: (u.loans || []).map(l => l.id === lid ? {...l, status: 'RECHAZADO', comments: r} : l)} : u))} />}
-      {view === AppView.REPORTS && <ReportsView />}
+      {view === AppView.CREDIT_OFFICER_HUB && <CreditOfficerApproval users={users} onUpdateUser={handleUpdateUser} onApprove={handleApproveLoan} onReject={(lid, mid, r) => setUsers(prev => prev.map(u => u.id === mid ? {...u, loans: (u.loans || []).map(l => l.id === lid ? {...l, status: 'RECHAZADO', comments: r} : l)} : u))} />}
+      {view === AppView.REPORTS && <ReportsView users={users} onUpdateUser={handleUpdateUser} currentUser={currentUser || undefined} />}
+      {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}
       {currentUser?.role === UserRole.MEMBER && <ChatAssistant user={currentUser} currentBalance={currentUser.accounts[0]?.balance} transactions={currentUser.transactions} />}
     </Layout>
   );
