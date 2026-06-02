@@ -6,11 +6,13 @@ import { User, InterestRate, GlobalConfig, Transaction, Loan } from '../types';
  * El backend PHP debe actuar como proxy para la base de datos Informix.
  */
 export class DataService {
-  private static API_URL = 'api'; // Ajustar a la ruta real de tu servidor
+  private static API_URL = import.meta.env.VITE_API_URL || '/api';
 
   private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
-      const response = await fetch(`${this.API_URL}/${endpoint}`, {
+      const baseUrl = this.API_URL.replace(/\/$/, '');
+      const cleanEndpoint = endpoint.replace(/^\//, '');
+      const response = await fetch(`${baseUrl}/${cleanEndpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',

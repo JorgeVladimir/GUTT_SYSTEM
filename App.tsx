@@ -45,6 +45,7 @@ const CAPLogo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
 };
 
 export default function App() {
+  const useRemoteApi = import.meta.env.VITE_USE_REMOTE_API === 'true';
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showPin, setShowPin] = useState(false);
@@ -121,21 +122,41 @@ export default function App() {
     }
   }, [users]);
 
-  const handleLogin = (id: string, pin: string) => {
+  const navigateByRole = (user: User) => {
+    if (user.needsPinChange) setView(AppView.CHANGE_PIN);
+    else {
+      if (user.role === UserRole.ADMIN) setView(AppView.ADMIN_HUB);
+      else if (user.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
+      else if (user.role === UserRole.TELLER) setView(AppView.TELLER_OPERATIONS);
+      else if (user.role === UserRole.CREDIT_OFFICER) setView(AppView.CREDIT_OFFICER_HUB);
+      else setView(AppView.DASHBOARD);
+    }
+  };
+
+  const handleLogin = async (id: string, pin: string) => {
     const cleanId = id.trim().toLowerCase();
     const cleanPin = pin.trim();
+
+    if (useRemoteApi) {
+      try {
+        const loginResult = await DataService.login(cleanId, cleanPin);
+        if (loginResult) {
+          const profile = await DataService.getUserFullData(loginResult.id).catch(() => loginResult);
+          setCurrentUser(profile);
+          setLoginError('');
+          navigateByRole(profile);
+          return;
+        }
+      } catch (error) {
+        console.error('Login remoto fallido, se usa respaldo local:', error);
+      }
+    }
+
     const found = users.find(u => u.id.toLowerCase() === cleanId && u.pin === cleanPin);
     
     if (found) {
       setCurrentUser(found);
-      if (found.needsPinChange) setView(AppView.CHANGE_PIN);
-      else {
-        if (found.role === UserRole.ADMIN) setView(AppView.ADMIN_HUB);
-        else if (found.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
-        else if (found.role === UserRole.TELLER) setView(AppView.TELLER_OPERATIONS);
-        else if (found.role === UserRole.CREDIT_OFFICER) setView(AppView.CREDIT_OFFICER_HUB);
-        else setView(AppView.DASHBOARD);
-      }
+      navigateByRole(found);
       setLoginError('');
     } else {
       setLoginError('Identificación o PIN incorrectos.');
@@ -295,7 +316,7 @@ export default function App() {
           <form className="space-y-6" onSubmit={(e) => {
             e.preventDefault();
             const f = e.target as any;
-            handleLogin(f.uid.value, f.pin.value);
+            void handleLogin(f.uid.value, f.pin.value);
           }}>
             {loginError && <div className="bg-red-50 p-4 rounded-2xl border border-red-100"><p className="text-center text-red-600 text-xs font-bold">{loginError}</p></div>}
             <div className="space-y-2">
