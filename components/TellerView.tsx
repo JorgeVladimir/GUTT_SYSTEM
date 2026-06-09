@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { User, Transaction, AccountType, UserRole, Dependent, PersonalReference } from '../types';
+import { User, Transaction, AccountType, UserRole, Dependent, PersonalReference, CashDetail, PersonType, InterbankTransfer } from '../types';
 import { SEPS_CATALOGS as CATALOGS } from '../constants';
 import { 
   Search, 
@@ -27,7 +27,12 @@ import {
   Info,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Building2,
+  ArrowRightLeft,
+  FileText,
+  Calculator,
+  Printer
 } from 'lucide-react';
 
 interface TellerViewProps {
@@ -36,7 +41,8 @@ interface TellerViewProps {
   currentUserRole?: UserRole;
 }
 
-type TellerTab = 'OPERATIONS' | 'CONSULTAS' | 'REGISTER';
+type TellerTab = 'OPERATIONS' | 'CONSULTAS' | 'REGISTER' | 'CASH_CLOSE';
+type OperationType = 'DEPOSIT' | 'WITHDRAW' | 'CREDIT_NOTE' | 'DEBIT_NOTE' | 'INTERBANK_TRANSFER';
 
 export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, currentUserRole }) => {
   const [activeTab, setActiveTab] = useState<TellerTab>('OPERATIONS');
@@ -44,10 +50,39 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [amount, setAmount] = useState('');
-  const [opType, setOpType] = useState<'DEPOSIT' | 'WITHDRAW'>('DEPOSIT');
+  const [opType, setOpType] = useState<OperationType>('DEPOSIT');
   const [generalFilter, setGeneralFilter] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [mapModal, setMapModal] = useState<{ isOpen: boolean; type: 'home' | 'work' }>({ isOpen: false, type: 'home' });
+
+  // Estados para funcionalidades nuevas
+  const [showCashDetail, setShowCashDetail] = useState(false);
+  const [cashDetail, setCashDetail] = useState<CashDetail>({
+    bills: [
+      { denomination: 100, count: 0, total: 0 },
+      { denomination: 50, count: 0, total: 0 },
+      { denomination: 20, count: 0, total: 0 },
+      { denomination: 10, count: 0, total: 0 },
+      { denomination: 5, count: 0, total: 0 },
+      { denomination: 1, count: 0, total: 0 },
+    ],
+    coins: [
+      { denomination: 0.50, count: 0, total: 0 },
+      { denomination: 0.25, count: 0, total: 0 },
+      { denomination: 0.10, count: 0, total: 0 },
+      { denomination: 0.05, count: 0, total: 0 },
+      { denomination: 0.01, count: 0, total: 0 },
+    ],
+    total: 0
+  });
+  const [personType, setPersonType] = useState<PersonType>('SOCIO');
+  const [interbankTransfer, setInterbankTransfer] = useState<Partial<InterbankTransfer>>({
+    toBank: '',
+    toAccount: '',
+    toAccountName: '',
+    reference: ''
+  });
+  const [showCashCloseModal, setShowCashCloseModal] = useState(false);
 
   // Estado para Nuevo Socio (Estructura S01 Completa - Manual 28.0)
   const [newMember, setNewMember] = useState<Partial<User>>({
@@ -128,34 +163,6 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
     } else alert("Socio no encontrado.");
   };
 
-  const handleOperation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !amount) return;
-    const numAmount = parseFloat(amount);
-    
-    const updatedAccounts = selectedUser.accounts.map(acc => {
-      if (acc.id === selectedAccountId) {
-        return { ...acc, balance: opType === 'DEPOSIT' ? acc.balance + numAmount : acc.balance - numAmount };
-      }
-      return acc;
-    });
-
-    const newTx: Transaction = {
-      id: `TX-${Date.now()}`,
-      date: new Date().toLocaleDateString('es-EC'),
-      description: `${opType === 'DEPOSIT' ? 'DEPÓSITO' : 'RETIRO'} VENTANILLA`,
-      amount: opType === 'DEPOSIT' ? numAmount : -numAmount,
-      type: opType === 'DEPOSIT' ? 'CREDIT' : 'DEBIT',
-      category: 'Caja',
-      accountId: selectedAccountId,
-      isCash: true
-    };
-
-    onUpdateUser({ ...selectedUser, accounts: updatedAccounts, transactions: [newTx, ...(selectedUser.transactions || [])] });
-    alert("Operación exitosa.");
-    setSelectedUser(null);
-    setAmount('');
-  };
 
   const filteredUsers = useMemo(() => {
     const q = generalFilter.toLowerCase();
@@ -204,6 +211,99 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
     setMapModal({ isOpen: false, type: 'home' });
   };
 
+  // Funciones para manejo de efectivo
+  const updateCashDetail = (type: 'bills' | 'coins', index: number, count: number) => {
+    const updated = { ...cashDetail };
+    updated[type][index].count = count;
+    updated[type][index].total = updated[type][index].denomination * count;
+    updated.total = updated.bills.reduce((sum, b) => sum + b.total, 0) + updated.coins.reduce((sum, c) => sum + c.total, 0);
+    setCashDetail(updated);
+    setAmount(updated.total.toString());
+  };
+
+  const calculateCashTotal = () => {
+    const total = cashDetail.bills.reduce((sum, b) => sum + b.total, 0) + cashDetail.coins.reduce((sum, c) => sum + c.total, 0);
+    setCashDetail({ ...cashDetail, total });
+    setAmount(total.toString());
+  };
+
+  // Modificar handleOperation para incluir nuevas operaciones
+  const handleOperation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser || !amount) return;
+    const numAmount = parseFloat(amount);
+
+    let description = '';
+    let category = '';
+
+    switch (opType) {
+      case 'DEPOSIT':
+        description = showCashDetail ? 'DEPÓSITO VENTANILLA CON DETALLE' : 'DEPÓSITO VENTANILLA';
+        category = 'Caja';
+        break;
+      case 'WITHDRAW':
+        description = 'RETIRO VENTANILLA';
+        category = 'Caja';
+        break;
+      case 'CREDIT_NOTE':
+        description = 'NOTA DE CRÉDITO';
+        category = 'Ajustes';
+        break;
+      case 'DEBIT_NOTE':
+        description = 'NOTA DE DÉBITO';
+        category = 'Ajustes';
+        break;
+      case 'INTERBANK_TRANSFER':
+        description = `TRANSFERENCIA INTERBANCARIA A ${interbankTransfer.toBank}`;
+        category = 'Transferencias';
+        break;
+    }
+
+    const updatedAccounts = selectedUser.accounts.map(acc => {
+      if (acc.id === selectedAccountId) {
+        if (opType === 'DEPOSIT' || opType === 'CREDIT_NOTE') {
+          return { ...acc, balance: acc.balance + numAmount };
+        } else {
+          return { ...acc, balance: acc.balance - numAmount };
+        }
+      }
+      return acc;
+    });
+
+    const newTx: Transaction = {
+      id: `TX-${Date.now()}`,
+      date: new Date().toLocaleDateString('es-EC'),
+      description,
+      amount: (opType === 'DEPOSIT' || opType === 'CREDIT_NOTE') ? numAmount : -numAmount,
+      type: (opType === 'DEPOSIT' || opType === 'CREDIT_NOTE') ? 'CREDIT' : 'DEBIT',
+      category,
+      accountId: selectedAccountId,
+      isCash: opType === 'DEPOSIT' || opType === 'WITHDRAW',
+      tellerId: currentUserRole === UserRole.TELLER ? 'caja' : undefined
+    };
+
+    onUpdateUser({ ...selectedUser, accounts: updatedAccounts, transactions: [newTx, ...(selectedUser.transactions || [])] });
+    alert("Operación exitosa.");
+
+    // Preguntar si desea cerrar caja después del depósito
+    if (opType === 'DEPOSIT' && !showCashCloseModal) {
+      if (confirm('¿Desea realizar el cierre de caja?')) {
+        setShowCashCloseModal(true);
+      }
+    }
+
+    // Resetear estados
+    setSelectedUser(null);
+    setAmount('');
+    setCashDetail({
+      bills: cashDetail.bills.map(b => ({ ...b, count: 0, total: 0 })),
+      coins: cashDetail.coins.map(c => ({ ...c, count: 0, total: 0 })),
+      total: 0
+    });
+    setShowCashDetail(false);
+    setInterbankTransfer({ toBank: '', toAccount: '', toAccountName: '', reference: '' });
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20 no-print">
       {/* Modal Mapa Falso */}
@@ -235,11 +335,12 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
         {[
           { id: 'OPERATIONS', label: 'OPERACIONES', icon: <Banknote size={18} /> },
           { id: 'REGISTER', label: 'APERTURA DE SOCIO', icon: <UserPlus size={18} /> },
-          { id: 'CONSULTAS', label: 'DIRECTORIO', icon: <Search size={18} /> }
+          { id: 'CONSULTAS', label: 'DIRECTORIO', icon: <Search size={18} /> },
+          { id: 'CASH_CLOSE', label: 'CIERRE DE CAJA', icon: <Calculator size={18} /> }
         ].map(tab => (
-          <button 
+          <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)} 
+            onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
           >
             {tab.icon} {tab.label}
@@ -279,10 +380,47 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
             {selectedUser ? (
               <div className="bg-white p-10 rounded-[4rem] shadow-sm border border-slate-100 animate-in slide-in-from-right-4">
                 <form onSubmit={handleOperation} className="space-y-10">
-                  <div className="flex gap-4 p-2 bg-slate-50 rounded-[2rem]">
-                    <button type="button" onClick={() => setOpType('DEPOSIT')} className={`flex-1 py-5 rounded-[1.5rem] font-black text-sm uppercase transition-all flex items-center justify-center gap-3 ${opType === 'DEPOSIT' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>DEPÓSITO</button>
-                    <button type="button" onClick={() => setOpType('WITHDRAW')} className={`flex-1 py-5 rounded-[1.5rem] font-black text-sm uppercase transition-all flex items-center justify-center gap-3 ${opType === 'WITHDRAW' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>RETIRO</button>
+                  <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-[2rem]">
+                    <button type="button" onClick={() => { setOpType('DEPOSIT'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEPOSIT' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>DEPÓSITO</button>
+                    <button type="button" onClick={() => { setOpType('WITHDRAW'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'WITHDRAW' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>RETIRO</button>
+                    <button type="button" onClick={() => { setOpType('CREDIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'CREDIT_NOTE' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>NOTA CRÉDITO</button>
+                    <button type="button" onClick={() => { setOpType('DEBIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEBIT_NOTE' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>NOTA DÉBITO</button>
+                    <button type="button" onClick={() => { setOpType('INTERBANK_TRANSFER'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'INTERBANK_TRANSFER' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>TRANSFERENCIA</button>
                   </div>
+
+                  {opType === 'INTERBANK_TRANSFER' && (
+                    <div className="space-y-4 animate-in slide-in-from-top-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Banco Destino</label>
+                          <select required value={interbankTransfer.toBank} onChange={e => setInterbankTransfer({...interbankTransfer, toBank: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                            <option value="">Seleccione...</option>
+                            <option value="BANCO PICHINCHA">BANCO PICHINCHA</option>
+                            <option value="BANCO GUAYAQUIL">BANCO GUAYAQUIL</option>
+                            <option value="BANCO PACÍFICO">BANCO PACÍFICO</option>
+                            <option value="BANCO AMAZONAS">BANCO AMAZONAS</option>
+                            <option value="BANCO BOLIVARIANO">BANCO BOLIVARIANO</option>
+                            <option value="BANCO DEL AUSTRO">BANCO DEL AUSTRO</option>
+                            <option value="BANCO INTERNACIONAL">BANCO INTERNACIONAL</option>
+                            <option value="BANCO PRODUBANCO">BANCO PRODUBANCO</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cuenta Destino</label>
+                          <input required type="text" value={interbankTransfer.toAccount} onChange={e => setInterbankTransfer({...interbankTransfer, toAccount: e.target.value})} placeholder="Número de cuenta" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Beneficiario</label>
+                        <input required type="text" value={interbankTransfer.toAccountName} onChange={e => setInterbankTransfer({...interbankTransfer, toAccountName: e.target.value.toUpperCase()})} placeholder="Nombre completo" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Referencia</label>
+                        <input type="text" value={interbankTransfer.reference} onChange={e => setInterbankTransfer({...interbankTransfer, reference: e.target.value})} placeholder="Referencia opcional" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto de Operación ($)</label>
                      <div className="relative">
@@ -290,6 +428,58 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
                        <input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full pl-16 pr-8 py-5 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] text-2xl focus:ring-4 focus:ring-[#14532D]/10 outline-none shadow-inner" />
                      </div>
                   </div>
+
+                  {opType === 'DEPOSIT' && (
+                    <div className="space-y-4">
+                      <button type="button" onClick={() => setShowCashDetail(!showCashDetail)} className="flex items-center gap-2 text-[10px] font-black text-[#14532D] uppercase tracking-widest hover:underline">
+                        <Calculator size={16} /> {showCashDetail ? 'Ocultar' : 'Mostrar'} detalle de billetes y monedas
+                      </button>
+
+                      {showCashDetail && (
+                        <div className="space-y-6 animate-in slide-in-from-top-4 p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                          <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest">Detalle de Billetes</h4>
+                          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                            {cashDetail.bills.map((bill, i) => (
+                              <div key={i} className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-500 uppercase block text-center">${bill.denomination}</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={bill.count}
+                                  onChange={e => updateCashDetail('bills', i, parseInt(e.target.value) || 0)}
+                                  className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                                />
+                                <p className="text-[9px] font-bold text-center text-slate-400">${bill.total.toFixed(2)}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest pt-4 border-t border-emerald-200">Detalle de Monedas</h4>
+                          <div className="grid grid-cols-5 gap-4">
+                            {cashDetail.coins.map((coin, i) => (
+                              <div key={i} className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-500 uppercase block text-center">${coin.denomination}</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={coin.count}
+                                  onChange={e => updateCashDetail('coins', i, parseInt(e.target.value) || 0)}
+                                  className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                                />
+                                <p className="text-[9px] font-bold text-center text-slate-400">${coin.total.toFixed(2)}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex justify-between items-center pt-4 border-t border-emerald-200 bg-emerald-100 p-4 rounded-2xl">
+                            <span className="text-sm font-black text-[#14532D] uppercase">Total Efectivo:</span>
+                            <span className="text-2xl font-black text-[#14532D]">${cashDetail.total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <button type="submit" className="w-full py-7 bg-[#14532D] text-white rounded-full font-black text-2xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter">CONFIRMAR TRANSACCIÓN</button>
                 </form>
               </div>
@@ -305,39 +495,76 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
 
       {activeTab === 'REGISTER' && (
         <div className="bg-white rounded-[4rem] shadow-xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-6 duration-500">
-          <div className="p-10 border-b bg-emerald-50/50 flex items-center gap-6">
-            <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
-               <UserPlus size={32} />
+          <div className="p-10 border-b bg-emerald-50/50 flex items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
+                 <UserPlus size={32} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Apertura de Socio Integral</h3>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Sincronización Automática SEPS S01 • Manual 28.0</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Apertura de Socio Integral</h3>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Sincronización Automática SEPS S01 • Manual 28.0</p>
+            <div className="flex gap-2 p-2 bg-white rounded-2xl border border-emerald-200">
+              <button type="button" onClick={() => setPersonType('SOCIO')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'SOCIO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>SOCIO</button>
+              <button type="button" onClick={() => setPersonType('CLIENTE')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>CLIENTE</button>
+              <button type="button" onClick={() => setPersonType('CLIENTE_EXTERNO')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE_EXTERNO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>CLIENTE EXTERNO</button>
             </div>
           </div>
           
-          <form className="p-12 space-y-12" onSubmit={e => {
+          <form className="p-12 space-y-8" onSubmit={e => {
              e.preventDefault();
              if(idStatus === 'invalid') return alert("Cédula inválida.");
              const fullName = `${newMember.firstName} ${newMember.middleName || ''} ${newMember.lastName}`.replace(/\s+/g, ' ').toUpperCase();
              const cleanId = newMember.id!;
-             const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
-             const certAcc = { id: `cert-${cleanId}`, type: AccountType.CERTIFICATE, number: `02${Math.floor(100000 + Math.random()*899999)}`, balance: 5, currency: 'USD' };
-             
-             onUpdateUser({ 
-               ...newMember, 
-               id: cleanId, 
-               name: fullName, 
-               accounts: [savAcc, certAcc], 
-               transactions: [], 
-               loans: [], 
-               role: UserRole.MEMBER, 
-               needsPinChange: true, 
+
+             // Dependiendo del tipo de persona, crear cuentas diferentes
+             let accounts = [];
+             if (personType === 'SOCIO') {
+               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
+               const certAcc = { id: `cert-${cleanId}`, type: AccountType.CERTIFICATE, number: `02${Math.floor(100000 + Math.random()*899999)}`, balance: 5, currency: 'USD' };
+               accounts = [savAcc, certAcc];
+             } else if (personType === 'CLIENTE') {
+               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
+               accounts = [savAcc];
+             } else {
+               // CLIENTE_EXTERNO - solo cuenta de ahorros sin certificado
+               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
+               accounts = [savAcc];
+             }
+
+             onUpdateUser({
+               ...newMember,
+               id: cleanId,
+               name: fullName,
+               accounts,
+               transactions: [],
+               loans: [],
+               role: UserRole.MEMBER,
+               needsPinChange: true,
                pin: newMember.pin || '1234',
                memberNumber: `P${Math.floor(1000+Math.random()*9000)}`,
-               registrationDate: new Date().toLocaleDateString('es-EC')
+               registrationDate: new Date().toLocaleDateString('es-EC'),
+               personType: personType
              } as User);
-             alert("¡Socio registrado con éxito en el Core Bancario!");
-             setActiveTab('CONSULTAS');
+             alert(`¡${personType.replace('_', ' ')} registrado con éxito en el Core Bancario!`);
+
+             // Si es socio, preguntar si desea realizar depósito inicial
+             if (personType === 'SOCIO') {
+               if (confirm('¿Desea realizar el depósito de apertura de cuenta?')) {
+                 const newUser = users.find(u => u.id === cleanId);
+                 if (newUser) {
+                   setSelectedUser(newUser);
+                   setSelectedAccountId(newUser.accounts[0]?.id || '');
+                   setActiveTab('OPERATIONS');
+                   setOpType('DEPOSIT');
+                 }
+               } else {
+                 setActiveTab('CONSULTAS');
+               }
+             } else {
+               setActiveTab('CONSULTAS');
+             }
           }}>
             {/* Sección 1: Identidad */}
             <div className="space-y-6">
@@ -644,6 +871,117 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
                </tbody>
              </table>
            </div>
+        </div>
+      )}
+
+      {activeTab === 'CASH_CLOSE' && (
+        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in duration-500">
+          <div className="flex items-center gap-6 mb-10">
+            <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
+              <Calculator size={32} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Cierre de Caja</h3>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Arqueo de efectivo y consolidación de operaciones</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest mb-4">Detalle de Billetes</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  {cashDetail.bills.map((bill, i) => (
+                    <div key={i} className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-500 uppercase block text-center">${bill.denomination}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={bill.count}
+                        onChange={e => updateCashDetail('bills', i, parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                      />
+                      <p className="text-[9px] font-bold text-center text-slate-400">${bill.total.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest mb-4">Detalle de Monedas</h4>
+                <div className="grid grid-cols-5 gap-4">
+                  {cashDetail.coins.map((coin, i) => (
+                    <div key={i} className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-500 uppercase block text-center">${coin.denomination}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={coin.count}
+                        onChange={e => updateCashDetail('coins', i, parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                      />
+                      <p className="text-[9px] font-bold text-center text-slate-400">${coin.total.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-[#14532D] p-8 rounded-3xl text-white shadow-2xl">
+                <h4 className="text-sm font-black text-emerald-300 uppercase tracking-widest mb-6">Resumen del Cierre</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-white/10">
+                    <span className="text-sm font-bold">Fecha de Cierre</span>
+                    <span className="text-sm font-black">{new Date().toLocaleDateString('es-EC')}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-white/10">
+                    <span className="text-sm font-bold">Cajero</span>
+                    <span className="text-sm font-black">Cajero Matriz</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-white/10">
+                    <span className="text-sm font-bold">Total Efectivo</span>
+                    <span className="text-2xl font-black text-[#FACC15]">${cashDetail.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-white/10">
+                    <span className="text-sm font-bold">Total Transacciones</span>
+                    <span className="text-sm font-black">{users.reduce((acc, u) => acc + (u.transactions?.length || 0), 0)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                <h4 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4">Operaciones del Día</h4>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {users.flatMap(u => u.transactions || []).slice(-10).reverse().map((tx, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-500">{tx.date}</p>
+                        <p className="text-xs font-bold text-slate-800">{tx.description}</p>
+                      </div>
+                      <p className={`text-sm font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  alert(`Cierre de caja completado exitosamente.\nTotal: $${cashDetail.total.toFixed(2)}\nFecha: ${new Date().toLocaleDateString('es-EC')}`);
+                  setCashDetail({
+                    bills: cashDetail.bills.map(b => ({ ...b, count: 0, total: 0 })),
+                    coins: cashDetail.coins.map(c => ({ ...c, count: 0, total: 0 })),
+                    total: 0
+                  });
+                }}
+                className="w-full py-6 bg-[#14532D] text-white rounded-2xl font-black text-xl shadow-2xl border-b-[4px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter flex items-center justify-center gap-3"
+              >
+                <Printer size={24} /> CONFIRMAR CIERRE DE CAJA
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

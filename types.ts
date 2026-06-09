@@ -97,7 +97,7 @@ export interface Dependent {
 }
 
 export interface User {
-  id: string; 
+  id: string;
   name: string;
   firstName?: string;
   middleName?: string;
@@ -150,6 +150,7 @@ export interface User {
   workSketch?: string; // base64
   references?: PersonalReference[];
   bureau?: CreditBureauProfile;
+  personType?: PersonType;
 }
 
 export interface Account {
@@ -183,4 +184,43 @@ export interface ChartOfAccountEntry {
   level: number;
   type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
   balance: number;
+}
+
+export interface CashDetail {
+  bills: {
+    denomination: number;
+    count: number;
+    total: number;
+  }[];
+  coins: {
+    denomination: number;
+    count: number;
+    total: number;
+  }[];
+  total: number;
+}
+
+export interface CashClose {
+  tellerId: string;
+  tellerName: string;
+  date: string;
+  openingBalance: number;
+  closingBalance: number;
+  cashDetail: CashDetail;
+  transactions: Transaction[];
+  discrepancies?: number;
+  status: 'OPEN' | 'CLOSED';
+}
+
+export type PersonType = 'SOCIO' | 'CLIENTE' | 'CLIENTE_EXTERNO';
+
+export interface InterbankTransfer {
+  id: string;
+  fromAccount: string;
+  toBank: string;
+  toAccount: string;
+  toAccountName: string;
+  amount: number;
+  reference: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
 }
