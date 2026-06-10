@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Transaction, AccountType, UserRole, Dependent, PersonalReference, CashDetail, PersonType, InterbankTransfer } from '../types';
 import { SEPS_CATALOGS as CATALOGS } from '../constants';
+import { MapSelector } from './MapSelector';
 import { 
   Search, 
   Banknote, 
@@ -83,6 +84,18 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
     reference: ''
   });
   const [showCashCloseModal, setShowCashCloseModal] = useState(false);
+
+  // Estados para integración SQL Server
+  const [showMapSelector, setShowMapSelector] = useState(false);
+  const [mapSelectorType, setMapSelectorType] = useState<'home' | 'work'>('home');
+  const [capturedMapImage, setCapturedMapImage] = useState<string>('');
+  const [capturedWorkMapImage, setCapturedWorkMapImage] = useState<string>('');
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: string; lng: string } | null>(null);
+  const [workMapCoordinates, setWorkMapCoordinates] = useState<{ lat: string; lng: string } | null>(null);
+  const [isFormLocked, setIsFormLocked] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [sociosConsultas, setSociosConsultas] = useState<any[]>([]);
+  const [loadingConsultas, setLoadingConsultas] = useState(false);
 
   // Estado para Nuevo Socio (Estructura S01 Completa - Manual 28.0)
   const [newMember, setNewMember] = useState<Partial<User>>({
@@ -211,6 +224,214 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
     setMapModal({ isOpen: false, type: 'home' });
   };
 
+  // Función para abrir el selector de mapa real
+  const openRealMapSelector = (type: 'home' | 'work') => {
+    setMapSelectorType(type);
+    setShowMapSelector(true);
+  };
+
+  // Función para manejar la selección de ubicación del mapa
+  const handleMapLocationSelect = (lat: string, lng: string, address: string, image: string) => {
+    if (mapSelectorType === 'home') {
+      setNewMember(p => ({ ...p, address: address.toUpperCase() }));
+      setCapturedMapImage(image);
+      setMapCoordinates({ lat, lng });
+    } else {
+      setNewMember(p => ({ ...p, workAddress: address.toUpperCase() }));
+      setCapturedWorkMapImage(image);
+      setWorkMapCoordinates({ lat, lng });
+    }
+  };
+
+  // Función para cerrar el formulario sin guardar
+  const handleCloseForm = () => {
+    if (isFormLocked) {
+      if (confirm('¿Está seguro de cerrar el formulario? Los datos no guardados se perderán.')) {
+        resetForm();
+      }
+    } else {
+      resetForm();
+    }
+  };
+
+  // Función para resetear el formulario
+  const resetForm = () => {
+    setNewMember({
+      id: '',
+      idType: 'CÉDULA',
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      onlyOneName: false,
+      email: '',
+      phone: '',
+      address: '',
+      residenceCountry: '593 - ECUADOR',
+      birthCountry: '593 - ECUADOR',
+      birthProvince: '',
+      birthCity: '',
+      birthParish: '',
+      ethnicity: 'MESTIZO',
+      gender: 'MASCULINO',
+      maritalStatus: 'SOLTERO',
+      province: '',
+      city: '',
+      parish: '',
+      profession: 'SIN ACTIVIDAD ECONÓMICA',
+      instructionLevel: 'SIN INSTRUCCIÓN',
+      role: UserRole.MEMBER,
+      dependents: [],
+      references: [],
+      homeSketch: [],
+      workAddress: '',
+      workProvince: '',
+      workCity: '',
+      workParish: '',
+      spouseId: '',
+      spouseName: '',
+      spousePhone: '',
+      pin: '1234',
+      needsPinChange: true
+    });
+    setPersonType('SOCIO');
+    setCapturedMapImage('');
+    setCapturedWorkMapImage('');
+    setMapCoordinates(null);
+    setWorkMapCoordinates(null);
+    setIsFormLocked(false);
+    setIdStatus('idle');
+  };
+
+  // Función para registrar socio en SQL Server
+  const handleRegisterSocioSQL = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (idStatus === 'invalid') {
+      return alert('Cédula inválida.');
+    }
+
+    if (!newMember.id || !newMember.firstName || !newMember.lastName || !newMember.pin) {
+      return alert('Por favor complete los campos obligatorios.');
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Registrar socio en SQL Server
+      const response = await fetch('/api/socios/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipoPersona: personType,
+          tipoIdentificacion: newMember.idType,
+          identificacion: newMember.id,
+          primerNombre: newMember.firstName,
+          segundoNombre: newMember.middleName,
+          apellidos: newMember.lastName,
+          email: newMember.email,
+          telefono: newMember.phone,
+          fechaNacimiento: newMember.birthDate,
+          estadoCivil: newMember.maritalStatus,
+          pin: newMember.pin,
+          paisNacimiento: newMember.birthCountry,
+          provinciaNacimiento: newMember.birthProvince,
+          cantonNacimiento: newMember.birthCity,
+          parroquiaNacimiento: newMember.birthParish,
+          paisResidencia: newMember.residenceCountry,
+          provinciaResidencia: newMember.province,
+          cantonResidencia: newMember.city,
+          parroquiaResidencia: newMember.parish,
+          direccionDomicilio: newMember.address,
+          lugarTrabajo: newMember.workAddress,
+          provinciaTrabajo: newMember.workProvince,
+          cantonTrabajo: newMember.workCity,
+          parroquiaTrabajo: newMember.workParish,
+          cedulaConyuge: newMember.spouseId,
+          nombreConyuge: newMember.spouseName,
+          telefonoConyuge: newMember.spousePhone,
+          etnia: newMember.ethnicity,
+          genero: newMember.gender,
+          nivelInstruccion: newMember.instructionLevel,
+          profesion: newMember.profession,
+          referenciasPersonales: newMember.references,
+          cargasFamiliares: newMember.dependents,
+          usuarioRegistro: currentUserRole === UserRole.TELLER ? 'caja' : 'admin'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || 'Error al registrar socio');
+      }
+
+      // Guardar imagen del mapa de ubicación si existe
+      if (capturedMapImage && data.socioId) {
+        await fetch('/api/socios/guardar-mapa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            socioId: data.socioId,
+            imagenMapa: capturedMapImage,
+            coordenadaLat: mapCoordinates?.lat,
+            coordenadaLng: mapCoordinates?.lng,
+            direccionCapturada: newMember.address
+          })
+        });
+      }
+
+      // Guardar imagen del croquis de trabajo si existe
+      if (capturedWorkMapImage && data.socioId) {
+        await fetch('/api/socios/guardar-croquis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            socioId: data.socioId,
+            imagenCroquis: capturedWorkMapImage,
+            descripcion: 'Croquis del lugar de trabajo'
+          })
+        });
+      }
+
+      alert(`¡${personType.replace('_', ' ')} registrado exitosamente!\nNúmero de Socio: ${data.numeroSocio}\nID de Socio: ${data.socioId}`);
+
+      // Resetear formulario y cambiar a consultas
+      resetForm();
+      setActiveTab('CONSULTAS');
+      // Cargar datos actualizados
+      loadSociosConsultas();
+
+    } catch (error) {
+      console.error('Error registrando socio:', error);
+      alert('Error al registrar el socio. Por favor intente nuevamente.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Función para cargar socios desde SQL Server
+  const loadSociosConsultas = async () => {
+    setLoadingConsultas(true);
+    try {
+      const response = await fetch('/api/socios/consultas');
+      const data = await response.json();
+      if (data.ok) {
+        setSociosConsultas(data.data);
+      }
+    } catch (error) {
+      console.error('Error cargando consultas:', error);
+    } finally {
+      setLoadingConsultas(false);
+    }
+  };
+
+  // Cargar datos cuando se cambia a la pestaña CONSULTAS
+  useEffect(() => {
+    if (activeTab === 'CONSULTAS') {
+      loadSociosConsultas();
+    }
+  }, [activeTab]);
+
   // Funciones para manejo de efectivo
   const updateCashDetail = (type: 'bills' | 'coins', index: number, count: number) => {
     const updated = { ...cashDetail };
@@ -306,29 +527,14 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20 no-print">
-      {/* Modal Mapa Falso */}
-      {mapModal.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-           <div className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95">
-              <div className="p-6 bg-[#14532D] text-white flex justify-between items-center">
-                 <h4 className="font-black uppercase text-xs tracking-widest flex items-center gap-2"><MapIcon size={16}/> Localizador {mapModal.type === 'home' ? 'Domicilio' : 'Trabajo'}</h4>
-                 <button onClick={() => setMapModal({isOpen: false, type: 'home'})}><X size={20}/></button>
-              </div>
-              <div className="p-8 space-y-6">
-                 <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-200 text-slate-400">
-                    <p className="text-[10px] font-black uppercase text-center">Interfase de Google Maps Activa<br/><span className="text-[8px]">Seleccione ubicación en el visor</span></p>
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dirección Capturada:</label>
-                    <input autoFocus type="text" id="mapInput" placeholder="Calle Principal y Secundaria..." className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-xl font-bold text-slate-700" />
-                 </div>
-                 <button onClick={() => {
-                   const val = (document.getElementById('mapInput') as HTMLInputElement).value;
-                   handleMapSelect(val || "Dirección desde mapa");
-                 }} className="w-full py-4 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase shadow-xl">Confirmar Ubicación</button>
-              </div>
-           </div>
-        </div>
+      {/* Modal Mapa Real con Captura */}
+      {showMapSelector && (
+        <MapSelector
+          onLocationSelect={handleMapLocationSelect}
+          onClose={() => setShowMapSelector(false)}
+          initialPosition={mapSelectorType === 'home' ? { lat: -1.5923, lng: -78.9044 } : { lat: -1.5923, lng: -78.9044 }}
+          title={mapSelectorType === 'home' ? 'Seleccionar Ubicación de Domicilio' : 'Seleccionar Ubicación de Trabajo'}
+        />
       )}
 
       <div className="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-100 flex gap-2 overflow-x-auto no-scrollbar sticky top-0 z-40">
@@ -506,66 +712,34 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
               </div>
             </div>
             <div className="flex gap-2 p-2 bg-white rounded-2xl border border-emerald-200">
-              <button type="button" onClick={() => setPersonType('SOCIO')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'SOCIO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>SOCIO</button>
-              <button type="button" onClick={() => setPersonType('CLIENTE')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>CLIENTE</button>
-              <button type="button" onClick={() => setPersonType('CLIENTE_EXTERNO')} className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE_EXTERNO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>CLIENTE EXTERNO</button>
+              <button
+                type="button"
+                onClick={() => setPersonType('SOCIO')}
+                disabled={isFormLocked && personType !== 'SOCIO'}
+                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'SOCIO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'} ${isFormLocked && personType !== 'SOCIO' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                SOCIO
+              </button>
+              <button
+                type="button"
+                onClick={() => setPersonType('CLIENTE')}
+                disabled={isFormLocked && personType !== 'CLIENTE'}
+                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'} ${isFormLocked && personType !== 'CLIENTE' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                CLIENTE
+              </button>
+              <button
+                type="button"
+                onClick={() => setPersonType('CLIENTE_EXTERNO')}
+                disabled={isFormLocked && personType !== 'CLIENTE_EXTERNO'}
+                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${personType === 'CLIENTE_EXTERNO' ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'} ${isFormLocked && personType !== 'CLIENTE_EXTERNO' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                CLIENTE EXTERNO
+              </button>
             </div>
           </div>
           
-          <form className="p-12 space-y-8" onSubmit={e => {
-             e.preventDefault();
-             if(idStatus === 'invalid') return alert("Cédula inválida.");
-             const fullName = `${newMember.firstName} ${newMember.middleName || ''} ${newMember.lastName}`.replace(/\s+/g, ' ').toUpperCase();
-             const cleanId = newMember.id!;
-
-             // Dependiendo del tipo de persona, crear cuentas diferentes
-             let accounts = [];
-             if (personType === 'SOCIO') {
-               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
-               const certAcc = { id: `cert-${cleanId}`, type: AccountType.CERTIFICATE, number: `02${Math.floor(100000 + Math.random()*899999)}`, balance: 5, currency: 'USD' };
-               accounts = [savAcc, certAcc];
-             } else if (personType === 'CLIENTE') {
-               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
-               accounts = [savAcc];
-             } else {
-               // CLIENTE_EXTERNO - solo cuenta de ahorros sin certificado
-               const savAcc = { id: `sav-${cleanId}`, type: AccountType.SAVINGS, number: `01${Math.floor(100000 + Math.random()*899999)}`, balance: 0, currency: 'USD' };
-               accounts = [savAcc];
-             }
-
-             onUpdateUser({
-               ...newMember,
-               id: cleanId,
-               name: fullName,
-               accounts,
-               transactions: [],
-               loans: [],
-               role: UserRole.MEMBER,
-               needsPinChange: true,
-               pin: newMember.pin || '1234',
-               memberNumber: `P${Math.floor(1000+Math.random()*9000)}`,
-               registrationDate: new Date().toLocaleDateString('es-EC'),
-               personType: personType
-             } as User);
-             alert(`¡${personType.replace('_', ' ')} registrado con éxito en el Core Bancario!`);
-
-             // Si es socio, preguntar si desea realizar depósito inicial
-             if (personType === 'SOCIO') {
-               if (confirm('¿Desea realizar el depósito de apertura de cuenta?')) {
-                 const newUser = users.find(u => u.id === cleanId);
-                 if (newUser) {
-                   setSelectedUser(newUser);
-                   setSelectedAccountId(newUser.accounts[0]?.id || '');
-                   setActiveTab('OPERATIONS');
-                   setOpType('DEPOSIT');
-                 }
-               } else {
-                 setActiveTab('CONSULTAS');
-               }
-             } else {
-               setActiveTab('CONSULTAS');
-             }
-          }}>
+          <form className="p-12 space-y-8" onSubmit={handleRegisterSocioSQL}>
             {/* Sección 1: Identidad */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 border-l-4 border-[#14532D] pl-4">
@@ -725,7 +899,7 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Exacta (Domicilio)</label>
                   <div className="flex gap-2">
                     <input required type="text" value={newMember.address} onChange={e => setNewMember({...newMember, address: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
-                    <button type="button" onClick={() => openMapSelector('home')} className="p-4 bg-white border-2 border-slate-100 text-blue-600 rounded-2xl shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2">
+                    <button type="button" onClick={() => openRealMapSelector('home')} className="p-4 bg-white border-2 border-slate-100 text-blue-600 rounded-2xl shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2">
                        <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                     </button>
                   </div>
@@ -762,7 +936,7 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lugar de Trabajo / Nombre Empresa</label>
                   <div className="flex gap-2">
                     <input type="text" value={newMember.workAddress} onChange={e => setNewMember({...newMember, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
-                    <button type="button" onClick={() => openMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
+                    <button type="button" onClick={() => openRealMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
                        <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                     </button>
                   </div>
@@ -833,7 +1007,29 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
                </div>
             </div>
 
-            <button type="submit" disabled={idStatus === 'invalid'} className="w-full py-7 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50">REGISTRAR SOCIO PATATE (S01)</button>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className="flex-1 py-7 bg-slate-200 text-slate-600 rounded-full font-black text-xl shadow-lg border-b-[6px] border-slate-300 active:translate-y-2 transition-all uppercase tracking-tighter hover:bg-slate-300"
+              >
+                CERRAR
+              </button>
+              <button
+                type="submit"
+                disabled={idStatus === 'invalid' || isSaving}
+                className="flex-1 py-7 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    GUARDANDO...
+                  </>
+                ) : (
+                  'REGISTRO SOCIO PATATE'
+                )}
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -841,36 +1037,105 @@ export const TellerView: React.FC<TellerViewProps> = ({ users, onUpdateUser, cur
       {activeTab === 'CONSULTAS' && (
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in duration-500">
            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-              <h3 className="text-2xl font-black text-slate-800">Directorio de Socios</h3>
+              <div>
+                <h3 className="text-2xl font-black text-slate-800">Consultas de Socio y Fichas</h3>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Registros SQL Server SQLGUTPATATE</p>
+              </div>
               <div className="relative w-full md:w-96">
                 <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" value={generalFilter} onChange={e => setGeneralFilter(e.target.value)} placeholder="Nombre o Cédula..." className="w-full pl-14 pr-6 py-4 bg-slate-100 border-2 border-slate-100 rounded-2xl outline-none font-bold text-[#14532D] focus:border-[#14532D] shadow-inner" />
+                <input 
+                  type="text" 
+                  value={generalFilter} 
+                  onChange={e => setGeneralFilter(e.target.value)} 
+                  placeholder="Nombre o Cédula..." 
+                  className="w-full pl-14 pr-6 py-4 bg-slate-100 border-2 border-slate-100 rounded-2xl outline-none font-bold text-[#14532D] focus:border-[#14532D] shadow-inner" 
+                />
               </div>
            </div>
-           <div className="overflow-x-auto rounded-3xl border border-slate-50">
-             <table className="w-full text-sm">
-               <thead className="bg-slate-50 border-b">
-                 <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                   <th className="px-8 py-5 text-left">Nro Socio</th>
-                   <th className="px-8 py-5 text-left">Nombres</th>
-                   <th className="px-8 py-5 text-right">Saldo Vista</th>
-                   <th className="px-8 py-5 text-center">Acciones</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-slate-50">
-                 {filteredUsers.map(u => (
-                   <tr key={u.id} className="hover:bg-slate-50 transition-colors group">
-                     <td className="px-8 py-5 font-black text-slate-300 italic">#{u.memberNumber || 'S/N'}</td>
-                     <td className="px-8 py-5 font-bold text-slate-800 uppercase text-xs">{u.name}</td>
-                     <td className="px-8 py-5 text-right font-black text-slate-900">${(u.accounts[0]?.balance || 0).toFixed(2)}</td>
-                     <td className="px-8 py-5 text-center">
-                        <button onClick={() => { setSelectedUser(u); setActiveTab('OPERATIONS'); }} className="p-3 bg-emerald-50 text-[#14532D] rounded-xl hover:bg-[#14532D] hover:text-white transition-all shadow-sm"><Banknote size={16}/></button>
-                     </td>
+           
+           {loadingConsultas ? (
+             <div className="flex items-center justify-center py-20">
+               <Loader2 size={32} className="animate-spin text-[#14532D]" />
+               <span className="ml-4 text-[10px] font-black text-slate-400 uppercase">Cargando datos de SQL Server...</span>
+             </div>
+           ) : (
+             <div className="overflow-x-auto rounded-3xl border border-slate-50">
+               <table className="w-full text-sm">
+                 <thead className="bg-slate-50 border-b">
+                   <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                     <th className="px-8 py-5 text-left">Nro Socio</th>
+                     <th className="px-8 py-5 text-left">Tipo</th>
+                     <th className="px-8 py-5 text-left">Identificación</th>
+                     <th className="px-8 py-5 text-left">Nombres Completos</th>
+                     <th className="px-8 py-5 text-left">Fecha Registro</th>
+                     <th className="px-8 py-5 text-center">Mapa</th>
+                     <th className="px-8 py-5 text-center">Croquis</th>
+                     <th className="px-8 py-5 text-center">Estado</th>
                    </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                   {sociosConsultas
+                     .filter(s => 
+                       s.NombreCompleto?.toLowerCase().includes(generalFilter.toLowerCase()) ||
+                       s.Identificacion?.includes(generalFilter)
+                     )
+                     .map(s => (
+                     <tr key={s.SOCIOID} className="hover:bg-slate-50 transition-colors group">
+                       <td className="px-8 py-5 font-black text-[#14532D]">{s.NumeroSocio || 'S/N'}</td>
+                       <td className="px-8 py-5">
+                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
+                           s.TipoPersona === 'SOCIO' ? 'bg-emerald-100 text-emerald-700' : 
+                           s.TipoPersona === 'CLIENTE' ? 'bg-blue-100 text-blue-700' : 
+                           'bg-purple-100 text-purple-700'
+                         }`}>
+                           {s.TipoPersona.replace('_', ' ')}
+                         </span>
+                       </td>
+                       <td className="px-8 py-5 font-bold text-slate-800 text-xs">{s.Identificacion}</td>
+                       <td className="px-8 py-5 font-bold text-slate-800 uppercase text-xs">{s.NombreCompleto}</td>
+                       <td className="px-8 py-5 text-[10px] font-black text-slate-400">
+                         {s.FechaRegistro ? new Date(s.FechaRegistro).toLocaleDateString('es-EC') : 'N/A'}
+                       </td>
+                       <td className="px-8 py-5 text-center">
+                         {s.TieneMapaUbicacion ? (
+                           <CheckCircle2 size={16} className="text-emerald-600 mx-auto" />
+                         ) : (
+                           <span className="text-slate-300">—</span>
+                         )}
+                       </td>
+                       <td className="px-8 py-5 text-center">
+                         {s.TieneCroquisTrabajo ? (
+                           <CheckCircle2 size={16} className="text-emerald-600 mx-auto" />
+                         ) : (
+                           <span className="text-slate-300">—</span>
+                         )}
+                       </td>
+                       <td className="px-8 py-5 text-center">
+                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
+                           s.Estado === 'ACTIVO' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                         }`}>
+                           {s.Estado}
+                         </span>
+                       </td>
+                     </tr>
+                   ))}
+                   {sociosConsultas.filter(s => 
+                     s.NombreCompleto?.toLowerCase().includes(generalFilter.toLowerCase()) ||
+                     s.Identificacion?.includes(generalFilter)
+                   ).length === 0 && (
+                     <tr>
+                       <td colSpan={8} className="px-8 py-20 text-center">
+                         <div className="flex flex-col items-center gap-4">
+                           <Search size={48} className="text-slate-200" />
+                           <p className="text-[10px] font-black text-slate-400 uppercase">No se encontraron registros</p>
+                         </div>
+                       </td>
+                     </tr>
+                   )}
+                 </tbody>
+               </table>
+             </div>
+           )}
         </div>
       )}
 

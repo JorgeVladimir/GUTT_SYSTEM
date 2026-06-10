@@ -11,6 +11,7 @@ import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
+import sql from 'mssql';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require   = createRequire(import.meta.url);
@@ -29,6 +30,23 @@ function loadDotEnv(filePath) {
   }
 }
 loadDotEnv(join(__dirname, 'api', '.env'));
+
+// ─── 1.5 Configuración SQL Server ───────────────────────────────────────────────
+const sqlConfig = {
+  server: process.env.SQL_SERVER_HOST || 'localhost',
+  database: process.env.SQL_SERVER_DATABASE || 'SQLGUTPATATE',
+  user: process.env.SQL_SERVER_USER || 'sa',
+  password: process.env.SQL_SERVER_PASSWORD || '',
+  options: {
+    encrypt: true,
+    trustServerCertificate: true
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  }
+};
 
 // ─── 2. Express + cors ────────────────────────────────────────────────────
 let express, cors;
@@ -261,6 +279,189 @@ app.post('/api/reports/generate.php', async (req, res) => {
     return res.json(Array.isArray(rows) ? rows : []);
   } catch (err) {
     console.error('[reports]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/socios/registrar ───────────────────────────────────────────────
+app.post('/api/socios/registrar', async (req, res) => {
+  const {
+    tipoPersona,
+    tipoIdentificacion,
+    identificacion,
+    primerNombre,
+    segundoNombre,
+    apellidos,
+    email,
+    telefono,
+    fechaNacimiento,
+    estadoCivil,
+    pin,
+    paisNacimiento,
+    provinciaNacimiento,
+    cantonNacimiento,
+    parroquiaNacimiento,
+    paisResidencia,
+    provinciaResidencia,
+    cantonResidencia,
+    parroquiaResidencia,
+    direccionDomicilio,
+    lugarTrabajo,
+    provinciaTrabajo,
+    cantonTrabajo,
+    parroquiaTrabajo,
+    cedulaConyuge,
+    nombreConyuge,
+    telefonoConyuge,
+    etnia,
+    genero,
+    nivelInstruccion,
+    profesion,
+    referenciasPersonales,
+    cargasFamiliares,
+    usuarioRegistro
+  } = req.body || {};
+
+  if (!identificacion || !primerNombre || !apellidos || !pin) {
+    return res.status(400).json({ ok: false, error: 'Identificación, nombres y PIN son requeridos' });
+  }
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .input('TipoPersona', sql.NVarChar(20), tipoPersona)
+      .input('TipoIdentificacion', sql.NVarChar(20), tipoIdentificacion)
+      .input('Identificacion', sql.NVarChar(20), identificacion)
+      .input('PrimerNombre', sql.NVarChar(50), primerNombre)
+      .input('SegundoNombre', sql.NVarChar(50), segundoNombre)
+      .input('Apellidos', sql.NVarChar(100), apellidos)
+      .input('Email', sql.NVarChar(100), email)
+      .input('Telefono', sql.NVarChar(20), telefono)
+      .input('FechaNacimiento', sql.Date, fechaNacimiento)
+      .input('EstadoCivil', sql.NVarChar(20), estadoCivil)
+      .input('PIN', sql.NVarChar(4), pin)
+      .input('PaisNacimiento', sql.NVarChar(50), paisNacimiento)
+      .input('ProvinciaNacimiento', sql.NVarChar(50), provinciaNacimiento)
+      .input('CantonNacimiento', sql.NVarChar(50), cantonNacimiento)
+      .input('ParroquiaNacimiento', sql.NVarChar(50), parroquiaNacimiento)
+      .input('PaisResidencia', sql.NVarChar(50), paisResidencia)
+      .input('ProvinciaResidencia', sql.NVarChar(50), provinciaResidencia)
+      .input('CantonResidencia', sql.NVarChar(50), cantonResidencia)
+      .input('ParroquiaResidencia', sql.NVarChar(50), parroquiaResidencia)
+      .input('DireccionDomicilio', sql.NVarChar(200), direccionDomicilio)
+      .input('LugarTrabajo', sql.NVarChar(200), lugarTrabajo)
+      .input('ProvinciaTrabajo', sql.NVarChar(50), provinciaTrabajo)
+      .input('CantonTrabajo', sql.NVarChar(50), cantonTrabajo)
+      .input('ParroquiaTrabajo', sql.NVarChar(50), parroquiaTrabajo)
+      .input('CedulaConyuge', sql.NVarChar(20), cedulaConyuge)
+      .input('NombreConyuge', sql.NVarChar(150), nombreConyuge)
+      .input('TelefonoConyuge', sql.NVarChar(20), telefonoConyuge)
+      .input('Etnia', sql.NVarChar(20), etnia)
+      .input('Genero', sql.NVarChar(20), genero)
+      .input('NivelInstruccion', sql.NVarChar(50), nivelInstruccion)
+      .input('Profesion', sql.NVarChar(100), profesion)
+      .input('ReferenciasPersonales', sql.NVarChar(MAX), JSON.stringify(referenciasPersonales))
+      .input('CargasFamiliares', sql.NVarChar(MAX), JSON.stringify(cargasFamiliares))
+      .input('UsuarioRegistro', sql.NVarChar(50), usuarioRegistro)
+      .output('SOCIOID', sql.BigInt)
+      .execute('dbo.usp_RegistrarSocio');
+
+    const socioId = result.output.SOCIOID;
+    const numeroSocio = result.recordset[0]?.NumeroSocio;
+
+    await pool.close();
+
+    return res.json({
+      ok: true,
+      socioId,
+      numeroSocio,
+      message: 'Socio registrado exitosamente'
+    });
+  } catch (err) {
+    console.error('[registrar socio]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/socios/guardar-mapa ────────────────────────────────────────────
+app.post('/api/socios/guardar-mapa', async (req, res) => {
+  const { socioId, imagenMapa, coordenadaLat, coordenadaLng, direccionCapturada } = req.body || {};
+
+  if (!socioId) {
+    return res.status(400).json({ ok: false, error: 'SOCIOID es requerido' });
+  }
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    
+    // Convertir base64 a buffer
+    let imagenBuffer = null;
+    if (imagenMapa) {
+      const base64Data = imagenMapa.replace(/^data:image\/\w+;base64,/, '');
+      imagenBuffer = Buffer.from(base64Data, 'base64');
+    }
+
+    await pool.request()
+      .input('SOCIOID', sql.BigInt, socioId)
+      .input('ImagenMapa', sql.VarBinary(sql.MAX), imagenBuffer)
+      .input('CoordenadaLat', sql.NVarChar(50), coordenadaLat)
+      .input('CoordenadaLng', sql.NVarChar(50), coordenadaLng)
+      .input('DireccionCapturada', sql.NVarChar(200), direccionCapturada)
+      .execute('dbo.usp_GuardarMapaUbicacion');
+
+    await pool.close();
+
+    return res.json({ ok: true, message: 'Mapa de ubicación guardado exitosamente' });
+  } catch (err) {
+    console.error('[guardar mapa]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/socios/guardar-croquis ──────────────────────────────────────────
+app.post('/api/socios/guardar-croquis', async (req, res) => {
+  const { socioId, imagenCroquis, descripcion } = req.body || {};
+
+  if (!socioId) {
+    return res.status(400).json({ ok: false, error: 'SOCIOID es requerido' });
+  }
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    
+    // Convertir base64 a buffer
+    let imagenBuffer = null;
+    if (imagenCroquis) {
+      const base64Data = imagenCroquis.replace(/^data:image\/\w+;base64,/, '');
+      imagenBuffer = Buffer.from(base64Data, 'base64');
+    }
+
+    await pool.request()
+      .input('SOCIOID', sql.BigInt, socioId)
+      .input('ImagenCroquis', sql.VarBinary(sql.MAX), imagenBuffer)
+      .input('Descripcion', sql.NVarChar(500), descripcion)
+      .execute('dbo.usp_GuardarCroquisTrabajo');
+
+    await pool.close();
+
+    return res.json({ ok: true, message: 'Croquis de trabajo guardado exitosamente' });
+  } catch (err) {
+    console.error('[guardar croquis]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/socios/consultas ───────────────────────────────────────────────
+app.get('/api/socios/consultas', async (req, res) => {
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .query('SELECT * FROM dbo.vw_RegistroSociosConsultas ORDER BY FechaRegistro DESC');
+    await pool.close();
+
+    return res.json({ ok: true, data: result.recordset });
+  } catch (err) {
+    console.error('[consultas socios]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
