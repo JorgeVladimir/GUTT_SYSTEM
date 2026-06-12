@@ -116,16 +116,37 @@ export const SEPS_CATALOGS = {
 
 export const NAV_BY_ROLE: Record<string, any[]> = {
   MEMBER: [
-    { id: 'DASHBOARD', label: 'Resumen Patate', icon: <LayoutDashboard size={20} /> },
+    { id: 'DASHBOARD', label: 'Resumen Gutt System', icon: <LayoutDashboard size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
     { id: 'PROFILE', label: 'Mi Perfil', icon: <UserIcon size={20} /> },
     { id: 'TRANSFERS', label: 'Transferencias', icon: <ArrowRightLeft size={20} /> },
     { id: 'CREDITS', label: 'Créditos y Simulador', icon: <TrendingUp size={20} /> },
   ],
+  SUPER_USER: [
+    { id: 'ADMIN_HUB', label: 'Panel Administrativo', icon: <ShieldCheck size={20} /> },
+    { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
+    { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
+    { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
+    { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
+  ],
   ADMIN: [
     { id: 'ADMIN_HUB', label: 'Panel Administrativo', icon: <ShieldCheck size={20} /> },
     { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
+    { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
+    { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
+  ],
+  MANAGER: [
+    { id: 'ADMIN_HUB', label: 'Panel Administrativo', icon: <ShieldCheck size={20} /> },
+    { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
+    { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
@@ -143,6 +164,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
   CREDIT_OFFICER: [
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
   ]
 };
 

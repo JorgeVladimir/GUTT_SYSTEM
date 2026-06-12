@@ -62,7 +62,7 @@ export const Transfers: React.FC<TransfersProps> = ({ user }) => {
               <label className="block text-sm font-bold text-slate-700 mb-3">Sugeridos Recientes</label>
               <div className="space-y-3">
                 {[
-                  { name: 'María Solís', bank: 'Caja Patate', acc: '**** 2910' },
+                  { name: 'María Solís', bank: 'Gutt System', acc: '**** 2910' },
                   { name: 'Carlos Arcos', bank: 'Banco Pichincha', acc: '**** 8822' },
                 ].map((b, i) => (
                   <button 
@@ -172,8 +172,8 @@ export const Transfers: React.FC<TransfersProps> = ({ user }) => {
            <Info size={20} />
          </div>
          <div>
-           <p className="text-sm font-bold text-amber-900">Seguridad Patate</p>
-           <p className="text-xs text-amber-800/70">Nunca compartas tu PIN con nadie. Caja Patate jamás te pedirá datos sensibles por teléfono o correo electrónico.</p>
+           <p className="text-sm font-bold text-amber-900">Seguridad Gutt System</p>
+           <p className="text-xs text-amber-800/70">Nunca compartas tu PIN con nadie. Gutt System jamás te pedirá datos sensibles por teléfono o correo electrónico.</p>
          </div>
       </div>
     </div>

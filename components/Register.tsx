@@ -8,12 +8,14 @@ interface RegisterProps {
 }
 
 const CAPLogo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
-  const dimensions = size === "sm" ? "w-12 h-8" : size === "lg" ? "w-24 h-16" : "w-16 h-12";
-  const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-3xl" : "text-xl";
+  const dimensions = size === "sm" ? "w-10 h-10" : size === "lg" ? "w-24 h-24" : "w-16 h-16";
+  const textSize = size === "sm" ? "text-xl" : size === "lg" ? "text-5xl" : "text-3xl";
+  const radius = size === "sm" ? "rounded-xl" : size === "lg" ? "rounded-[2rem]" : "rounded-2xl";
+  const borderBottom = size === "sm" ? "border-b-4" : size === "lg" ? "border-b-8" : "border-b-6";
   return (
-    <div className={`${dimensions} bg-[#14532D] flex flex-col items-center justify-center relative rounded-xl shadow-lg shrink-0 overflow-hidden`}>
-      <span className={`font-black text-white ${textSize} tracking-tighter mb-1 italic pr-1`}>CAP</span>
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#FACC15]"></div>
+    <div className={`${dimensions} bg-[#14532D] flex items-center justify-center relative ${radius} shadow-2xl shrink-0 ${borderBottom} border-[#FACC15] overflow-hidden group`}>
+      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <span className={`font-black text-white ${textSize} italic pr-0.5 relative z-10`}>G</span>
     </div>
   );
 };
@@ -119,7 +121,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
               <span className="text-[#14532D] lowercase italic">{firstName}!</span>
             </h2>
             <p className="text-slate-400 font-bold text-sm leading-relaxed px-4">
-              Tu acceso a la banca digital de Patate ha sido configurado con éxito.
+              Tu acceso a la banca digital de Gutt System ha sido configurado con éxito.
             </p>
           </div>
 
@@ -152,7 +154,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
                 <CAPLogo size="sm" />
                 <div>
                   <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">Nueva Cuenta</h1>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Patate • Banca Solidaria</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Gutt System • Banca Solidaria</p>
                 </div>
               </div>
               <button onClick={onBack} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
@@ -241,7 +243,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
             </form>
           </div>
         </div>
-        <p className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Caja de Ahorro Patate • Seguridad Certificada</p>
+        <p className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Gutt System • Seguridad Certificada</p>
       </div>
     </div>
   );

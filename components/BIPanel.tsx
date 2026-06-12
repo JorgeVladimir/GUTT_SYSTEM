@@ -29,13 +29,23 @@ interface BIPanelProps {
   users: User[];
   assets?: FixedAsset[];
   currentUserRole?: UserRole;
+  activeTab?: 'BUILDER' | 'PROFITABILITY' | 'BUREAU';
+  onActiveTabChange?: (tab: 'BUILDER' | 'PROFITABILITY' | 'BUREAU') => void;
 }
 
-export const BIPanel: React.FC<BIPanelProps> = ({ users, assets = [], currentUserRole }) => {
-  const isAdmin = currentUserRole === UserRole.ADMIN;
+export const BIPanel: React.FC<BIPanelProps> = ({ 
+  users, 
+  assets = [], 
+  currentUserRole,
+  activeTab: propActiveTab,
+  onActiveTabChange
+}) => {
+  const isAdmin = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.SUPER_USER;
   
   // Si no es admin, forzar pestaña de rentabilidad/buró y ocultar constructor
-  const [activeSubTab, setActiveSubTab] = useState<'BUILDER' | 'PROFITABILITY' | 'BUREAU'>(isAdmin ? 'BUILDER' : 'PROFITABILITY');
+  const [internalActiveSubTab, setInternalActiveSubTab] = useState<'BUILDER' | 'PROFITABILITY' | 'BUREAU'>(isAdmin ? 'BUILDER' : 'PROFITABILITY');
+  const activeSubTab = propActiveTab !== undefined ? propActiveTab : internalActiveSubTab;
+  const setActiveSubTab = onActiveTabChange !== undefined ? onActiveTabChange : setInternalActiveSubTab;
   const [reportConfig, setReportConfig] = useState({
     entity: 'SOCIOS',
     fields: ['ID', 'Nombre', 'Email'] as string[],
@@ -134,13 +144,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({ users, assets = [], currentUse
           </div>
         </div>
 
-        <div className="bg-slate-50 p-2 rounded-2xl flex gap-1">
-          {isAdmin && (
-             <button onClick={() => setActiveSubTab('BUILDER')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'BUILDER' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}>Constructor</button>
-          )}
-          <button onClick={() => setActiveSubTab('PROFITABILITY')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'PROFITABILITY' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}>Rentabilidad</button>
-          <button onClick={() => setActiveSubTab('BUREAU')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeSubTab === 'BUREAU' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}>Buró Interno</button>
-        </div>
+        {/* Submenús consolidados en la barra lateral vertical */}
       </div>
 
       {activeSubTab === 'BUILDER' && isAdmin && (

@@ -1,8 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import html2canvas from 'html2canvas';
+
+function MapViewUpdater({ center, zoom }: { center: { lat: number; lng: number }; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([center.lat, center.lng], zoom);
+  }, [center, zoom, map]);
+  return null;
+}
 
 // Fix para iconos de Leaflet en React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -39,10 +47,52 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
   const mapRef = useRef<L.Map>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleLocationSelect = async (lat: number, lng: number) => {
     setPosition({ lat, lng });
-    // Reverse geocoding simulado - en producción usar una API real
-    setAddress(`Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
+    setAddress('Obteniendo dirección del mapa...');
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      const data = await response.json();
+      if (data && data.display_name) {
+        setAddress(data.display_name.toUpperCase());
+      } else {
+        setAddress(`LAT: ${lat.toFixed(6)}, LNG: ${lng.toFixed(6)}`);
+      }
+    } catch (error) {
+      setAddress(`LAT: ${lat.toFixed(6)}, LNG: ${lng.toFixed(6)}`);
+    }
+  };
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!address.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+      const results = await response.json();
+      if (results && results.length > 0) {
+        const first = results[0];
+        const lat = parseFloat(first.lat);
+        const lng = parseFloat(first.lon);
+        setPosition({ lat, lng });
+        setAddress(first.display_name.toUpperCase());
+        
+        // Mover el mapa a las coordenadas
+        if (mapRef.current) {
+          mapRef.current.setView([lat, lng], 16);
+        }
+      } else {
+        alert('No se encontraron resultados para la dirección especificada.');
+      }
+    } catch (error) {
+      console.error('Error al buscar dirección:', error);
+      alert('Error al buscar la dirección en el mapa.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleCapture = async () => {
@@ -90,19 +140,27 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
           </button>
         </div>
         
-        <div className="p-4 bg-slate-50 shrink-0">
+        <form onSubmit={handleSearch} className="p-4 bg-slate-50 shrink-0">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-            Haga clic en el mapa para seleccionar la ubicación
+            Haga clic en el mapa o busque una dirección para seleccionar la ubicación
           </p>
           <div className="flex gap-4">
             <input
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Dirección (se actualiza al hacer clic en el mapa)"
+              placeholder="Escriba una dirección para buscar o haga clic en el mapa..."
               className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-bold text-sm focus:border-[#14532D] outline-none"
             />
             <button
+              type="submit"
+              disabled={isSearching}
+              className="px-6 py-3 bg-[#FACC15] text-[#14532D] rounded-xl font-black text-xs uppercase shadow-md hover:bg-yellow-500 transition-all flex items-center gap-2"
+            >
+              {isSearching ? 'Buscando...' : 'Buscar'}
+            </button>
+            <button
+              type="button"
               onClick={handleCapture}
               disabled={isCapturing}
               className="px-6 py-3 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-[#1b5e20] transition-all disabled:opacity-50 flex items-center gap-2"
@@ -126,7 +184,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
               )}
             </button>
           </div>
-        </div>
+        </form>
 
         <div className="flex-1 overflow-hidden">
           <MapContainer
@@ -136,11 +194,12 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
             ref={mapRef}
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
             <Marker position={position} />
             <MapClickHandler onLocationSelect={handleLocationSelect} />
+            <MapViewUpdater center={position} zoom={16} />
           </MapContainer>
         </div>
 

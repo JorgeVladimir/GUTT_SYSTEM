@@ -1,7 +1,7 @@
-
-import React, { useState, useMemo } from 'react';
-import { InterestRate, Loan, LoanInstallment, GlobalConfig } from '../types';
-import { Calculator, CheckCircle2, AlertCircle, Calendar, Info, FileText, Ban, TrendingUp, X, ArrowLeft, Printer, MessageSquareText } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { InterestRate, Loan, LoanInstallment, GlobalConfig, AccountType } from '../types';
+import { DataService } from '../services/dataService';
+import { Calculator, CheckCircle2, AlertCircle, Calendar, Info, FileText, Ban, TrendingUp, X, ArrowLeft, Printer, MessageSquareText, ShieldAlert } from 'lucide-react';
 
 interface CreditsViewProps {
   rates: InterestRate[];
@@ -17,6 +17,38 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
   const [term, setTerm] = useState<number>(12);
   const [selectedRateId, setSelectedRateId] = useState<string>(rates[0]?.id || '');
   const [selectedLoanForTable, setSelectedLoanForTable] = useState<Loan | null>(null);
+
+  // Warranty States
+  const [warrantyType, setWarrantyType] = useState<'SOLIDARIA' | 'PRENDARIA'>('SOLIDARIA');
+  const [solidariaGuarantorName, setSolidariaGuarantorName] = useState<string>('');
+  const [solidariaGuarantorId, setSolidariaGuarantorId] = useState<string>('');
+  const [prendariaValuation, setPrendariaValuation] = useState<string>('');
+  const [prendariaInsurance, setPrendariaInsurance] = useState<string>('');
+
+  // Certificados de Aportación balance
+  const [certBalance, setCertBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!memberId) return;
+    const fetchCertBalance = async () => {
+      try {
+        const user = await DataService.getUserFullData(memberId);
+        const certAcc = user.accounts?.find(acc => 
+          acc.type === AccountType.CERTIFICATE || 
+          (acc.type as any) === 'CERTIFICADO_APORTACION'
+        );
+        if (certAcc) {
+          setCertBalance(Number(certAcc.balance));
+        } else {
+          setCertBalance(0);
+        }
+      } catch (err) {
+        console.error('Error fetching member certificates balance:', err);
+        setCertBalance(0);
+      }
+    };
+    fetchCertBalance();
+  }, [memberId]);
 
   const { minLoanAmount, maxLoanAmount, maxGlobalTerm } = config;
 
@@ -54,8 +86,24 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
     return { monthlyPayment, totalInterest: (monthlyPayment * n) - p, totalPayable: monthlyPayment * n, installments };
   }, [numAmount, isAmountValid, term, selectedRate, maxGlobalTerm]);
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!simulation || !isAmountValid) return;
+
+    if (certBalance !== null && certBalance < 1.00) {
+      alert(`No puede solicitar crédito: El socio debe poseer al menos $1.00 USD en Certificados de Aportación. Saldo actual: $${certBalance.toFixed(2)} USD.`);
+      return;
+    }
+
+    const maxRateLimit = (selectedRate as any).maxRate || selectedRate.rate;
+    if (selectedRate.rate > maxRateLimit) {
+      alert(`La tasa seleccionada (${selectedRate.rate}%) supera el límite legal para esta línea de crédito (${maxRateLimit}%).`);
+      return;
+    }
+
+    const garantiaInfo = warrantyType === 'SOLIDARIA'
+      ? { tipo: 'SOLIDARIA', garanteNombre: solidariaGuarantorName, garanteCedula: solidariaGuarantorId }
+      : { tipo: 'PRENDARIA', avaluoMonto: parseFloat(prendariaValuation) || 0, aseguradora: prendariaInsurance };
+
     const newLoan: Loan = {
       id: `CRD-${Date.now()}`,
       memberId,
@@ -68,11 +116,45 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
       status: 'SOLICITADO',
       type: selectedRate.category,
       startDate: new Date().toLocaleDateString('es-EC'),
-      dueDate: 'A Definir'
+      dueDate: new Date(Date.now() + term * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('es-EC'),
+      garantiaInfo: garantiaInfo as any,
+      origen: 'CAJA_PATATE'
     };
-    onApply(newLoan);
-    setAmount('');
-    alert("Solicitud de crédito enviada con éxito.");
+
+    const useRemoteApi = import.meta.env.VITE_USE_REMOTE_API === 'true';
+
+    if (useRemoteApi) {
+      try {
+        const response = await fetch('/api/socios/loans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newLoan)
+        });
+        const data = await response.json();
+        if (data.ok) {
+          onApply(newLoan);
+          setAmount('');
+          setSolidariaGuarantorName('');
+          setSolidariaGuarantorId('');
+          setPrendariaValuation('');
+          setPrendariaInsurance('');
+          alert("Solicitud de crédito registrada con éxito en el servidor.");
+        } else {
+          alert("Error al registrar solicitud: " + (data.error || ''));
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error de conexión al registrar solicitud.");
+      }
+    } else {
+      onApply(newLoan);
+      setAmount('');
+      setSolidariaGuarantorName('');
+      setSolidariaGuarantorId('');
+      setPrendariaValuation('');
+      setPrendariaInsurance('');
+      alert("Solicitud de crédito enviada con éxito.");
+    }
   };
 
   const handlePrint = () => {
@@ -89,8 +171,8 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden printable-area">
           <div className="bg-[#14532D] p-10 text-white flex justify-between items-center relative overflow-hidden">
             <div className="relative z-10">
-              <h2 className="text-3xl font-black italic">CAP</h2>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FACC15]">Caja de Ahorro Patate</p>
+              <h2 className="text-3xl font-black italic">G</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#FACC15]">Gutt System</p>
               <div className="mt-6 space-y-1">
                 <p className="text-sm font-bold opacity-80 uppercase">Tabla de Amortización Oficial</p>
                 <p className="text-2xl font-black">Operación: {selectedLoanForTable.id}</p>
@@ -168,7 +250,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
               </button>
             </div>
             <div className="text-center pt-8 border-t border-slate-100 mt-8 opacity-50 text-[10px] font-bold uppercase tracking-widest hidden print:block">
-              © Caja de Ahorro Patate - Documento Electrónico no Negociable
+              © Gutt System - Documento Electrónico no Negociable
             </div>
           </div>
         </div>
@@ -184,7 +266,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
              <Calculator size={36} />
            </div>
            <div>
-             <h2 className="text-3xl font-black text-slate-900 leading-tight">Simulador de Crédito Patate</h2>
+             <h2 className="text-3xl font-black text-slate-900 leading-tight">Simulador de Crédito Gutt System</h2>
              <p className="text-slate-500 font-medium">Conoce tu cuota y proyecta tu crecimiento financiero.</p>
            </div>
         </div>
@@ -226,9 +308,102 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
                 </select>
               </div>
             </div>
-            <div className="p-5 bg-amber-50 rounded-2xl flex gap-4 items-start border border-amber-100/50">
-              <Info size={20} className="text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-900 font-medium">Toda solicitud está sujeta a la validación de fondos de reserva institucionales.</p>
+            {/* Certificados de Aportación Status */}
+            <div className={`p-5 rounded-2xl flex gap-4 items-start border transition-all ${
+              certBalance === null ? 'bg-slate-50 border-slate-100' :
+              certBalance < 1.00 ? 'bg-red-50 border-red-100 text-red-900 animate-pulse' :
+              'bg-emerald-50 border-emerald-100 text-emerald-900'
+            }`}>
+              {certBalance === null ? (
+                <Info size={20} className="text-slate-400 shrink-0 mt-0.5 animate-spin" />
+              ) : certBalance < 1.00 ? (
+                <ShieldAlert size={20} className="text-red-500 shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle2 size={20} className="text-[#14532D] shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider">
+                  {certBalance === null ? 'Validando Aportaciones...' :
+                   certBalance < 1.00 ? 'Fondo de Aportación Insuficiente' :
+                   'Certificados de Aportación Validados'}
+                </p>
+                <p className="text-[10px] font-bold opacity-80 mt-0.5">
+                  {certBalance === null ? 'Verificando saldo mínimo requerido en cooperativa...' :
+                   certBalance < 1.00 ? `El socio posee $${certBalance.toFixed(2)} USD. Requiere al menos $1.00 USD para calificar a un crédito.` :
+                   `Saldo actual: $${certBalance.toFixed(2)} USD (Cumple con el requisito mínimo de $1.00 USD).`}
+                </p>
+              </div>
+            </div>
+
+            {/* Selector de Garantía */}
+            <div className="space-y-4 p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Garantía y Respaldo del Crédito</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setWarrantyType('SOLIDARIA')}
+                  className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${warrantyType === 'SOLIDARIA' ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}
+                >
+                  Solidaria (Garante)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWarrantyType('PRENDARIA')}
+                  className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${warrantyType === 'PRENDARIA' ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}
+                >
+                  Prendaria (Avalúo/Seguro)
+                </button>
+              </div>
+
+              {warrantyType === 'SOLIDARIA' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 animate-in slide-in-from-top-2 duration-300">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nombre del Garante</label>
+                    <input
+                      type="text"
+                      value={solidariaGuarantorName}
+                      onChange={(e) => setSolidariaGuarantorName(e.target.value)}
+                      placeholder="Ej: Juan Pérez"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-bold text-xs text-[#14532D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cédula del Garante</label>
+                    <input
+                      type="text"
+                      value={solidariaGuarantorId}
+                      onChange={(e) => setSolidariaGuarantorId(e.target.value)}
+                      placeholder="Ej: 1801234567"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-bold text-xs text-[#14532D]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {warrantyType === 'PRENDARIA' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 animate-in slide-in-from-top-2 duration-300">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Valor de Avalúo ($)</label>
+                    <input
+                      type="number"
+                      value={prendariaValuation}
+                      onChange={(e) => setPrendariaValuation(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-bold text-xs text-[#14532D]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Compañía Aseguradora</label>
+                    <input
+                      type="text"
+                      value={prendariaInsurance}
+                      onChange={(e) => setPrendariaInsurance(e.target.value)}
+                      placeholder="Ej: Seguros Equinoccial"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-bold text-xs text-[#14532D]"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -244,18 +419,28 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div>
-                         <p className="text-[9px] font-black text-emerald-300 uppercase tracking-widest">Total Intereses</p>
-                         <p className="text-xl font-black">${simulation.totalInterest.toFixed(2)}</p>
+                          <p className="text-[9px] font-black text-emerald-300 uppercase tracking-widest">Total Intereses</p>
+                          <p className="text-xl font-black">${simulation.totalInterest.toFixed(2)}</p>
                        </div>
                        <div className="text-right">
-                         <p className="text-[9px] font-black text-emerald-300 uppercase tracking-widest">Total a Pagar</p>
-                         <p className="text-xl font-black">${simulation.totalPayable.toFixed(2)}</p>
+                          <p className="text-[9px] font-black text-emerald-300 uppercase tracking-widest">Total a Pagar</p>
+                          <p className="text-xl font-black">${simulation.totalPayable.toFixed(2)}</p>
                        </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-12 space-y-4 relative z-10">
-                  <button onClick={handleApply} className="w-full py-5 bg-[#FACC15] text-[#14532D] rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">ENVIAR SOLICITUD <CheckCircle2 size={24} /></button>
+                  <button 
+                    onClick={handleApply}
+                    disabled={certBalance !== null && certBalance < 1.00}
+                    className={`w-full py-5 rounded-2xl font-black text-xl shadow-xl transition-all flex items-center justify-center gap-3 ${
+                      certBalance !== null && certBalance < 1.00
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+                        : 'bg-[#FACC15] text-[#14532D] hover:scale-[1.02] active:scale-95'
+                    }`}
+                  >
+                    ENVIAR SOLICITUD <CheckCircle2 size={24} />
+                  </button>
                 </div>
               </div>
             ) : (

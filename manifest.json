@@ -1,0 +1,17 @@
+{
+  "name": "GUTT SYSTEM",
+  "short_name": "GUTT",
+  "description": "Plataforma oficial de Gutt System, diseñada para el manejo eficiente de aportaciones, créditos y asesoría financiera inteligente.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14532D",
+  "theme_color": "#14532D",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

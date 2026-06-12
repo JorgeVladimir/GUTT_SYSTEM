@@ -59,13 +59,74 @@ interface AdminViewProps {
   onUpdateRates: (rates: InterestRate[]) => void;
   onUpdateConfig: (config: GlobalConfig) => void;
   onRestoreDatabase: (data: { users: User[], rates: InterestRate[], config?: GlobalConfig }) => void;
+  activeTab?: 'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD';
+  onActiveTabChange?: (tab: 'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD') => void;
 }
 
-export const AdminView: React.FC<AdminViewProps> = ({ users, rates, config, onUpdateRates, onUpdateConfig, onRestoreDatabase }) => {
-  const [activeTab, setActiveTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'SEGURIDAD'>('SUMMARY');
+export const AdminView: React.FC<AdminViewProps> = ({ 
+  users, 
+  rates, 
+  config, 
+  onUpdateRates, 
+  onUpdateConfig, 
+  onRestoreDatabase,
+  activeTab: propActiveTab,
+  onActiveTabChange
+}) => {
+  const [internalActiveTab, setInternalActiveTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD'>('SUMMARY');
+  const activeTab = propActiveTab !== undefined ? propActiveTab : internalActiveTab;
+  const setActiveTab = onActiveTabChange !== undefined ? onActiveTabChange : setInternalActiveTab;
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editorSubTab, setEditorSubTab] = useState<'IDENTIDAD' | 'LOCALIZACIÓN' | 'ACTIVIDAD' | 'OTROS'>('IDENTIDAD');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Estados para pestaña de Productos (SEPS)
+  const [productos, setProductos] = useState<any[]>([]);
+  const [editingProducto, setEditingProducto] = useState<any | null>(null);
+
+  const loadProductos = async () => {
+    try {
+      const response = await fetch('/api/admin/productos');
+      const data = await response.json();
+      if (data.ok) {
+        setProductos(data.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar productos:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'PRODUCTOS') {
+      loadProductos();
+    }
+  }, [activeTab]);
+
+  const handleSaveProducto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProducto) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/admin/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingProducto)
+      });
+      const data = await response.json();
+      if (data.ok) {
+        alert(data.message || 'Producto guardado con éxito');
+        setEditingProducto(null);
+        loadProductos();
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar el producto');
+    } finally {
+      setIsSaving(false);
+    }
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sketchInputRef = useRef<HTMLInputElement>(null);
@@ -170,23 +231,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ users, rates, config, onUp
              </div>
           </div>
           
-          <div className="bg-slate-50 p-2 rounded-[2.5rem] border border-slate-100 flex gap-1 shadow-inner overflow-x-auto max-w-full no-scrollbar">
-            {[
-              { id: 'SUMMARY', label: 'Dashboard', icon: <BarChart3 size={18} /> },
-              { id: 'MEMBERS', label: 'Socios', icon: <Users size={18} /> },
-              { id: 'TASAS', label: 'Tasas BCE', icon: <Percent size={18} /> },
-              { id: 'SEGURIDAD', label: 'Seguridad', icon: <Database size={18} /> }
-            ].map(tab => (
-              <button 
-                key={tab.id} 
-                onClick={() => setActiveTab(tab.id as any)} 
-                className={`flex items-center gap-3 px-8 py-4 rounded-3xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === tab.id ? 'bg-[#14532D] text-white shadow-xl scale-105' : 'text-slate-400 hover:text-[#14532D] hover:bg-white'}`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          {/* Submenús consolidados en la barra lateral vertical */}
         </div>
       </div>
 
@@ -368,6 +413,305 @@ export const AdminView: React.FC<AdminViewProps> = ({ users, rates, config, onUp
               </div>
               <ShieldCheck className="absolute right-[-40px] bottom-[-40px] text-white/5" size={240} />
            </div>
+        </div>
+      )}
+
+      {activeTab === 'PRODUCTOS' && (
+        <div className="bg-white p-10 rounded-[4rem] shadow-sm border border-slate-100 animate-in fade-in duration-700 space-y-8">
+          {editingProducto ? (
+            <form onSubmit={handleSaveProducto} className="space-y-8">
+              <div className="flex justify-between items-center pb-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">
+                    {editingProducto.ProductoId ? 'Editar Parámetros de Producto' : 'Crear Nuevo Producto de Ahorro'}
+                  </h3>
+                  <p className="text-slate-400 text-xs mt-1 uppercase font-bold tracking-wider">Configuración Contable y Operativa SEPS</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProducto(null)}
+                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Regresar a la Lista
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Columna 1: Información General */}
+                <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">1. Datos Básicos</p>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Código del Producto (ID)</label>
+                    <input
+                      required
+                      type="number"
+                      disabled={!!editingProducto.ProductoId}
+                      value={editingProducto.CodigoProducto || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CodigoProducto: parseInt(e.target.value) })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Nombre del Producto</label>
+                    <input
+                      required
+                      type="text"
+                      value={editingProducto.Nombre || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, Nombre: e.target.value.toUpperCase() })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tipo de Depósito</label>
+                    <input
+                      required
+                      type="text"
+                      value={editingProducto.TipoDeposito || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, TipoDeposito: e.target.value.toUpperCase() })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <input
+                      type="checkbox"
+                      id="esCertificado"
+                      checked={!!editingProducto.EsCertificado}
+                      onChange={e => setEditingProducto({ ...editingProducto, EsCertificado: e.target.checked })}
+                      className="w-5 h-5 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]"
+                    />
+                    <label htmlFor="esCertificado" className="text-[10px] font-black text-slate-600 uppercase tracking-wider cursor-pointer">
+                      ¿Es Certificado de Aportación?
+                    </label>
+                  </div>
+                </div>
+
+                {/* Columna 2: Cuentas Contables */}
+                <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">2. Cuentas Contables (SEPS)</p>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Activa</label>
+                    <input
+                      required
+                      type="text"
+                      value={editingProducto.CuentaActiva || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CuentaActiva: e.target.value })}
+                      placeholder="Ej: 21013505"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Inactiva</label>
+                    <input
+                      required
+                      type="text"
+                      value={editingProducto.CuentaInactiva || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CuentaInactiva: e.target.value })}
+                      placeholder="Ej: 21013505"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Gasto</label>
+                    <input
+                      type="text"
+                      value={editingProducto.CuentaGasto || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CuentaGasto: e.target.value })}
+                      placeholder="Ej: 41019001"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Provisión</label>
+                    <input
+                      type="text"
+                      value={editingProducto.CuentaProvision || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CuentaProvision: e.target.value })}
+                      placeholder="Ej: 25019001"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Depósitos Por Confirmar</label>
+                    <input
+                      type="text"
+                      value={editingProducto.CuentaDepositosConfirmar || ''}
+                      onChange={e => setEditingProducto({ ...editingProducto, CuentaDepositosConfirmar: e.target.value })}
+                      placeholder="Ej: 21015015"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+                </div>
+
+                {/* Columna 3: Transacciones y Parámetros Operativos */}
+                <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">3. Operatividad y Tasas</p>
+
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Transacciones Permitidas</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: 'PermiteDepositos', label: 'Depósitos' },
+                        { key: 'PermiteRetiros', label: 'Retiros' },
+                        { key: 'PermiteDebitos', label: 'Débitos' },
+                        { key: 'PermiteCreditos', label: 'Créditos' },
+                        { key: 'PermiteTransferencias', label: 'Transferencias' }
+                      ].map(tx => (
+                        <div key={tx.key} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={tx.key}
+                            checked={!!editingProducto[tx.key]}
+                            onChange={e => setEditingProducto({ ...editingProducto, [tx.key]: e.target.checked })}
+                            className="w-4 h-4 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]"
+                          />
+                          <label htmlFor={tx.key} className="text-[9px] font-black text-slate-500 uppercase tracking-wider cursor-pointer">
+                            {tx.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Num. Ctas (4 dígitos)</label>
+                    <input
+                      type="number"
+                      value={editingProducto.NumCtas4Dig || 28}
+                      onChange={e => setEditingProducto({ ...editingProducto, NumCtas4Dig: parseInt(e.target.value) })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tasa de Interés</label>
+                    <input
+                      type="text"
+                      value={editingProducto.Tasa || 'TASA NOMINAL'}
+                      onChange={e => setEditingProducto({ ...editingProducto, Tasa: e.target.value.toUpperCase() })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Forma de Pago de Intereses</label>
+                    <input
+                      type="text"
+                      value={editingProducto.FormaPago || 'MOVIMIENTO HISTORICO PONDERADO BASE'}
+                      onChange={e => setEditingProducto({ ...editingProducto, FormaPago: e.target.value.toUpperCase() })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Meses de Acreditación</label>
+                    <input
+                      type="text"
+                      value={editingProducto.MesesAcreditacion || 'Diciembre'}
+                      onChange={e => setEditingProducto({ ...editingProducto, MesesAcreditacion: e.target.value })}
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-6 border-t border-slate-100">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-10 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-75"
+                >
+                  {isSaving ? 'Guardando...' : 'Guardar Parámetros'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Parámetros de Productos de Ahorro</h3>
+                  <p className="text-slate-400 text-xs mt-1">Configuración de los productos, cuentas SEPS y transacciones permitidas.</p>
+                </div>
+                <button
+                  onClick={() => setEditingProducto({
+                    CodigoProducto: productos.length + 1,
+                    Nombre: '',
+                    TipoDeposito: 'AHORRO A LA VISTA',
+                    EsCertificado: false,
+                    CuentaActiva: '',
+                    CuentaInactiva: '',
+                    CuentaGasto: '41019001',
+                    CuentaProvision: '25019001',
+                    CuentaDepositosConfirmar: '21015015',
+                    NumCtas4Dig: 28,
+                    PermiteDepositos: true,
+                    PermiteRetiros: true,
+                    PermiteDebitos: true,
+                    PermiteCreditos: true,
+                    PermiteTransferencias: true,
+                    Tasa: 'TASA NOMINAL',
+                    FormaPago: 'MOVIMIENTO HISTORICO PONDERADO BASE',
+                    MesesAcreditacion: 'Diciembre'
+                  })}
+                  className="px-6 py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
+                >
+                  Nuevo Producto
+                </button>
+              </div>
+
+              <div className="border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-50">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100/75 border-b border-slate-200">
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Código</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Nombre</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Cuenta Activa</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Tipo Depósito</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Certificado</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider">Operaciones</th>
+                      <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-wider text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productos.map(prod => (
+                      <tr key={prod.ProductoId} className="border-b border-slate-200/50 bg-white hover:bg-slate-50/50 transition-colors">
+                        <td className="p-6 text-sm font-black text-[#14532D]">#{prod.CodigoProducto}</td>
+                        <td className="p-6 text-sm font-bold text-slate-800 uppercase">{prod.Nombre}</td>
+                        <td className="p-6 text-sm font-mono font-black text-slate-600">{prod.CuentaActiva}</td>
+                        <td className="p-6 text-xs font-bold text-slate-500 uppercase">{prod.TipoDeposito}</td>
+                        <td className="p-6">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${prod.EsCertificado ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                            {prod.EsCertificado ? 'SÍ' : 'NO'}
+                          </span>
+                        </td>
+                        <td className="p-6 text-xs text-slate-500 font-bold">
+                          {prod.PermiteDepositos ? 'DEP ' : ''}
+                          {prod.PermiteRetiros ? 'RET ' : ''}
+                          {prod.PermiteTransferencias ? 'TRANS ' : ''}
+                        </td>
+                        <td className="p-6 text-right">
+                          <button
+                            onClick={() => setEditingProducto(prod)}
+                            className="px-4 py-2 bg-slate-100 hover:bg-[#14532D] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all"
+                          >
+                            Editar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

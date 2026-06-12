@@ -35,6 +35,20 @@ export class DataService {
     });
   }
 
+  static async updatePassword(id: string, password: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('auth/update_password', {
+      method: 'POST',
+      body: JSON.stringify({ id, password })
+    });
+  }
+
+  static async updatePrinter(id: string, printer: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('users/update_printer', {
+      method: 'POST',
+      body: JSON.stringify({ id, printer })
+    });
+  }
+
   static async getUserFullData(userId: string): Promise<User> {
     // Une datos de bcaclie, bcadpvi (cuentas) y bcacred (préstamos)
     return this.request<User>(`users/get_profile.php?id=${userId}`);
@@ -48,6 +62,74 @@ export class DataService {
     });
   }
 
+  static async applyLoan(loan: any): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('socios/loans', {
+      method: 'POST',
+      body: JSON.stringify(loan)
+    });
+  }
+
+  static async approveLoan(loanId: string, reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('socios/loans/approve', {
+      method: 'POST',
+      body: JSON.stringify({ ids: [loanId], reason, usuarioId })
+    });
+  }
+
+  static async approveLoans(loanIds: string[], reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('socios/loans/approve', {
+      method: 'POST',
+      body: JSON.stringify({ ids: loanIds, reason, usuarioId })
+    });
+  }
+
+  static async disburseLoans(loanIds: string[], usuarioId?: string): Promise<{ ok: boolean, message?: string, successes?: any[], failures?: any[] }> {
+    return this.request<{ ok: boolean, message?: string, successes?: any[], failures?: any[] }>('socios/loans/disburse', {
+      method: 'POST',
+      body: JSON.stringify({ ids: loanIds, usuarioId })
+    });
+  }
+
+  static async getAllLoans(): Promise<any[]> {
+    const res = await this.request<{ ok: boolean, loans: any[] }>('socios/loans/all');
+    return res.ok ? res.loans : [];
+  }
+
+  static async rejectLoan(loanId: string, reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('socios/loans/reject', {
+      method: 'POST',
+      body: JSON.stringify({ id: loanId, reason, usuarioId })
+    });
+  }
+
+  static async payInstallment(identificacion: string, loanId: string, installmentNumber: number, paymentSource: 'ACCOUNT' | 'TRANSFER', amount: number, applyProrating?: boolean): Promise<{ ok: boolean, message?: string, loanBalance?: number, savingsBalance?: number, installmentPaid?: number, isCompleted?: boolean }> {
+    return this.request<{ ok: boolean, message?: string, loanBalance?: number, savingsBalance?: number, installmentPaid?: number, isCompleted?: boolean }>('socios/loans/pay-dividend', {
+      method: 'POST',
+      body: JSON.stringify({ identificacion, loanId, installmentNumber, paymentSource, amount, applyProrating })
+    });
+  }
+
+  static async anularLoan(loanId: string, usuarioId?: string): Promise<{ ok: boolean, message?: string, balance?: number }> {
+    return this.request<{ ok: boolean, message?: string, balance?: number }>('socios/loans/anular', {
+      method: 'POST',
+      body: JSON.stringify({ id: loanId, usuarioId })
+    });
+  }
+
+  static async anularPayment(loanId: string, installmentNumber: number, usuarioId?: string): Promise<{ ok: boolean, message?: string, loanBalance?: number, savingsBalance?: number }> {
+    return this.request<{ ok: boolean, message?: string, loanBalance?: number, savingsBalance?: number }>('socios/loans/anular-pago', {
+      method: 'POST',
+      body: JSON.stringify({ loanId, installmentNumber, usuarioId })
+    });
+  }
+
+  static async updateLoanStatus(loanId: string, status: string, reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('socios/loans/update-status', {
+      method: 'POST',
+      body: JSON.stringify({ loanId, status, reason, usuarioId })
+    });
+  }
+
   // Métodos de respaldo para desarrollo (si el API no responde)
   static async getUsers(): Promise<User[]> {
     const saved = localStorage.getItem('cap_core_users');
@@ -58,8 +140,26 @@ export class DataService {
     localStorage.setItem('cap_core_users', JSON.stringify(users));
   }
 
-  // Added missing method to retrieve interest rates from local storage fallback
+  // Fetch from DB if available, fallback to local storage
   static async getRates(): Promise<InterestRate[]> {
+    try {
+      const res = await this.request<{ ok: boolean, rates: any[] }>('socios/rates');
+      if (res && res.ok && res.rates) {
+        return res.rates.map(r => ({
+          id: r.id,
+          category: r.category,
+          rate: Number(r.rate),
+          maxTerm: Number(r.maxTerm),
+          class: r.class,
+          minAmount: Number(r.minAmount),
+          maxAmount: Number(r.maxAmount),
+          minTerm: Number(r.minTerm),
+          maxRate: Number(r.maxRate)
+        }));
+      }
+    } catch (err) {
+      console.warn('Error fetching rates from DB API, using local storage:', err);
+    }
     const saved = localStorage.getItem('cap_interest_rates');
     return saved ? JSON.parse(saved) : [];
   }

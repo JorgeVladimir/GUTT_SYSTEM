@@ -1,5 +1,6 @@
 
 export enum UserRole {
+  SUPER_USER = 'SUPER_USER',
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
   ACCOUNTANT = 'ACCOUNTANT',
@@ -64,11 +65,13 @@ export interface Loan {
   rate: number;
   installmentsCount: number;
   installments: LoanInstallment[];
-  status: 'VIGENTE' | 'VENCIDO' | 'PAGADO' | 'SOLICITADO' | 'RECHAZADO';
+  status: 'VIGENTE' | 'VENCIDO' | 'PAGADO' | 'SOLICITADO' | 'RECHAZADO' | 'APROBADO';
   type: string;
   startDate: string;
   dueDate: string;
   comments?: string;
+  garantiaInfo?: any;
+  origen?: string;
 }
 
 export interface Transaction {
@@ -93,6 +96,12 @@ export interface PersonalReference {
 export interface Dependent {
   id: string;
   name: string;
+  firstName?: string;
+  middleName?: string;
+  firstLastName?: string;
+  secondLastName?: string;
+  onlyOneName?: boolean;
+  onlyOneLastName?: boolean;
   relationship: string;
 }
 
@@ -102,7 +111,10 @@ export interface User {
   firstName?: string;
   middleName?: string;
   lastName?: string;
+  firstLastName?: string;
+  secondLastName?: string;
   onlyOneName?: boolean;
+  onlyOneLastName?: boolean;
   pin: string;
   role: UserRole;
   accounts: Account[];
@@ -173,6 +185,7 @@ export enum AppView {
   ADMIN_HUB = 'ADMIN_HUB',
   CREDIT_OFFICER_HUB = 'CREDIT_OFFICER_HUB',
   REPORTS = 'REPORTS',
+  REPORTS_SOCIOS_CREDITOS = 'REPORTS_SOCIOS_CREDITOS',
   BI_PANEL = 'BI_PANEL',
   PROFILE = 'PROFILE',
   CHANGE_PIN = 'CHANGE_PIN'

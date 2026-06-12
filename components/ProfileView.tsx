@@ -140,13 +140,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
     <div id="ficha-printable" className="bg-white p-12 space-y-10 text-slate-900 printable-area border-2 border-slate-200 rounded-[3rem]">
       <div className="flex justify-between items-start border-b-4 border-[#14532D] pb-8">
         <div className="flex items-center gap-6">
-          <div className="w-20 h-16 bg-[#14532D] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-lg">
-             <span className="text-2xl leading-none">CAP</span>
-             <div className="w-full h-1 bg-[#FACC15] mt-1"></div>
+          <div className="w-16 h-16 bg-[#14532D] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-lg relative border-b-4 border-[#FACC15] overflow-hidden">
+             <span className="text-3xl leading-none">G</span>
           </div>
           <div>
             <h2 className="text-3xl font-black tracking-tighter uppercase">Ficha Integral de Socio</h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Caja de Ahorro Patate • Estructura S01 SEPS</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Gutt System • Estructura S01 SEPS</p>
           </div>
         </div>
         <div className="text-right">
