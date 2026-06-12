@@ -45,7 +45,8 @@ async function run() {
       join(__dirname, 'db', 'sqlserver', '12_solicitudes_credito_socioid.sql'),
       join(__dirname, 'db', 'sqlserver', '13_solicitudes_credito_origen.sql'),
       join(__dirname, 'db', 'sqlserver', '14_crear_superuser.sql'),
-      join(__dirname, 'db', 'sqlserver', '15_cierre_caja_control.sql')
+      join(__dirname, 'db', 'sqlserver', '15_cierre_caja_control.sql'),
+      join(__dirname, 'db', 'sqlserver', '16_mejoras_reportes_ficha.sql')
     ];
 
     for (const file of files) {
