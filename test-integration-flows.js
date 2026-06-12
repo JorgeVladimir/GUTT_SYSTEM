@@ -32,12 +32,7 @@ const sqlConfig = {
   }
 };
 
-if (process.env.SQL_SERVER_PORT) {
-  sqlConfig.port = parseInt(process.env.SQL_SERVER_PORT, 10);
-}
-if (process.env.SQL_SERVER_INSTANCE) {
-  sqlConfig.options.instanceName = process.env.SQL_SERVER_INSTANCE;
-}
+sqlConfig.port = 1433;
 
 const API_BASE = 'http://localhost:8080/api';
 const TEST_CEDULA = '9999999999';

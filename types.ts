@@ -163,6 +163,8 @@ export interface User {
   references?: PersonalReference[];
   bureau?: CreditBureauProfile;
   personType?: PersonType;
+  rutaImagenMapa?: string;
+  rutaImagenCroquis?: string;
 }
 
 export interface Account {

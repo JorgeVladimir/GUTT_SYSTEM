@@ -2367,16 +2367,9 @@ export const TellerView: React.FC<TellerViewProps> = ({
               <div className="flex items-center gap-2 border-l-4 border-emerald-550 pl-4">
                 <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest">Información Laboral</h4>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="space-y-2 lg:col-span-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lugar de Trabajo / Nombre Empresa</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={newMember.workAddress} onChange={e => setNewMember({...newMember, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
-                    <button type="button" onClick={() => openRealMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
-                       <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
-                    </button>
-                  </div>
-                </div>
+              
+              {/* Fila 1: Selección geográfica */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Provincia (Trabajo)</label>
                   <select value={newMember.workProvince} onChange={e => setNewMember({...newMember, workProvince: e.target.value, workCity: '', workParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
@@ -2397,6 +2390,17 @@ export const TellerView: React.FC<TellerViewProps> = ({
                     <option value="">Parroquia...</option>
                     {workParishes.map((p: string) => <option key={p} value={p}>{p}</option>)}
                   </select>
+                </div>
+              </div>
+
+              {/* Fila 2: Dirección y botón Mapa */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lugar de Trabajo / Nombre Empresa (Dirección)</label>
+                <div className="flex gap-2">
+                  <input type="text" value={newMember.workAddress} onChange={e => setNewMember({...newMember, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                  <button type="button" onClick={() => openRealMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
+                     <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
+                  </button>
                 </div>
               </div>
 

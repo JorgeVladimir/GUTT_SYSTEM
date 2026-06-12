@@ -58,13 +58,14 @@ export const BIPanel: React.FC<BIPanelProps> = ({
     'SOCIOS': ['ID', 'Nombre', 'Email', 'Profesión', 'Provincia', 'Fecha Registro', 'Saldo Ahorros'],
     'CARTERA': ['ID Préstamo', 'Socio', 'Monto Original', 'Saldo Pendiente', 'Tasa (%)', 'Estado', 'Cuotas Totales'],
     'ACTIVOS': ['ID Activo', 'Nombre', 'Categoría', 'Valor Compra', 'Depreciación Acum.'],
-    'CONTABILIDAD': ['Cuenta', 'Nombre Cuenta', 'Saldo', 'Nivel']
+    'CONTABILIDAD': ['Cuenta', 'Nombre Cuenta', 'Saldo', 'Nivel'],
+    'CONTROL_CAJA': ['ID Control', 'Usuario ID', 'Fecha', 'Hora Apertura', 'Hora Cierre', 'Saldo Apertura', 'Saldo Cierre', 'Estado']
   };
 
   const members = useMemo(() => users.filter(u => u.role === UserRole.MEMBER), [users]);
   const portfolio = useMemo(() => members.flatMap(u => (u.loans || []).map(l => ({...l, memberName: u.name}))), [members]);
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     let data: any[] = [];
     const q = reportConfig.filter.toLowerCase();
 
@@ -96,6 +97,25 @@ export const BIPanel: React.FC<BIPanelProps> = ({
         'Valor Compra': `$${a.value.toFixed(2)}`,
         'Depreciación Acum.': `$${a.depreciation.toFixed(2)}`
       }));
+    } else if (reportConfig.entity === 'CONTROL_CAJA') {
+      try {
+        const res = await fetch('/api/caja/control/historial');
+        const resJson = await res.json();
+        if (resJson.ok && Array.isArray(resJson.data)) {
+          data = resJson.data.map((cc: any) => ({
+            'ID Control': cc.ControlID,
+            'Usuario ID': cc.UsuarioId,
+            'Fecha': cc.Fecha ? new Date(cc.Fecha).toLocaleDateString('es-EC') : 'N/A',
+            'Hora Apertura': cc.HoraApertura ? new Date(cc.HoraApertura).toLocaleTimeString('es-EC') : 'N/A',
+            'Hora Cierre': cc.HoraCierre ? new Date(cc.HoraCierre).toLocaleTimeString('es-EC') : 'N/A',
+            'Saldo Apertura': `$${parseFloat(cc.SaldoApertura || 0).toFixed(2)}`,
+            'Saldo Cierre': cc.SaldoCierre !== null ? `$${parseFloat(cc.SaldoCierre).toFixed(2)}` : 'N/A',
+            'Estado': cc.Estado
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching control caja history:', err);
+      }
     }
 
     if (q) {

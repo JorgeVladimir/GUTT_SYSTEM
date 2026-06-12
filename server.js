@@ -7,7 +7,7 @@
  */
 
 import { createRequire } from 'module';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
@@ -207,6 +207,13 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Ensure uploads directory exists and is served statically
+const uploadsDir = join(__dirname, 'uploads');
+if (!existsSync(uploadsDir)) {
+  mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({
@@ -1510,11 +1517,15 @@ app.post('/api/socios/guardar-mapa', async (req, res) => {
   try {
     const pool = await sql.connect(sqlConfig);
     
-    // Convertir base64 a buffer
+    // Convertir base64 a buffer e insertar/actualizar ruta física
     let imagenBuffer = null;
+    let relativePath = null;
     if (imagenMapa) {
       const base64Data = imagenMapa.replace(/^data:image\/\w+;base64,/, '');
       imagenBuffer = Buffer.from(base64Data, 'base64');
+      const filename = `mapa_domicilio_${socioId}.png`;
+      writeFileSync(join(uploadsDir, filename), imagenBuffer);
+      relativePath = `/uploads/${filename}`;
     }
 
     await pool.request()
@@ -1523,6 +1534,7 @@ app.post('/api/socios/guardar-mapa', async (req, res) => {
       .input('CoordenadaLat', sql.NVarChar(50), coordenadaLat)
       .input('CoordenadaLng', sql.NVarChar(50), coordenadaLng)
       .input('DireccionCapturada', sql.NVarChar(200), direccionCapturada)
+      .input('RutaImagen', sql.NVarChar(250), relativePath)
       .execute('dbo.usp_GuardarMapaUbicacion');
 
     await pool.close();
@@ -1545,17 +1557,22 @@ app.post('/api/socios/guardar-croquis', async (req, res) => {
   try {
     const pool = await sql.connect(sqlConfig);
     
-    // Convertir base64 a buffer
+    // Convertir base64 a buffer e insertar/actualizar ruta física
     let imagenBuffer = null;
+    let relativePath = null;
     if (imagenCroquis) {
       const base64Data = imagenCroquis.replace(/^data:image\/\w+;base64,/, '');
       imagenBuffer = Buffer.from(base64Data, 'base64');
+      const filename = `mapa_trabajo_${socioId}.png`;
+      writeFileSync(join(uploadsDir, filename), imagenBuffer);
+      relativePath = `/uploads/${filename}`;
     }
 
     await pool.request()
       .input('SOCIOID', sql.BigInt, socioId)
       .input('ImagenCroquis', sql.VarBinary(sql.MAX), imagenBuffer)
       .input('Descripcion', sql.NVarChar(500), descripcion)
+      .input('RutaImagen', sql.NVarChar(250), relativePath)
       .execute('dbo.usp_GuardarCroquisTrabajo');
 
     await pool.close();
@@ -1597,24 +1614,32 @@ app.get('/api/socios/buscar', async (req, res) => {
         .input('exactQ', sql.NVarChar(50), q)
         .query(`
           SELECT 
-            SOCIOID, TipoPersona, TipoIdentificacion, Identificacion, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Apellidos, Email, Telefono, FechaNacimiento, EstadoCivil, NumeroSocio, PIN,
-            DireccionDomicilio, LugarTrabajo, Etnia, Genero, NivelInstruccion, Profesion, ReferenciasPersonales, CargasFamiliares,
-            Telefonos, Autoidentificacion, TipoVivienda, ValorVivienda, Discapacidad, ConsentimientoDatos, PEPS, PatrimonioIngresos,
-            CedulaConyuge, NombreConyuge, TelefonoConyuge
-          FROM dbo.RegistroSocios
-          WHERE (Identificacion = @exactQ OR NumeroSocio = @exactQ OR Apellidos LIKE @q OR PrimerNombre LIKE @q)
-            AND Estado = 'ACTIVO'
+            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio, rs.PIN,
+            rs.DireccionDomicilio, rs.LugarTrabajo, rs.Etnia, rs.Genero, rs.NivelInstruccion, rs.Profesion, rs.ReferenciasPersonales, rs.CargasFamiliares,
+            rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
+            rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
+            sm.RutaImagen AS RutaImagenMapa,
+            ct.RutaImagen AS RutaImagenCroquis
+          FROM dbo.RegistroSocios rs
+          LEFT JOIN dbo.SocioUbicacionMapa sm ON sm.SOCIOID = rs.SOCIOID
+          LEFT JOIN dbo.SocioCroquisTrabajo ct ON ct.SOCIOID = rs.SOCIOID
+          WHERE (rs.Identificacion = @exactQ OR rs.NumeroSocio = @exactQ OR rs.Apellidos LIKE @q OR rs.PrimerNombre LIKE @q)
+            AND rs.Estado = 'ACTIVO'
         `);
     } else {
       searchResult = await pool.request()
         .query(`
           SELECT 
-            SOCIOID, TipoPersona, TipoIdentificacion, Identificacion, PrimerNombre, SegundoNombre, PrimerApellido, SegundoApellido, Apellidos, Email, Telefono, FechaNacimiento, EstadoCivil, NumeroSocio, PIN,
-            DireccionDomicilio, LugarTrabajo, Etnia, Genero, NivelInstruccion, Profesion, ReferenciasPersonales, CargasFamiliares,
-            Telefonos, Autoidentificacion, TipoVivienda, ValorVivienda, Discapacidad, ConsentimientoDatos, PEPS, PatrimonioIngresos,
-            CedulaConyuge, NombreConyuge, TelefonoConyuge
-          FROM dbo.RegistroSocios
-          WHERE Estado = 'ACTIVO'
+            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio, rs.PIN,
+            rs.DireccionDomicilio, rs.LugarTrabajo, rs.Etnia, rs.Genero, rs.NivelInstruccion, rs.Profesion, rs.ReferenciasPersonales, rs.CargasFamiliares,
+            rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
+            rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
+            sm.RutaImagen AS RutaImagenMapa,
+            ct.RutaImagen AS RutaImagenCroquis
+          FROM dbo.RegistroSocios rs
+          LEFT JOIN dbo.SocioUbicacionMapa sm ON sm.SOCIOID = rs.SOCIOID
+          LEFT JOIN dbo.SocioCroquisTrabajo ct ON ct.SOCIOID = rs.SOCIOID
+          WHERE rs.Estado = 'ACTIVO'
         `);
     }
       
@@ -1709,6 +1734,8 @@ app.get('/api/socios/buscar', async (req, res) => {
         spouseId: r.CedulaConyuge || '',
         spouseName: r.NombreConyuge || '',
         spousePhone: r.TelefonoConyuge || '',
+        rutaImagenMapa: r.RutaImagenMapa || '',
+        rutaImagenCroquis: r.RutaImagenCroquis || '',
         accounts: accountsResult.recordset,
         transactions: txsResult.recordset,
         loans: loans
@@ -2909,6 +2936,75 @@ app.post('/api/caja/control/cerrar', async (req, res) => {
       try { await pool.close(); } catch (_) {}
     }
     console.error('[caja-control-cerrar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/caja/control/historial ──────────────────────────────────────────
+app.get('/api/caja/control/historial', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .query('SELECT ControlID, UsuarioId, Fecha, HoraApertura, HoraCierre, SaldoApertura, SaldoCierre, Estado FROM dbo.ControlCaja ORDER BY Fecha DESC, HoraApertura DESC');
+    await pool.close();
+    return res.json({ ok: true, data: result.recordset });
+  } catch (err) {
+    if (pool) {
+      try { await pool.close(); } catch (_) {}
+    }
+    console.error('[caja-control-historial]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/reportes/situacion-general ──────────────────────────────────────
+app.get('/api/reportes/situacion-general', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    
+    // 1. Total socios
+    const totalSociosRes = await pool.request()
+      .query("SELECT COUNT(*) AS total FROM dbo.RegistroSocios WHERE Estado = 'ACTIVO'");
+    const totalSocios = totalSociosRes.recordset[0].total;
+
+    // 2. Socios por tipo
+    const sociosPorTipoRes = await pool.request()
+      .query("SELECT TipoPersona, COUNT(*) AS cantidad FROM dbo.RegistroSocios WHERE Estado = 'ACTIVO' GROUP BY TipoPersona");
+    const sociosPorTipo = sociosPorTipoRes.recordset;
+
+    // 3. Totales globales de cuentas (Ahorro vista y Certificados)
+    const balancesRes = await pool.request()
+      .query(`
+        SELECT 
+          SUM(CASE WHEN p.EsCertificado = 0 THEN c.Saldo ELSE 0 END) AS saldoAhorroVista,
+          SUM(CASE WHEN p.EsCertificado = 1 THEN c.Saldo ELSE 0 END) AS saldoCertificados,
+          COUNT(CASE WHEN p.EsCertificado = 0 THEN 1 END) AS numAhorroVista,
+          COUNT(CASE WHEN p.EsCertificado = 1 THEN 1 END) AS numCertificados
+        FROM dbo.CuentasAhorro c
+        INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+      `);
+    const balances = balancesRes.recordset[0];
+
+    await pool.close();
+
+    return res.json({
+      ok: true,
+      data: {
+        totalSocios,
+        sociosPorTipo,
+        saldoAhorroVista: parseFloat(balances.saldoAhorroVista || 0),
+        saldoCertificados: parseFloat(balances.saldoCertificados || 0),
+        numAhorroVista: balances.numAhorroVista || 0,
+        numCertificados: balances.numCertificados || 0
+      }
+    });
+  } catch (err) {
+    if (pool) {
+      try { await pool.close(); } catch (_) {}
+    }
+    console.error('[situacion-general]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });

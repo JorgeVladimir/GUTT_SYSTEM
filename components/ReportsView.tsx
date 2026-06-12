@@ -27,6 +27,9 @@ import { DataService } from '../services/dataService';
 import { BIPanel } from './BIPanel';
 import { ProfileView } from './ProfileView';
 import { User, UserRole } from '../types';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+const COLORS = ['#14532D', '#FACC15', '#2563EB', '#7C3AED', '#EC4899'];
 
 interface ReportsViewProps {
   users?: User[];
@@ -36,7 +39,7 @@ interface ReportsViewProps {
 
 export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUser, currentUser }) => {
   const isMember = currentUser?.role === UserRole.MEMBER;
-  const isAdmin = currentUser?.role === UserRole.ADMIN;
+  const isAdmin = currentUser?.role === UserRole.ADMIN || currentUser?.role === UserRole.SUPER_USER;
   const isAccountant = currentUser?.role === UserRole.ACCOUNTANT;
   
   // Acceso restringido a reportes financieros (Solo Admin y Contabilidad)
@@ -54,6 +57,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
   const [editForm, setEditForm] = useState<any>(null);
   const [showPrintView, setShowPrintView] = useState(false);
+
+  // Estados y funciones para Estado de Situación General Consolidado
+  const [situacionGeneral, setSituacionGeneral] = useState<{
+    totalSocios: number;
+    sociosPorTipo: { TipoPersona: string; cantidad: number }[];
+    saldoAhorroVista: number;
+    saldoCertificados: number;
+    numAhorroVista: number;
+    numCertificados: number;
+  } | null>(null);
+  const [loadingSituacion, setLoadingSituacion] = useState(false);
+
+  const loadSituacionGeneral = async () => {
+    setLoadingSituacion(true);
+    try {
+      const response = await fetch('/api/reportes/situacion-general');
+      const resData = await response.json();
+      if (resData.ok) {
+        setSituacionGeneral(resData.data);
+      }
+    } catch (error) {
+      console.error('Error loading general situation report:', error);
+    } finally {
+      setLoadingSituacion(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMasterTab === 'SITUACION') {
+      void loadSituacionGeneral();
+    }
+  }, [activeMasterTab]);
 
   useEffect(() => {
     if (targetUser) {
@@ -226,8 +261,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
         {[
           { id: 'FICHA', label: 'RECUPERAR FICHA DE SOCIO', icon: <FileText size={18} /> },
           { id: 'SITUACION', label: 'ESTADO DE SITUACIÓN GENERAL', icon: <PieChart size={18} /> },
-          // RESTRICCIÓN: BI solo visible para roles administrativos (no socios)
-          !isMember && { id: 'BI', label: 'REPORTERÍA GENERAL (BI)', icon: <BarChart3 size={18} /> },
+          // RESTRICCIÓN: BI solo visible para roles administrativos (no socios, no cajeros)
+          isAdmin && { id: 'BI', label: 'REPORTERÍA GENERAL (BI)', icon: <BarChart3 size={18} /> },
           // RESTRICCIÓN DE ACCESO: Solo Admin/Contabilidad ve reportes financieros
           hasFinancialAccess && { id: 'FINANCIAL', label: 'REPORTES FINANCIEROS', icon: <FileBarChart size={18} /> }
         ].filter(Boolean).map((tab: any) => (
@@ -380,6 +415,32 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                    )}
                  </div>
                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">7. Capturas de Pantalla y Croquis Geográficos</h4>
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <p className="font-bold text-[10.5px] text-slate-700 uppercase">A. Croquis Domiciliario (Mapa de Ubicación):</p>
+                      {targetUser.rutaImagenMapa ? (
+                        <div className="border-2 border-slate-200 rounded-3xl overflow-hidden shadow-sm max-w-sm">
+                          <img src={targetUser.rutaImagenMapa} alt="Mapa Domicilio" className="w-full h-48 object-cover" />
+                        </div>
+                      ) : (
+                        <p className="italic text-slate-400 text-xs">Sin captura de mapa domiciliario registrada.</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-bold text-[10.5px] text-slate-700 uppercase">B. Croquis Laboral (Lugar de Trabajo):</p>
+                      {targetUser.rutaImagenCroquis ? (
+                        <div className="border-2 border-slate-200 rounded-3xl overflow-hidden shadow-sm max-w-sm">
+                          <img src={targetUser.rutaImagenCroquis} alt="Croquis Trabajo" className="w-full h-48 object-cover" />
+                        </div>
+                      ) : (
+                        <p className="italic text-slate-400 text-xs">Sin croquis laboral registrado.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                <div className="pt-16 grid grid-cols-2 gap-12 text-center text-xs font-serif pt-20 border-t border-slate-200">
                  <div className="space-y-1">
@@ -565,6 +626,35 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  </label>
                </div>
 
+                {/* SECCIÓN 7: CROQUIS Y MAPAS GEOGRÁFICOS */}
+                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100/60 space-y-6">
+                  <div className="flex items-center gap-2 border-l-4 border-emerald-500 pl-3">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Croquis y Mapas Registrados</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black text-slate-400 uppercase block">Mapa Domicilio</span>
+                      {targetUser.rutaImagenMapa ? (
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm max-w-sm">
+                          <img src={targetUser.rutaImagenMapa} alt="Mapa Domicilio" className="w-full h-40 object-cover" />
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-400 italic">Sin mapa domiciliario registrado.</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black text-slate-400 uppercase block">Croquis Trabajo</span>
+                      {targetUser.rutaImagenCroquis ? (
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm max-w-sm">
+                          <img src={targetUser.rutaImagenCroquis} alt="Croquis Trabajo" className="w-full h-40 object-cover" />
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-400 italic">Sin croquis laboral registrado.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                {/* CONTROLES FINALES DE EDICIÓN */}
                <div className="flex gap-4 pt-4">
                  <button onClick={handleSaveReportProfile} disabled={loading} className="flex-1 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
@@ -576,93 +666,130 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
         </div>
       )}
 
-      {activeMasterTab === 'SITUACION' && targetUser && (
+      {activeMasterTab === 'SITUACION' && (
         <div className="animate-in slide-in-from-right-4 space-y-8 pb-10">
-           {!isMember && (
-             <button onClick={() => setSelectedS01User(null)} className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase hover:text-[#14532D] transition-all px-6 no-print">
-               <Search size={14} /> Nueva Búsqueda
-             </button>
-           )}
-           
-           <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100 space-y-12 printable-area">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b pb-10">
-                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-2xl flex items-center justify-center font-black italic text-3xl border-b-6 border-[#FACC15] overflow-hidden">
-                       <span className="text-white">G</span>
-                    </div>
+          <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100 space-y-12 printable-area">
+            {/* Cabecera */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b pb-10">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-2xl flex items-center justify-center font-black italic text-3xl border-b-6 border-[#FACC15] overflow-hidden">
+                  <span className="text-white">G</span>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Estado de Situación General</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Análisis Consolidado de Socios e Indicadores Financieros Globales</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-slate-400 uppercase">Fecha de Visualización</p>
+                <p className="text-lg font-black text-slate-800">{new Date().toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+            </div>
+
+            {loadingSituacion || !situacionGeneral ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Cargando Indicadores Globales...</p>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                {/* Indicadores Clave en Tarjetas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 flex flex-col justify-between shadow-sm">
                     <div>
-                      <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Estado de Situación</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resumen Integral de Obligaciones</p>
+                      <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-2">Socios Registrados</p>
+                      <h4 className="text-4xl font-black text-[#14532D]">{situacionGeneral.totalSocios}</h4>
                     </div>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Socio ID</p>
-                    <p className="text-xl font-black text-slate-800">{targetUser.id}</p>
-                 </div>
-              </div>
+                    <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">Cuentas activas en la COAC</p>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                 <div className="space-y-6">
-                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Información del Socio</h4>
-                    <div className="space-y-3 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                       <div className="flex justify-between text-sm"><span className="font-bold text-slate-400 uppercase text-[10px]">Nombre:</span> <span className="font-black text-slate-800 uppercase">{targetUser.name}</span></div>
-                       <div className="flex justify-between text-sm"><span className="font-bold text-slate-400 uppercase text-[10px]">E-mail:</span> <span className="font-bold text-slate-800 lowercase">{targetUser.email || 'N/A'}</span></div>
-                       <div className="flex justify-between text-sm"><span className="font-bold text-slate-400 uppercase text-[10px]">Teléfono:</span> <span className="font-bold text-slate-800">{targetUser.phone || 'N/A'}</span></div>
-                       <div className="flex justify-between text-sm"><span className="font-bold text-slate-400 uppercase text-[10px]">Profesión:</span> <span className="font-bold text-slate-800 uppercase">{targetUser.profession || 'N/A'}</span></div>
+                  <div className="p-8 bg-blue-50 rounded-3xl border border-blue-100 flex flex-col justify-between shadow-sm">
+                    <div>
+                      <p className="text-[9px] font-black text-blue-600 uppercase tracking-wider mb-2">Ahorro a la Vista Global</p>
+                      <h4 className="text-3xl font-black text-blue-900">${situacionGeneral.saldoAhorroVista.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
                     </div>
-                 </div>
+                    <p className="text-[8px] font-bold text-blue-800/60 uppercase tracking-widest mt-6">Depósitos a la vista a nivel global</p>
+                  </div>
 
-                 <div className="space-y-6">
-                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Obligaciones Financieras</h4>
-                    <div className="grid grid-cols-1 gap-4">
-                       <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
-                          <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Ahorros a la Vista</p>
-                          <p className="text-3xl font-black text-[#14532D]">${(targetUser.accounts[0]?.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
-                       </div>
-                       <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
-                          <p className="text-[10px] font-black text-blue-600 uppercase mb-1">Certificados Aportación</p>
-                          <p className="text-2xl font-black text-blue-900">${(targetUser.accounts[1]?.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
-                       </div>
+                  <div className="p-8 bg-amber-50 rounded-3xl border border-amber-100 flex flex-col justify-between shadow-sm">
+                    <div>
+                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-2">Cuentas de Ahorro Creadas</p>
+                      <h4 className="text-4xl font-black text-amber-900">{situacionGeneral.numAhorroVista}</h4>
                     </div>
-                 </div>
-              </div>
+                    <p className="text-[8px] font-bold text-amber-800/60 uppercase tracking-widest mt-6">Cuentas de ahorro generadas</p>
+                  </div>
 
-              <div className="space-y-6">
-                 <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Créditos y Colocaciones</h4>
-                 <div className="overflow-x-auto rounded-3xl border border-slate-100">
-                    <table className="w-full">
-                       <thead className="bg-slate-50 border-b">
-                          <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                             <th className="px-8 py-5 text-left">Nro Crédito</th>
-                             <th className="px-8 py-5 text-left">Tipo</th>
-                             <th className="px-8 py-5 text-center">Estado</th>
-                             <th className="px-8 py-5 text-right">Saldo Deudor</th>
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-slate-50">
-                          {targetUser.loans && targetUser.loans.length > 0 ? targetUser.loans.map(loan => (
-                             <tr key={loan.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-8 py-5 font-black text-slate-800">{loan.id}</td>
-                                <td className="px-8 py-5 font-bold text-slate-500 uppercase text-xs">{loan.type}</td>
-                                <td className="px-8 py-5 text-center">
-                                   <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${
-                                      loan.status === 'VIGENTE' ? 'bg-emerald-100 text-emerald-700' : 
-                                      loan.status === 'SOLICITADO' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                                   }`}>{loan.status}</span>
-                                </td>
-                                <td className="px-8 py-5 text-right font-black text-slate-900">${loan.balance.toFixed(2)}</td>
-                             </tr>
-                          )) : (
-                             <tr><td colSpan={4} className="px-8 py-10 text-center opacity-30 font-bold uppercase text-xs">No posee obligaciones crediticias activas</td></tr>
-                          )}
-                       </tbody>
-                    </table>
-                 </div>
+                  <div className="p-8 bg-purple-50 rounded-3xl border border-purple-100 flex flex-col justify-between shadow-sm">
+                    <div>
+                      <p className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-2">Certificados de Aportación</p>
+                      <h4 className="text-4xl font-black text-purple-900">{situacionGeneral.numCertificados}</h4>
+                    </div>
+                    <p className="text-[8px] font-bold text-purple-800/60 uppercase tracking-widest mt-6">Certificados de aportación emitidos</p>
+                  </div>
+                </div>
+
+                {/* Gráfico y Distribución */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                  {/* Gráfico de Tarta (Pie Chart) */}
+                  <div className="space-y-6">
+                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Distribución de Socios por Tipo</h4>
+                    <div className="h-[300px] flex items-center justify-center bg-slate-50 border border-slate-100 rounded-[2.5rem] p-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={situacionGeneral.sociosPorTipo.map(item => ({
+                              name: item.TipoPersona === 'SOCIO' ? 'Socio Coac' : item.TipoPersona === 'CLIENTE' ? 'Cliente Directo' : 'Cliente Externo',
+                              value: item.cantidad
+                            }))}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {situacionGeneral.sociosPorTipo.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => [`${value} miembros`, 'Cantidad']}
+                            contentStyle={{ borderRadius: '1rem', border: '1px solid #e2e8f0', fontFamily: 'sans-serif', fontWeight: 'bold' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', fontFamily: 'sans-serif' }} />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Detalle y Certificados Financieros */}
+                  <div className="space-y-6">
+                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Resumen de Patrimonio e Integridad</h4>
+                    <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                      <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span className="text-[10px] font-black text-slate-400 uppercase">Total Certificados Aportación (Patrimonio)</span>
+                        <span className="text-lg font-black text-slate-800">${situacionGeneral.saldoCertificados.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span className="text-[10px] font-black text-slate-400 uppercase">Fondos Totales Custodiados (Global)</span>
+                        <span className="text-xl font-black text-[#14532D]">${(situacionGeneral.saldoAhorroVista + situacionGeneral.saldoCertificados).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase">Promedio Ahorro por Socio</span>
+                        <span className="text-lg font-black text-slate-800">
+                          ${situacionGeneral.totalSocios > 0 ? ((situacionGeneral.saldoAhorroVista + situacionGeneral.saldoCertificados) / situacionGeneral.totalSocios).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'} USD
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-10 border-t flex gap-4 no-print">
+                  <button onClick={() => window.print()} className="flex-1 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl transition-all"><Printer size={20} /> IMPRIMIR ESTADO DE SITUACIÓN GENERAL</button>
+                </div>
               </div>
-              <div className="pt-10 border-t flex gap-4 no-print">
-                 <button onClick={() => window.print()} className="flex-1 py-5 bg-[#14532D] text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl"><Printer size={20} /> IMPRIMIR ESTADO DE SITUACIÓN</button>
-              </div>
-           </div>
+            )}
+          </div>
         </div>
       )}
 
