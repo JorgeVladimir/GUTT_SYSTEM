@@ -40,7 +40,7 @@ if (process.env.SQL_SERVER_PORT) {
   sqlConfig.port = 1433;
 }
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'http://localhost:5005/api';
 const TEST_CEDULA = '9999999999';
 
 async function runTests() {

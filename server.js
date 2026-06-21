@@ -3840,7 +3840,7 @@ app.post('/api/dpf/:id/renovar', async (req, res) => {
 });
 
 // ─── 8. Iniciar servidor ──────────────────────────────────────────────────
-const PORT = parseInt(process.env.API_PORT || '8080', 10);
+const PORT = parseInt(process.env.API_PORT || '5005', 10);
 app.listen(PORT, () => {
   console.log('');
   console.log('════════════════════════════════════════════════════');

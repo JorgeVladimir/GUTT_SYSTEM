@@ -266,13 +266,7 @@ export default function App() {
       const updatedUser: User = { ...currentUser, pin: newPin, needsPinChange: false };
       handleUpdateUser(updatedUser);
       setCurrentUser(updatedUser);
-      
-      if (updatedUser.role === UserRole.ADMIN) setView(AppView.ADMIN_HUB);
-      else if (updatedUser.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
-      else if (updatedUser.role === UserRole.TELLER) setView(AppView.TELLER_OPERATIONS);
-      else if (updatedUser.role === UserRole.CREDIT_OFFICER) setView(AppView.CREDIT_OFFICER_HUB);
-      else setView(AppView.DASHBOARD);
-      
+      navigateByRole(updatedUser);
       await showCustomAlert("¡Contraseña actualizada con éxito! Bienvenido a su banca virtual.", "success", "Éxito");
     } catch (err) {
       console.error(err);

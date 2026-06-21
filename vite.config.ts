@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       host: string;
       proxy?: Record<string, unknown>;
     } = {
-      port: 3000,
+      port: 5000,
       host: '0.0.0.0',
     };
 

@@ -39,7 +39,7 @@ if (process.env.SQL_SERVER_INSTANCE) {
   sqlConfig.options.instanceName = process.env.SQL_SERVER_INSTANCE;
 }
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'http://localhost:5005/api';
 const TEST_MEMBER_CEDULA = '1720884012'; // Jorge Vladimir de la captura
 
 async function runSecurityTests() {
