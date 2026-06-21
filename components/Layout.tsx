@@ -120,6 +120,14 @@ export const Layout: React.FC<LayoutProps> = ({
         items.push({ id: 'PROFITABILITY', label: 'RENTABILIDAD', icon: <TrendingUp size={14} /> });
         items.push({ id: 'BUREAU', label: 'BURÓ INTERNO', icon: <ShieldCheck size={14} /> });
         return items;
+      case AppView.PLAZO_FIJO:
+        return [
+          { id: 'GESTION',      label: 'GESTIÓN DPF',      icon: <Wallet size={14} /> },
+          { id: 'NUEVA',        label: 'NUEVA INVERSIÓN',   icon: <DollarSign size={14} /> },
+          { id: 'VENCIMIENTOS', label: 'VENCIMIENTOS',      icon: <Layers size={14} /> },
+          { id: 'TASAS',        label: 'CONFIG. TASAS',     icon: <Settings2 size={14} /> },
+          { id: 'CONTABILIDAD', label: 'CONTABILIDAD',      icon: <FileText size={14} /> },
+        ];
       default:
         return [];
     }

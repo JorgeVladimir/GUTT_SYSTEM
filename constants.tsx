@@ -1,17 +1,18 @@
 
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  ArrowRightLeft, 
-  PiggyBank, 
-  CreditCard, 
-  ShieldCheck, 
+import {
+  LayoutDashboard,
+  ArrowRightLeft,
+  PiggyBank,
+  CreditCard,
+  ShieldCheck,
   Briefcase,
   TrendingUp,
   FileCheck,
   FileBarChart,
   BarChart3,
-  User as UserIcon
+  User as UserIcon,
+  Landmark
 } from 'lucide-react';
 import { UserRole, GlobalConfig } from './types';
 
@@ -129,6 +130,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
   ],
@@ -139,6 +141,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
   ],
@@ -149,15 +152,18 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'CHART_OF_ACCOUNTS', label: 'Contabilidad Central', icon: <Briefcase size={20} /> },
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
   ],
   TELLER: [
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
+    { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
   ],
   ACCOUNTANT: [
     { id: 'CHART_OF_ACCOUNTS', label: 'Plan Contable', icon: <Briefcase size={20} /> },
+    { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'BI_PANEL', label: 'Reportes ICG BI', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
   ],

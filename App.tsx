@@ -12,6 +12,7 @@ import { AdminView } from './components/AdminView';
 import { BIPanel } from './components/BIPanel';
 import { CreditsView } from './components/CreditsView';
 import { CreditOfficerApproval } from './components/CreditOfficerApproval';
+import { PlazoFijoView } from './components/PlazoFijoView';
 import { ReportsView } from './components/ReportsView';
 import { ProfileView } from './components/ProfileView';
 import { ReportsSociosCreditos } from './components/ReportsSociosCreditos';
@@ -56,6 +57,7 @@ export default function App() {
   const [adminTab, setAdminTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD'>('SUMMARY');
   const [biTab, setBiTab] = useState<'BUILDER' | 'PROFITABILITY' | 'BUREAU'>('PROFITABILITY');
   const [creditOfficerTab, setCreditOfficerTab] = useState<'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA'>('APPROVALS');
+  const [plazoFijoTab, setPlazoFijoTab] = useState<'GESTION' | 'NUEVA' | 'VENCIMIENTOS' | 'TASAS' | 'CONTABILIDAD'>('GESTION');
   const [reportsSocioTab, setReportsSocioTab] = useState<'GENERAL' | 'SOCIO_SEARCH' | 'PROFITABILITY' | 'ORIGINS'>('GENERAL');
   const [interestRates, setInterestRates] = useState<InterestRate[]>(INITIAL_RATES);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
@@ -472,6 +474,7 @@ export default function App() {
       case AppView.ADMIN_HUB: return adminTab;
       case AppView.BI_PANEL: return biTab;
       case AppView.CREDIT_OFFICER_HUB: return creditOfficerTab;
+      case AppView.PLAZO_FIJO: return plazoFijoTab;
       case AppView.REPORTS_SOCIOS_CREDITOS: return reportsSocioTab;
       default: return undefined;
     }
@@ -483,6 +486,7 @@ export default function App() {
       case AppView.ADMIN_HUB: setAdminTab(sub as any); break;
       case AppView.BI_PANEL: setBiTab(sub as any); break;
       case AppView.CREDIT_OFFICER_HUB: setCreditOfficerTab(sub as any); break;
+      case AppView.PLAZO_FIJO: setPlazoFijoTab(sub as any); break;
       case AppView.REPORTS_SOCIOS_CREDITOS: setReportsSocioTab(sub as any); break;
     }
   };
@@ -578,6 +582,7 @@ export default function App() {
         {view === AppView.CREDITS && <CreditsView rates={interestRates} config={globalConfig} onApply={handleApplyLoan} existingLoans={currentUser?.loans || []} memberName={currentUser?.name || ''} memberId={currentUser?.id || ''} />}
         {view === AppView.CHART_OF_ACCOUNTS && <AccountantView chart={chartOfAccounts} />}
         {view === AppView.CREDIT_OFFICER_HUB && <CreditOfficerApproval users={users} currentUser={currentUser || undefined} onUpdateUser={handleUpdateUser} onApprove={handleApproveLoan} onReject={handleRejectLoan} activeTab={creditOfficerTab} onActiveTabChange={setCreditOfficerTab} />}
+        {view === AppView.PLAZO_FIJO && <PlazoFijoView currentUser={currentUser || undefined} activeTab={plazoFijoTab} onActiveTabChange={setPlazoFijoTab} />}
         {view === AppView.REPORTS && <ReportsView users={users} onUpdateUser={handleUpdateUser} currentUser={currentUser || undefined} />}
         {view === AppView.REPORTS_SOCIOS_CREDITOS && <ReportsSociosCreditos users={users} currentUser={currentUser || undefined} activeTab={reportsSocioTab} onActiveTabChange={setReportsSocioTab} />}
         {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}

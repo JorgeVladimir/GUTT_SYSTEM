@@ -190,7 +190,8 @@ export enum AppView {
   REPORTS_SOCIOS_CREDITOS = 'REPORTS_SOCIOS_CREDITOS',
   BI_PANEL = 'BI_PANEL',
   PROFILE = 'PROFILE',
-  CHANGE_PIN = 'CHANGE_PIN'
+  CHANGE_PIN = 'CHANGE_PIN',
+  PLAZO_FIJO = 'PLAZO_FIJO'
 }
 
 export interface ChartOfAccountEntry {

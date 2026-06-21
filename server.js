@@ -3415,6 +3415,419 @@ app.get('/api/reportes/situacion-general', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MÓDULO 7: DEPÓSITOS A PLAZO FIJO (DPF) — NORMATIVA SEPS
+// Plan de Cuentas: 2103 Depósitos a Plazo | 4103 Int.Causados | 2503 Int.x Pagar
+// Retención Art.37 LORTI: 2% sobre rendimientos financieros
+// ═══════════════════════════════════════════════════════════════════════════
+
+app.get('/api/dpf/tasas', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const result = await pool.request().query(`
+      SELECT TasaID, CodigoRango, DescripcionRango, DiasDesde, DiasHasta,
+             TasaNominalAnual, TasaMaximaBCE, MontoMinimo, MontoMaximo,
+             CuentaContableDPF, PorcentajePenalizacion, Activo,
+             CONVERT(NVARCHAR(10), FechaVigencia, 103) AS FechaVigencia, UsuarioConfigID
+      FROM dbo.TasasPlazoFijo ORDER BY DiasDesde ASC
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: result.recordset });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put('/api/dpf/tasas/:id', async (req, res) => {
+  let pool;
+  const { tasaNominalAnual, montoMinimo, montoMaximo, porcentajePenalizacion, activo, usuarioID } = req.body;
+  try {
+    if (tasaNominalAnual === undefined || tasaNominalAnual < 0)
+      return res.status(400).json({ ok: false, error: 'Tasa nominal inválida.' });
+    pool = await sql.connect(sqlConfig);
+    const row = await pool.request().input('id', sql.Int, req.params.id)
+      .query('SELECT TasaMaximaBCE FROM dbo.TasasPlazoFijo WHERE TasaID = @id');
+    if (row.recordset.length === 0) { await pool.close(); return res.status(404).json({ ok: false, error: 'Tramo no encontrado.' }); }
+    const techoMax = parseFloat(row.recordset[0].TasaMaximaBCE);
+    if (parseFloat(tasaNominalAnual) > techoMax + 0.001)
+      return res.status(400).json({ ok: false, error: `La tasa ${tasaNominalAnual}% supera el techo BCE de ${techoMax}%.` });
+    await pool.request()
+      .input('id',       sql.Int,          req.params.id)
+      .input('tna',      sql.Decimal(5,2), tasaNominalAnual)
+      .input('minMonto', sql.Decimal(15,2),montoMinimo ?? 200)
+      .input('maxMonto', sql.Decimal(15,2),montoMaximo ?? null)
+      .input('penal',    sql.Decimal(5,2), porcentajePenalizacion ?? 50)
+      .input('activo',   sql.Bit,          activo !== undefined ? activo : 1)
+      .input('usuID',    sql.NVarChar(50), usuarioID || 'SISTEMA')
+      .query(`UPDATE dbo.TasasPlazoFijo SET
+                TasaNominalAnual=@tna, MontoMinimo=@minMonto, MontoMaximo=@maxMonto,
+                PorcentajePenalizacion=@penal, Activo=@activo,
+                FechaVigencia=CAST(SYSDATETIME() AS DATE), UsuarioConfigID=@usuID
+              WHERE TasaID=@id`);
+    await pool.close();
+    return res.json({ ok: true, message: 'Tasa actualizada correctamente.' });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/dpf/resumen', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const r = await pool.request().query(`
+      SELECT
+        COUNT(*) AS totalDPF,
+        SUM(CASE WHEN Estado='ACTIVO'    THEN 1 ELSE 0 END) AS activos,
+        SUM(CASE WHEN Estado='VENCIDO'   THEN 1 ELSE 0 END) AS vencidos,
+        SUM(CASE WHEN Estado='LIQUIDADO' THEN 1 ELSE 0 END) AS liquidados,
+        SUM(CASE WHEN Estado='CANCELADO' THEN 1 ELSE 0 END) AS cancelados,
+        ISNULL(SUM(CASE WHEN Estado='ACTIVO' THEN MontoCapital ELSE 0 END),0) AS capitalActivo,
+        ISNULL(SUM(CASE WHEN Estado='ACTIVO' THEN InteresProyectado ELSE 0 END),0) AS interesProyectadoTotal,
+        SUM(CASE WHEN Estado IN ('ACTIVO','VENCIDO') AND CAST(FechaVencimiento AS DATE)<=CAST(SYSDATETIME() AS DATE) THEN 1 ELSE 0 END) AS vencimientosHoy
+      FROM dbo.DepositosPlazo
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: r.recordset[0] });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/dpf/vencimientos', async (req, res) => {
+  let pool;
+  const dias = parseInt(req.query.dias) || 7;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const r = await pool.request().input('dias', sql.Int, dias).query(`
+      SELECT d.DepositoID, d.Identificacion, d.NombreSocio, d.MontoCapital,
+             d.TasaNominalAnual, d.PlazosDias, d.InteresProyectado,
+             d.RetencionProyectada, d.InteresNetoProyectado, d.Estado, d.TipoRenovacion,
+             CONVERT(NVARCHAR(10), d.FechaApertura,   103) AS FechaApertura,
+             CONVERT(NVARCHAR(10), d.FechaVencimiento, 103) AS FechaVencimiento,
+             DATEDIFF(DAY, CAST(SYSDATETIME() AS DATE), CAST(d.FechaVencimiento AS DATE)) AS DiasRestantes,
+             t.DescripcionRango, t.PorcentajePenalizacion
+      FROM dbo.DepositosPlazo d
+      INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID = t.TasaID
+      WHERE d.Estado IN ('ACTIVO','VENCIDO')
+        AND CAST(d.FechaVencimiento AS DATE) <= DATEADD(DAY, @dias, CAST(SYSDATETIME() AS DATE))
+      ORDER BY d.FechaVencimiento ASC
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: r.recordset });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/dpf', async (req, res) => {
+  let pool;
+  const { estado, busqueda, desde, hasta } = req.query;
+  try {
+    pool = await sql.connect(sqlConfig);
+    let where = 'WHERE 1=1';
+    const request = pool.request();
+    if (estado)   { where += ' AND d.Estado=@estado';   request.input('estado', sql.NVarChar(20), estado); }
+    if (busqueda) { where += ' AND (d.Identificacion LIKE @bus OR d.NombreSocio LIKE @bus OR d.DepositoID LIKE @bus)'; request.input('bus', sql.NVarChar(100), `%${busqueda}%`); }
+    if (desde)    { where += ' AND CAST(d.FechaApertura AS DATE)>=@desde'; request.input('desde', sql.Date, desde); }
+    if (hasta)    { where += ' AND CAST(d.FechaApertura AS DATE)<=@hasta'; request.input('hasta', sql.Date, hasta); }
+    const r = await request.query(`
+      SELECT d.DepositoID, d.Identificacion, d.NombreSocio, d.MontoCapital,
+             d.TasaNominalAnual, d.PlazosDias, d.InteresProyectado, d.RetencionProyectada,
+             d.InteresNetoProyectado, d.Estado, d.TipoRenovacion, d.ModalidadPago,
+             d.CuentaContableDPF, d.NumCertificado, d.NumeroRenovacion, d.UsuarioAperturaID,
+             d.InteresLiquidado, d.RetencionAplicada, d.InteresNetoLiquidado, d.PenalizacionAplicada,
+             CONVERT(NVARCHAR(10), d.FechaApertura,   103) AS FechaApertura,
+             CONVERT(NVARCHAR(10), d.FechaVencimiento, 103) AS FechaVencimiento,
+             CONVERT(NVARCHAR(10), d.FechaLiquidacion, 103) AS FechaLiquidacion,
+             DATEDIFF(DAY, CAST(SYSDATETIME() AS DATE), CAST(d.FechaVencimiento AS DATE)) AS DiasRestantes,
+             t.DescripcionRango, t.PorcentajePenalizacion
+      FROM dbo.DepositosPlazo d
+      INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID = t.TasaID
+      ${where}
+      ORDER BY d.FechaCreacion DESC
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: r.recordset });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/dpf/:id', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const dpf = await pool.request().input('id', sql.NVarChar(20), req.params.id).query(`
+      SELECT d.*, t.DescripcionRango, t.PorcentajePenalizacion,
+             CONVERT(NVARCHAR(10), d.FechaApertura,   103) AS FechaAperturaFmt,
+             CONVERT(NVARCHAR(10), d.FechaVencimiento,103) AS FechaVencimientoFmt,
+             CONVERT(NVARCHAR(10), d.FechaLiquidacion,103) AS FechaLiquidacionFmt,
+             DATEDIFF(DAY, CAST(SYSDATETIME() AS DATE), CAST(d.FechaVencimiento AS DATE)) AS DiasRestantes
+      FROM dbo.DepositosPlazo d INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID=t.TasaID
+      WHERE d.DepositoID=@id
+    `);
+    if (dpf.recordset.length === 0) { await pool.close(); return res.status(404).json({ ok: false, error: 'DPF no encontrado.' }); }
+    const asientos = await pool.request().input('id', sql.NVarChar(20), req.params.id).query(`
+      SELECT AsientoID, TipoOperacion, CuentaContable, NombreCuenta,
+             DebeAmount, HaberAmount, Concepto, UsuarioID,
+             CONVERT(NVARCHAR(19), FechaAsiento, 120) AS FechaAsiento
+      FROM dbo.AsientosContablesDPF WHERE DepositoID=@id ORDER BY AsientoID ASC
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: dpf.recordset[0], asientos: asientos.recordset });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/dpf', async (req, res) => {
+  let pool;
+  const { socioid, identificacion, nombreSocio, tasaID, montoCapital, plazosDias,
+          tipoRenovacion, modalidadPago, cuentaAhorrosRelacionada, observaciones, usuarioID } = req.body;
+  try {
+    if (!socioid || !identificacion || !montoCapital || !plazosDias || !tasaID)
+      return res.status(400).json({ ok: false, error: 'Campos obligatorios: socioid, identificacion, montoCapital, plazosDias, tasaID.' });
+    if (parseFloat(montoCapital) <= 0) return res.status(400).json({ ok: false, error: 'Monto debe ser mayor a cero.' });
+    if (parseInt(plazosDias) < 1) return res.status(400).json({ ok: false, error: 'Plazo mínimo 1 día.' });
+    pool = await sql.connect(sqlConfig);
+    const tasaRow = await pool.request().input('tid', sql.Int, tasaID)
+      .query('SELECT * FROM dbo.TasasPlazoFijo WHERE TasaID=@tid AND Activo=1');
+    if (tasaRow.recordset.length === 0) { await pool.close(); return res.status(400).json({ ok: false, error: 'Tramo de tasa no válido.' }); }
+    const tasa = tasaRow.recordset[0];
+    const monto = parseFloat(montoCapital), dias = parseInt(plazosDias);
+    if (monto < parseFloat(tasa.MontoMinimo)) return res.status(400).json({ ok: false, error: `Monto mínimo para este tramo: $${tasa.MontoMinimo}.` });
+    if (tasa.MontoMaximo && monto > parseFloat(tasa.MontoMaximo)) return res.status(400).json({ ok: false, error: `Monto máximo: $${tasa.MontoMaximo}.` });
+    if (dias < tasa.DiasDesde || (tasa.DiasHasta < 9999 && dias > tasa.DiasHasta))
+      return res.status(400).json({ ok: false, error: `Plazo debe ser entre ${tasa.DiasDesde} y ${tasa.DiasHasta} días.` });
+    const tna = parseFloat(tasa.TasaNominalAnual);
+    const interesProyectado     = monto * (tna / 100) * (dias / 365);
+    const retencionProyectada   = interesProyectado * 0.02;
+    const interesNetoProyectado = interesProyectado - retencionProyectada;
+    const fechaVencimiento = new Date();
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + dias);
+    const idResult = await pool.request().execute('dbo.usp_GenerarIDDepositoPlazo');
+    const depositoID = idResult.output.NuevoID;
+    await pool.request()
+      .input('depositoID',             sql.NVarChar(20),  depositoID)
+      .input('socioid',                sql.BigInt,         socioid)
+      .input('identificacion',         sql.NVarChar(20),  identificacion)
+      .input('nombreSocio',            sql.NVarChar(200), nombreSocio)
+      .input('tasaID',                 sql.Int,           tasaID)
+      .input('tasaNominalAnual',       sql.Decimal(5,2),  tna)
+      .input('plazosDias',             sql.Int,           dias)
+      .input('montoCapital',           sql.Decimal(15,2), monto)
+      .input('interesProyectado',      sql.Decimal(15,2), interesProyectado)
+      .input('retencionProyectada',    sql.Decimal(15,2), retencionProyectada)
+      .input('interesNetoProyectado',  sql.Decimal(15,2), interesNetoProyectado)
+      .input('fechaVencimiento',       sql.DateTime2,     fechaVencimiento)
+      .input('tipoRenovacion',         sql.NVarChar(20),  tipoRenovacion  || 'NO_RENOVAR')
+      .input('modalidadPago',          sql.NVarChar(20),  modalidadPago   || 'AL_VENCIMIENTO')
+      .input('cuentaAhorros',          sql.NVarChar(20),  cuentaAhorrosRelacionada || null)
+      .input('cuentaContableDPF',      sql.NVarChar(10),  tasa.CuentaContableDPF)
+      .input('usuarioAperturaID',      sql.NVarChar(50),  usuarioID || 'SISTEMA')
+      .input('observaciones',          sql.NVarChar(500), observaciones || null)
+      .query(`INSERT INTO dbo.DepositosPlazo
+                (DepositoID,SOCIOID,Identificacion,NombreSocio,NumCertificado,TasaID,TasaNominalAnual,PlazosDias,MontoCapital,
+                 InteresProyectado,RetencionProyectada,InteresNetoProyectado,FechaVencimiento,TipoRenovacion,ModalidadPago,
+                 CuentaAhorrosRelacionada,CuentaContableDPF,UsuarioAperturaID,Observaciones)
+              VALUES(@depositoID,@socioid,@identificacion,@nombreSocio,@depositoID,@tasaID,@tasaNominalAnual,@plazosDias,@montoCapital,
+                     @interesProyectado,@retencionProyectada,@interesNetoProyectado,@fechaVencimiento,@tipoRenovacion,@modalidadPago,
+                     @cuentaAhorros,@cuentaContableDPF,@usuarioAperturaID,@observaciones)`);
+    const asApertura = [
+      { cuenta: '2.1.01.05', nombre: 'Depósitos Ahorro Vista (Débito Apertura DPF)', debe: monto,    haber: 0 },
+      { cuenta: tasa.CuentaContableDPF, nombre: `Depósitos a Plazo — ${tasa.DescripcionRango}`, debe: 0, haber: monto }
+    ];
+    for (const a of asApertura) {
+      await pool.request()
+        .input('depositoID', sql.NVarChar(20), depositoID).input('tipoOp', sql.NVarChar(30), 'APERTURA')
+        .input('cuenta', sql.NVarChar(15), a.cuenta).input('nombre', sql.NVarChar(120), a.nombre)
+        .input('debe', sql.Decimal(15,2), a.debe).input('haber', sql.Decimal(15,2), a.haber)
+        .input('concepto', sql.NVarChar(300), `APERTURA DPF ${depositoID} - ${nombreSocio}`)
+        .input('usuarioID', sql.NVarChar(50), usuarioID || 'SISTEMA')
+        .query(`INSERT INTO dbo.AsientosContablesDPF (DepositoID,TipoOperacion,CuentaContable,NombreCuenta,DebeAmount,HaberAmount,Concepto,UsuarioID) VALUES(@depositoID,@tipoOp,@cuenta,@nombre,@debe,@haber,@concepto,@usuarioID)`);
+    }
+    await pool.close();
+    return res.status(201).json({
+      ok: true, depositoID, numCertificado: depositoID,
+      interesProyectado:     parseFloat(interesProyectado.toFixed(2)),
+      retencionProyectada:   parseFloat(retencionProyectada.toFixed(2)),
+      interesNetoProyectado: parseFloat(interesNetoProyectado.toFixed(2)),
+      fechaVencimiento: fechaVencimiento.toISOString().split('T')[0],
+      message: `DPF aperturado. Certificado: ${depositoID}`
+    });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[dpf-apertura]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/dpf/:id/liquidar', async (req, res) => {
+  let pool;
+  const { usuarioID } = req.body;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const dpfRow = await pool.request().input('id', sql.NVarChar(20), req.params.id).query(`
+      SELECT d.*, t.DescripcionRango FROM dbo.DepositosPlazo d INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID=t.TasaID WHERE d.DepositoID=@id
+    `);
+    if (dpfRow.recordset.length === 0) { await pool.close(); return res.status(404).json({ ok: false, error: 'DPF no encontrado.' }); }
+    const dpf = dpfRow.recordset[0];
+    if (!['ACTIVO','VENCIDO'].includes(dpf.Estado)) return res.status(400).json({ ok: false, error: `No se puede liquidar DPF en estado ${dpf.Estado}.` });
+    const interesLiquidado    = parseFloat(dpf.MontoCapital) * (parseFloat(dpf.TasaNominalAnual) / 100) * (dpf.PlazosDias / 365);
+    const retencionAplicada   = interesLiquidado * 0.02;
+    const interesNetoLiquidado = interesLiquidado - retencionAplicada;
+    await pool.request()
+      .input('id', sql.NVarChar(20), req.params.id).input('iL', sql.Decimal(15,2), interesLiquidado)
+      .input('rA', sql.Decimal(15,2), retencionAplicada).input('iN', sql.Decimal(15,2), interesNetoLiquidado)
+      .input('uL', sql.NVarChar(50), usuarioID || 'SISTEMA')
+      .query(`UPDATE dbo.DepositosPlazo SET Estado='LIQUIDADO',FechaLiquidacion=SYSDATETIME(),InteresLiquidado=@iL,RetencionAplicada=@rA,InteresNetoLiquidado=@iN,PenalizacionAplicada=0,UsuarioLiquidacionID=@uL,FechaModificacion=SYSDATETIME() WHERE DepositoID=@id`);
+    const capital = parseFloat(dpf.MontoCapital);
+    const asLiq = [
+      { cuenta: dpf.CuentaContableDPF, nombre: `Depósitos a Plazo (${dpf.DescripcionRango})`, debe: capital,            haber: 0 },
+      { cuenta: '4.1.03.05',           nombre: 'Intereses Causados DPF',                        debe: interesLiquidado,   haber: 0 },
+      { cuenta: '2.1.01.05',           nombre: 'Ahorro Vista — Capital + Interés Neto',          debe: 0,                 haber: capital + interesNetoLiquidado },
+      { cuenta: '2.5.03.05',           nombre: 'Retención Rendimientos Financieros 2% (LORTI)', debe: 0,                 haber: retencionAplicada }
+    ];
+    for (const a of asLiq) {
+      await pool.request()
+        .input('depositoID', sql.NVarChar(20), req.params.id).input('tipoOp', sql.NVarChar(30), 'LIQUIDACION')
+        .input('cuenta', sql.NVarChar(15), a.cuenta).input('nombre', sql.NVarChar(120), a.nombre)
+        .input('debe', sql.Decimal(15,2), a.debe).input('haber', sql.Decimal(15,2), a.haber)
+        .input('concepto', sql.NVarChar(300), `LIQUIDACIÓN DPF ${req.params.id} - ${dpf.NombreSocio}`)
+        .input('usuarioID', sql.NVarChar(50), usuarioID || 'SISTEMA')
+        .query(`INSERT INTO dbo.AsientosContablesDPF (DepositoID,TipoOperacion,CuentaContable,NombreCuenta,DebeAmount,HaberAmount,Concepto,UsuarioID) VALUES(@depositoID,@tipoOp,@cuenta,@nombre,@debe,@haber,@concepto,@usuarioID)`);
+    }
+    await pool.close();
+    return res.json({ ok: true, interesLiquidado: parseFloat(interesLiquidado.toFixed(2)), retencionAplicada: parseFloat(retencionAplicada.toFixed(2)), interesNetoLiquidado: parseFloat(interesNetoLiquidado.toFixed(2)), totalAcreditado: parseFloat((capital + interesNetoLiquidado).toFixed(2)), message: `DPF ${req.params.id} liquidado.` });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[dpf-liquidar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/dpf/:id/cancelar', async (req, res) => {
+  let pool;
+  const { usuarioID, motivo } = req.body;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const dpfRow = await pool.request().input('id', sql.NVarChar(20), req.params.id).query(`
+      SELECT d.*, t.PorcentajePenalizacion, t.DescripcionRango FROM dbo.DepositosPlazo d INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID=t.TasaID WHERE d.DepositoID=@id
+    `);
+    if (dpfRow.recordset.length === 0) { await pool.close(); return res.status(404).json({ ok: false, error: 'DPF no encontrado.' }); }
+    const dpf = dpfRow.recordset[0];
+    if (dpf.Estado !== 'ACTIVO') return res.status(400).json({ ok: false, error: `Solo se cancelan DPFs ACTIVOS. Estado: ${dpf.Estado}.` });
+    const hoy = new Date(), apertura = new Date(dpf.FechaApertura);
+    const diasTranscurridos = Math.max(0, Math.floor((hoy - apertura) / 86400000));
+    const interesBruto   = parseFloat(dpf.MontoCapital) * (parseFloat(dpf.TasaNominalAnual) / 100) * (diasTranscurridos / 365);
+    const penalizacion   = interesBruto * (parseFloat(dpf.PorcentajePenalizacion) / 100);
+    const interesNeto    = Math.max(0, interesBruto - penalizacion);
+    const retencion      = interesNeto * 0.02;
+    const interesNetoFinal = interesNeto - retencion;
+    await pool.request()
+      .input('id', sql.NVarChar(20), req.params.id).input('iL', sql.Decimal(15,2), interesNeto)
+      .input('rA', sql.Decimal(15,2), retencion).input('iNF', sql.Decimal(15,2), interesNetoFinal)
+      .input('pen', sql.Decimal(15,2), penalizacion).input('mot', sql.NVarChar(400), motivo || 'Cancelación anticipada solicitada por el socio.')
+      .input('uL', sql.NVarChar(50), usuarioID || 'SISTEMA')
+      .query(`UPDATE dbo.DepositosPlazo SET Estado='CANCELADO',FechaLiquidacion=SYSDATETIME(),InteresLiquidado=@iL,RetencionAplicada=@rA,InteresNetoLiquidado=@iNF,PenalizacionAplicada=@pen,MotivosCancelacion=@mot,UsuarioLiquidacionID=@uL,FechaModificacion=SYSDATETIME() WHERE DepositoID=@id`);
+    const capital = parseFloat(dpf.MontoCapital);
+    const asCan = [
+      { cuenta: dpf.CuentaContableDPF, nombre: `Depósitos a Plazo (${dpf.DescripcionRango})`,   debe: capital,        haber: 0 },
+      { cuenta: '4.1.03.05',           nombre: 'Intereses Causados (Cancelación Anticipada)',     debe: interesNeto,    haber: 0 },
+      { cuenta: '2.1.01.05',           nombre: 'Ahorro Vista — Devolución Neta',                  debe: 0,             haber: capital + interesNetoFinal },
+      { cuenta: '2.5.03.05',           nombre: 'Retención 2% Rendimientos Financieros',           debe: 0,             haber: retencion },
+      { cuenta: '5.4.90.90',           nombre: 'Penalización por Cancelación Anticipada DPF',     debe: 0,             haber: penalizacion }
+    ];
+    for (const a of asCan) {
+      await pool.request()
+        .input('depositoID', sql.NVarChar(20), req.params.id).input('tipoOp', sql.NVarChar(30), 'CANCELACION_ANTICIPADA')
+        .input('cuenta', sql.NVarChar(15), a.cuenta).input('nombre', sql.NVarChar(120), a.nombre)
+        .input('debe', sql.Decimal(15,2), a.debe).input('haber', sql.Decimal(15,2), a.haber)
+        .input('concepto', sql.NVarChar(300), `CANCELACIÓN ANTICIPADA ${req.params.id} - ${dpf.NombreSocio}`)
+        .input('usuarioID', sql.NVarChar(50), usuarioID || 'SISTEMA')
+        .query(`INSERT INTO dbo.AsientosContablesDPF (DepositoID,TipoOperacion,CuentaContable,NombreCuenta,DebeAmount,HaberAmount,Concepto,UsuarioID) VALUES(@depositoID,@tipoOp,@cuenta,@nombre,@debe,@haber,@concepto,@usuarioID)`);
+    }
+    await pool.close();
+    return res.json({ ok: true, diasTranscurridos, interesAcumuladoBruto: parseFloat(interesBruto.toFixed(2)), penalizacionAplicada: parseFloat(penalizacion.toFixed(2)), interesNetoFinal: parseFloat(interesNetoFinal.toFixed(2)), retencionAplicada: parseFloat(retencion.toFixed(2)), totalDevuelto: parseFloat((capital + interesNetoFinal).toFixed(2)), message: `DPF cancelado anticipadamente.` });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[dpf-cancelar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/dpf/:id/renovar', async (req, res) => {
+  let pool;
+  const { tasaID, plazosDias, usuarioID, tipoRenovacion } = req.body;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const dpfRow = await pool.request().input('id', sql.NVarChar(20), req.params.id).query(`
+      SELECT d.*, t.DescripcionRango FROM dbo.DepositosPlazo d INNER JOIN dbo.TasasPlazoFijo t ON d.TasaID=t.TasaID WHERE d.DepositoID=@id
+    `);
+    if (dpfRow.recordset.length === 0) { await pool.close(); return res.status(404).json({ ok: false, error: 'DPF no encontrado.' }); }
+    const dpf = dpfRow.recordset[0];
+    if (!['ACTIVO','VENCIDO'].includes(dpf.Estado)) return res.status(400).json({ ok: false, error: `Solo se renuevan DPFs ACTIVOS o VENCIDOS.` });
+    const interesLiq   = parseFloat(dpf.MontoCapital) * (parseFloat(dpf.TasaNominalAnual) / 100) * (dpf.PlazosDias / 365);
+    const retenLiq     = interesLiq * 0.02;
+    const interesNetoLiq = interesLiq - retenLiq;
+    await pool.request()
+      .input('id', sql.NVarChar(20), req.params.id).input('iL', sql.Decimal(15,2), interesLiq)
+      .input('rA', sql.Decimal(15,2), retenLiq).input('iN', sql.Decimal(15,2), interesNetoLiq).input('uL', sql.NVarChar(50), usuarioID || 'SISTEMA')
+      .query(`UPDATE dbo.DepositosPlazo SET Estado='RENOVADO',FechaLiquidacion=SYSDATETIME(),InteresLiquidado=@iL,RetencionAplicada=@rA,InteresNetoLiquidado=@iN,UsuarioLiquidacionID=@uL,FechaModificacion=SYSDATETIME() WHERE DepositoID=@id`);
+    const asRen = [
+      { cuenta: dpf.CuentaContableDPF, nombre: `Depósitos a Plazo (${dpf.DescripcionRango})`, debe: parseFloat(dpf.MontoCapital), haber: 0 },
+      { cuenta: '4.1.03.05',           nombre: 'Intereses Causados DPF — Renovación',          debe: interesLiq,                  haber: 0 },
+      { cuenta: '2.1.01.05',           nombre: 'Ahorro Vista — Interés Neto Renovación',        debe: 0,                          haber: interesNetoLiq },
+      { cuenta: '2.5.03.05',           nombre: 'Retención 2% Rendimientos',                     debe: 0,                          haber: retenLiq }
+    ];
+    for (const a of asRen) {
+      await pool.request()
+        .input('depositoID', sql.NVarChar(20), req.params.id).input('tipoOp', sql.NVarChar(30), 'RENOVACION')
+        .input('cuenta', sql.NVarChar(15), a.cuenta).input('nombre', sql.NVarChar(120), a.nombre)
+        .input('debe', sql.Decimal(15,2), a.debe).input('haber', sql.Decimal(15,2), a.haber)
+        .input('concepto', sql.NVarChar(300), `RENOVACIÓN DPF ${req.params.id}`)
+        .input('usuarioID', sql.NVarChar(50), usuarioID || 'SISTEMA')
+        .query(`INSERT INTO dbo.AsientosContablesDPF (DepositoID,TipoOperacion,CuentaContable,NombreCuenta,DebeAmount,HaberAmount,Concepto,UsuarioID) VALUES(@depositoID,@tipoOp,@cuenta,@nombre,@debe,@haber,@concepto,@usuarioID)`);
+    }
+    const nuevaTasaID  = tasaID || dpf.TasaID;
+    const nuevoPlazo   = parseInt(plazosDias) || dpf.PlazosDias;
+    const ntRow = await pool.request().input('tid', sql.Int, nuevaTasaID).query('SELECT * FROM dbo.TasasPlazoFijo WHERE TasaID=@tid AND Activo=1');
+    if (ntRow.recordset.length === 0) { await pool.close(); return res.status(400).json({ ok: false, error: 'Tramo de tasa para renovación no válido.' }); }
+    const nt = ntRow.recordset[0];
+    const nTNA = parseFloat(nt.TasaNominalAnual);
+    const nInt = parseFloat(dpf.MontoCapital) * (nTNA / 100) * (nuevoPlazo / 365);
+    const nRet = nInt * 0.02;
+    const nFechaVenc = new Date(); nFechaVenc.setDate(nFechaVenc.getDate() + nuevoPlazo);
+    const nuevoIDResult = await pool.request().execute('dbo.usp_GenerarIDDepositoPlazo');
+    const nuevoDepositoID = nuevoIDResult.output.NuevoID;
+    await pool.request()
+      .input('dID', sql.NVarChar(20), nuevoDepositoID).input('sID', sql.BigInt, dpf.SOCIOID)
+      .input('idf', sql.NVarChar(20), dpf.Identificacion).input('nom', sql.NVarChar(200), dpf.NombreSocio)
+      .input('tID', sql.Int, nuevaTasaID).input('tna', sql.Decimal(5,2), nTNA)
+      .input('pdias', sql.Int, nuevoPlazo).input('cap', sql.Decimal(15,2), parseFloat(dpf.MontoCapital))
+      .input('ip', sql.Decimal(15,2), nInt).input('rp', sql.Decimal(15,2), nRet).input('inp', sql.Decimal(15,2), nInt - nRet)
+      .input('fv', sql.DateTime2, nFechaVenc).input('tr', sql.NVarChar(20), tipoRenovacion || 'NO_RENOVAR')
+      .input('ca', sql.NVarChar(20), dpf.CuentaAhorrosRelacionada).input('cc', sql.NVarChar(10), nt.CuentaContableDPF)
+      .input('nr', sql.Int, (dpf.NumeroRenovacion || 0) + 1).input('dOrig', sql.NVarChar(20), req.params.id)
+      .input('uAp', sql.NVarChar(50), usuarioID || 'SISTEMA')
+      .query(`INSERT INTO dbo.DepositosPlazo (DepositoID,SOCIOID,Identificacion,NombreSocio,NumCertificado,TasaID,TasaNominalAnual,PlazosDias,MontoCapital,InteresProyectado,RetencionProyectada,InteresNetoProyectado,FechaVencimiento,TipoRenovacion,ModalidadPago,CuentaAhorrosRelacionada,CuentaContableDPF,NumeroRenovacion,DepositoOrigenID,UsuarioAperturaID) VALUES(@dID,@sID,@idf,@nom,@dID,@tID,@tna,@pdias,@cap,@ip,@rp,@inp,@fv,@tr,'AL_VENCIMIENTO',@ca,@cc,@nr,@dOrig,@uAp)`);
+    await pool.close();
+    return res.json({ ok: true, depositoIDAnterior: req.params.id, nuevoDepositoID, interesLiquidadoAnterior: parseFloat(interesNetoLiq.toFixed(2)), nuevoInteresProyectado: parseFloat((nInt - nRet).toFixed(2)), nuevaFechaVencimiento: nFechaVenc.toISOString().split('T')[0], message: `DPF renovado. Nuevo certificado: ${nuevoDepositoID}` });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[dpf-renovar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ─── 8. Iniciar servidor ──────────────────────────────────────────────────
 const PORT = parseInt(process.env.API_PORT || '8080', 10);
 app.listen(PORT, () => {
