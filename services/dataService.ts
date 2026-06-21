@@ -68,14 +68,19 @@ export class DataService {
       body: JSON.stringify(loan)
     });
   }
-
-  static async approveLoan(loanId: string, reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
+  static async approveLoan(
+    loanId: string, 
+    reason: string, 
+    usuarioId?: string, 
+    tipoAprobacion?: string, 
+    actaSesion?: string, 
+    proposedAmount?: number
+  ): Promise<{ ok: boolean, message?: string }> {
     return this.request<{ ok: boolean, message?: string }>('socios/loans/approve', {
       method: 'POST',
-      body: JSON.stringify({ ids: [loanId], reason, usuarioId })
+      body: JSON.stringify({ ids: [loanId], reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount })
     });
   }
-
   static async approveLoans(loanIds: string[], reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
     return this.request<{ ok: boolean, message?: string }>('socios/loans/approve', {
       method: 'POST',

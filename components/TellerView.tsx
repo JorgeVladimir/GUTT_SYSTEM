@@ -571,6 +571,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
   const [closeReportData, setCloseReportData] = useState<any>(null);
   const [showCloseReportModal, setShowCloseReportModal] = useState(false);
 
+  // Estados para excepción de cédula
+  const [idConExcepcion, setIdConExcepcion] = useState(false);
+  const [showDocUploadModal, setShowDocUploadModal] = useState(false);
+  const [imgFrontalBase64, setImgFrontalBase64] = useState('');
+  const [imgPosteriorBase64, setImgPosteriorBase64] = useState('');
+
   // Estado para Nuevo Socio (Estructura S01 Completa - Manual 28.0)
   const [newMember, setNewMember] = useState<Partial<User>>({
     id: '', 
@@ -707,6 +713,50 @@ export const TellerView: React.FC<TellerViewProps> = ({
     return age;
   }, [newMember.birthDate]);
 
+  const isFormValid = useMemo(() => {
+    // Basic fields validation
+    if (!(newMember.id || '').trim()) return false;
+    if (idStatus !== 'valid') return false;
+
+    if (!(newMember.firstName || '').trim()) return false;
+    if (!newMember.onlyOneName && !(newMember.middleName || '').trim()) return false;
+    
+    if (!(newMember.firstLastName || '').trim()) return false;
+    if (!newMember.onlyOneLastName && !(newMember.secondLastName || '').trim()) return false;
+
+    if (!(newMember.email || '').trim()) return false;
+    if (!(newMember.birthDate || '').trim()) return false;
+    
+    // Geographical residence fields
+    if (!(newMember.province || '').trim()) return false;
+    if (!(newMember.city || '').trim()) return false;
+    if (!(newMember.parish || '').trim()) return false;
+    if (!(newMember.address || '').trim()) return false;
+
+    // PIN check (must be modified and not default 1234)
+    const pinVal = (newMember.pin || '').trim();
+    if (pinVal.length !== 4) return false;
+    if (pinVal === '1234') return false;
+
+    // References validation - form has at least 2 references initialized
+    if (!newMember.references || newMember.references.length < 2) return false;
+    for (const ref of newMember.references) {
+      if (!ref.name?.trim() || !ref.phone?.trim()) return false;
+    }
+
+    // Exception documents check
+    if (idConExcepcion) {
+      if (!imgFrontalBase64 || !imgPosteriorBase64) return false;
+    }
+
+    // Age validation
+    if (personType === 'SOCIO' && calculatedAge !== null && calculatedAge < 18) {
+      return false;
+    }
+
+    return true;
+  }, [newMember, idStatus, idConExcepcion, imgFrontalBase64, imgPosteriorBase64, personType, calculatedAge]);
+
   useEffect(() => {
     const checkId = async () => {
       const idVal = (newMember.id || '').trim();
@@ -717,10 +767,18 @@ export const TellerView: React.FC<TellerViewProps> = ({
       }
       
       if (newMember.idType === 'CÉDULA') {
-        if (idVal.length !== 10 || !validateEcuadorianId(idVal)) {
-          setIdStatus('invalid');
-          setIdError('Cédula ecuatoriana inválida.');
-          return;
+        if (idConExcepcion) {
+          if (idVal.length !== 10) {
+            setIdStatus('invalid');
+            setIdError('La cédula debe tener exactamente 10 dígitos.');
+            return;
+          }
+        } else {
+          if (idVal.length !== 10 || !validateEcuadorianId(idVal)) {
+            setIdStatus('invalid');
+            setIdError('Cédula ecuatoriana inválida.');
+            return;
+          }
         }
       } else if (newMember.idType === 'RUC') {
         if (idVal.length !== 13) {
@@ -759,7 +817,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
     };
 
     checkId();
-  }, [newMember.id, newMember.idType]);
+  }, [newMember.id, newMember.idType, idConExcepcion]);
 
   useEffect(() => {
     const cId = (newMember.spouseId || '').trim();
@@ -1023,6 +1081,9 @@ export const TellerView: React.FC<TellerViewProps> = ({
     setHasChosenType(false);
     setSiguienteNumero('');
     setIdError('');
+    setIdConExcepcion(false);
+    setImgFrontalBase64('');
+    setImgPosteriorBase64('');
   };
 
   // Función para registrar socio en SQL Server
@@ -1098,7 +1159,10 @@ export const TellerView: React.FC<TellerViewProps> = ({
           profesion: newMember.profession,
           referenciasPersonales: newMember.references,
           cargasFamiliares: newMember.dependents,
-          usuarioRegistro: currentUserRole === UserRole.TELLER ? 'caja' : 'admin'
+          usuarioRegistro: currentUserRole === UserRole.TELLER ? 'caja' : 'admin',
+          idConExcepcion: idConExcepcion,
+          caraFrontal: idConExcepcion ? imgFrontalBase64 : null,
+          caraPosterior: idConExcepcion ? imgPosteriorBase64 : null
         })
       });
 
@@ -2142,6 +2206,45 @@ export const TellerView: React.FC<TellerViewProps> = ({
                       </div>
                     </div>
                     {idError && <p className="text-[10px] font-bold text-rose-500 mt-1 ml-1">{idError}</p>}
+                    {newMember.idType === 'CÉDULA' && (
+                      <div className="mt-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={idConExcepcion}
+                            onChange={e => {
+                              setIdConExcepcion(e.target.checked);
+                              if (e.target.checked) {
+                                setShowDocUploadModal(true);
+                              } else {
+                                setImgFrontalBase64('');
+                                setImgPosteriorBase64('');
+                              }
+                            }}
+                            className="rounded text-[#14532D] focus:ring-[#14532D] w-4 h-4"
+                          />
+                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-wider">
+                            CEDULAS REALES PERO NO VALIDAS
+                          </span>
+                        </label>
+                        {idConExcepcion && (
+                          <div className="flex flex-col gap-2 pt-1.5 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => setShowDocUploadModal(true)}
+                              className="w-full py-2 bg-[#14532D]/10 hover:bg-[#14532D]/20 text-[#14532D] text-[9px] font-black rounded-xl border border-[#14532D]/20 uppercase tracking-widest transition-all text-center"
+                            >
+                              {imgFrontalBase64 && imgPosteriorBase64 ? '✓ Ver Documentos Cargados' : '⚠️ Subir Fotos del Documento'}
+                            </button>
+                            {(!imgFrontalBase64 || !imgPosteriorBase64) && (
+                              <p className="text-[8px] font-bold text-rose-500 uppercase leading-none">
+                                * Debe subir ambas caras para poder registrar al socio.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Primer Nombre</label>
@@ -2219,12 +2322,22 @@ export const TellerView: React.FC<TellerViewProps> = ({
                     </select>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2"><Lock size={14}/> PIN Inicial</label>
-                    <div className="relative">
-                       <input required type={showPin ? "text" : "password"} maxLength={4} value={newMember.pin} onChange={e => setNewMember({...newMember, pin: e.target.value.replace(/\D/g, '')})} className="w-full pl-6 pr-12 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-center text-xl tracking-[0.3em]" />
-                       <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                    </div>
-                 </div>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2"><Lock size={14}/> PIN Inicial (Debe ser modificado)</label>
+                     <div className="relative">
+                        <input required type={showPin ? "text" : "password"} maxLength={4} value={newMember.pin} onChange={e => setNewMember({...newMember, pin: e.target.value.replace(/\D/g, '')})} className="w-full pl-6 pr-12 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-center text-xl tracking-[0.3em]" />
+                        <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                     </div>
+                     {newMember.pin === '1234' && (
+                       <p className="text-[9px] font-bold text-rose-500 mt-1 ml-1 uppercase">
+                         ⚠️ Debe modificar el PIN por defecto "1234" para habilitar el registro.
+                       </p>
+                     )}
+                     {newMember.pin && newMember.pin.length !== 4 && (
+                       <p className="text-[9px] font-bold text-rose-500 mt-1 ml-1 uppercase">
+                         ⚠️ El PIN debe tener exactamente 4 dígitos.
+                       </p>
+                     )}
+                  </div>
               </div>
             </div>
 
@@ -2658,7 +2771,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={idStatus === 'invalid' || isSaving || (personType === 'SOCIO' && calculatedAge !== null && calculatedAge < 18)}
+                disabled={!isFormValid || isSaving}
                 className="flex-1 py-7 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSaving ? (
@@ -3245,6 +3358,152 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDocUploadModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 max-w-2xl w-full overflow-hidden animate-in zoom-in-95 duration-200 font-sans">
+            {/* Modal Header */}
+            <div className="bg-slate-50 border-b p-6 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <ImageIcon size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">Cédula por Excepción Legal</h4>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                    Carga obligatoria de ambas caras del documento de identidad
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  if (!imgFrontalBase64 || !imgPosteriorBase64) {
+                    setIdConExcepcion(false);
+                    setImgFrontalBase64('');
+                    setImgPosteriorBase64('');
+                  }
+                  setShowDocUploadModal(false);
+                }} 
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-8 space-y-6">
+              <p className="text-xs font-bold text-slate-500 leading-relaxed">
+                Según la normativa, para registrar un socio con una cédula que no supera la validación estándar, debe adjuntar una captura legible de ambas caras del documento físico original.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Cara Frontal */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">CARA FRONTAL</label>
+                  {imgFrontalBase64 ? (
+                    <div className="relative h-48 rounded-2xl overflow-hidden border-2 border-blue-500 shadow-md group">
+                      <img src={imgFrontalBase64} alt="Cédula Frontal" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setImgFrontalBase64('')}
+                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="h-48 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-blue-50/20">
+                      <Plus size={24} className="text-slate-400 mb-1" />
+                      <span className="text-[9px] font-black uppercase text-slate-500">Subir Cara Frontal</span>
+                      <span className="text-[8px] text-slate-400 mt-1">Haga clic para seleccionar</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setImgFrontalBase64(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }} 
+                        className="hidden" 
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Cara Posterior */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">CARA POSTERIOR</label>
+                  {imgPosteriorBase64 ? (
+                    <div className="relative h-48 rounded-2xl overflow-hidden border-2 border-blue-500 shadow-md group">
+                      <img src={imgPosteriorBase64} alt="Cédula Posterior" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setImgPosteriorBase64('')}
+                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="h-48 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-blue-50/20">
+                      <Plus size={24} className="text-slate-400 mb-1" />
+                      <span className="text-[9px] font-black uppercase text-slate-500">Subir Cara Posterior</span>
+                      <span className="text-[8px] text-slate-400 mt-1">Haga clic para seleccionar</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setImgPosteriorBase64(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }} 
+                        className="hidden" 
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 bg-slate-50 border-t flex gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIdConExcepcion(false);
+                  setImgFrontalBase64('');
+                  setImgPosteriorBase64('');
+                  setShowDocUploadModal(false);
+                }}
+                className="flex-1 py-3 bg-slate-200 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!imgFrontalBase64 || !imgPosteriorBase64}
+                onClick={() => {
+                  setShowDocUploadModal(false);
+                }}
+                className="flex-1 py-3 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-50 hover:bg-emerald-800 transition-colors"
+              >
+                Aceptar y Confirmar
+              </button>
+            </div>
           </div>
         </div>
       )}

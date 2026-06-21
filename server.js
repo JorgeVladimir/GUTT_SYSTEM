@@ -51,9 +51,10 @@ const sqlConfig = {
 
 if (process.env.SQL_SERVER_PORT) {
   sqlConfig.port = parseInt(process.env.SQL_SERVER_PORT, 10);
-}
-if (process.env.SQL_SERVER_INSTANCE) {
+} else if (process.env.SQL_SERVER_INSTANCE) {
   sqlConfig.options.instanceName = process.env.SQL_SERVER_INSTANCE;
+} else {
+  sqlConfig.port = 1433;
 }
 
 // ─── 2. Express + cors ────────────────────────────────────────────────────
@@ -400,7 +401,10 @@ app.post('/api/socios/registrar', async (req, res) => {
     referenciasPersonales,
     cargasFamiliares,
     usuarioRegistro,
-    emailConfirmado
+    emailConfirmado,
+    idConExcepcion,
+    caraFrontal,
+    caraPosterior
   } = req.body || {};
 
   if (!identificacion || !primerNombre || !primerApellido || !pin || !email) {
@@ -483,6 +487,38 @@ app.post('/api/socios/registrar', async (req, res) => {
         INSERT INTO dbo.ActivacionBancaLinea (SocioId, PIN, CodigoVerificacion, FechaRegistro, AceptoDatosPersonales, Activo)
         VALUES (@SocioId, @PIN, @CodigoVerificacion, SYSDATETIME(), 0, 0)
       `);
+
+    // Guardar imágenes de la excepción de cédula si aplica
+    if (idConExcepcion) {
+      let rutaCaraFrontal = null;
+      let rutaCaraPosterior = null;
+
+      if (caraFrontal) {
+        const base64Data = caraFrontal.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const filename = `cedula_frontal_${socioId}.png`;
+        writeFileSync(join(uploadsDir, filename), buffer);
+        rutaCaraFrontal = `/uploads/${filename}`;
+      }
+
+      if (caraPosterior) {
+        const base64Data = caraPosterior.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const filename = `cedula_posterior_${socioId}.png`;
+        writeFileSync(join(uploadsDir, filename), buffer);
+        rutaCaraPosterior = `/uploads/${filename}`;
+      }
+
+      await pool.request()
+        .input('SocioId', sql.BigInt, socioId)
+        .input('Identificacion', sql.NVarChar(20), identificacion)
+        .input('RutaCaraFrontal', sql.NVarChar(250), rutaCaraFrontal)
+        .input('RutaCaraPosterior', sql.NVarChar(250), rutaCaraPosterior)
+        .query(`
+          INSERT INTO dbo.SocioDocumentoExcepcion (SOCIOID, Identificacion, RutaCaraFrontal, RutaCaraPosterior, FechaRegistro)
+          VALUES (@SocioId, @Identificacion, @RutaCaraFrontal, @RutaCaraPosterior, SYSDATETIME())
+        `);
+    }
 
     await pool.close();
 
@@ -708,7 +744,7 @@ app.get('/api/socios/rates', async (req, res) => {
 // ── POST /api/socios/loans ───────────────────────────────────────────────────
 app.post('/api/socios/loans', async (req, res) => {
   const { id, memberId, amount, balance, rate, installmentsCount, type, status, startDate, dueDate, installments, garantiaInfo, origen } = req.body || {};
-  if (!id || !memberId || !amount || !rate || !installmentsCount) {
+  if (!memberId || !amount || !rate || !installmentsCount) {
     return res.status(400).json({ ok: false, error: 'Datos de crédito incompletos' });
   }
 
@@ -761,8 +797,40 @@ app.post('/api/socios/loans', async (req, res) => {
       }
     }
 
+    // 3. Generar Código de Solicitud Autoincremental relacionado con SocioID
+    const countRes = await pool.request()
+      .input('socioId', sql.BigInt, socio.SOCIOID)
+      .query('SELECT COUNT(*) as count FROM dbo.SolicitudesCredito WHERE SocioID = @socioId');
+    const nextNum = (countRes.recordset[0].count || 0) + 1;
+    const autoSolicitudId = `SOL-${socio.SOCIOID}-${String(nextNum).padStart(3, '0')}`;
+
+    // 4. Mapear campos de Garantía Prendaria si aplica
+    let tipoPrenda = null;
+    let avaluoPrendario = null;
+    let observacionTecnicaPrenda = null;
+    let valorCobertura = null;
+
+    if (garantiaInfo && garantiaInfo.tipo === 'PRENDARIA') {
+      const pr = garantiaInfo.prendaria || {};
+      tipoPrenda = pr.tipoPrenda || 'Otros';
+      
+      const rawAvaluo = pr.avaluo !== undefined ? pr.avaluo : garantiaInfo.avaluoMonto;
+      const parsedAvaluo = parseFloat(rawAvaluo);
+      
+      if (isNaN(parsedAvaluo) || parsedAvaluo < 0) {
+        return res.status(400).json({ ok: false, error: 'El valor de la prenda (avaluo) no puede ser negativo o inconsistente.' });
+      }
+      
+      avaluoPrendario = parsedAvaluo;
+      observacionTecnicaPrenda = pr.observacion || pr.descripcion || '';
+      const numAmount = parseFloat(amount);
+      if (numAmount > 0) {
+        valorCobertura = parseFloat(((avaluoPrendario / numAmount) * 100).toFixed(2));
+      }
+    }
+
     await pool.request()
-      .input('id', sql.NVarChar(50), id)
+      .input('id', sql.NVarChar(50), autoSolicitudId)
       .input('socioId', sql.BigInt, socio.SOCIOID)
       .input('memberId', sql.NVarChar(20), memberId)
       .input('amount', sql.Decimal(15,2), amount)
@@ -774,13 +842,25 @@ app.post('/api/socios/loans', async (req, res) => {
       .input('dueDate', sql.NVarChar(50), dueDate)
       .input('installments', sql.NVarChar(sql.MAX), JSON.stringify(installments))
       .input('garantiaInfo', sql.NVarChar(sql.MAX), garantiaInfo ? JSON.stringify(garantiaInfo) : null)
-      .input('origen', sql.NVarChar(20), origen || 'GUTT_MOVIL')
+      .input('origen', sql.NVarChar(20), origen || 'CAJA_PATATE')
+      .input('tipoPrenda', sql.NVarChar(100), tipoPrenda)
+      .input('avaluoPrendario', sql.Decimal(15,2), avaluoPrendario)
+      .input('observacionTecnicaPrenda', sql.NVarChar(500), observacionTecnicaPrenda)
+      .input('valorCobertura', sql.Decimal(10,2), valorCobertura)
       .query(`
-        INSERT INTO dbo.SolicitudesCredito (SolicitudID, SocioID, Identificacion, Monto, Saldo, Tasa, Plazo, Tipo, Estado, FechaSolicitud, FechaVencimiento, PlanPagos, GarantiaInfo, Origen)
-        VALUES (@id, @socioId, @memberId, @amount, @balance, @rate, @installmentsCount, @type, @status, SYSDATETIME(), @dueDate, @installments, @garantiaInfo, @origen)
+        INSERT INTO dbo.SolicitudesCredito (
+          SolicitudID, SocioID, Identificacion, Monto, Saldo, Tasa, Plazo, Tipo, Estado, 
+          FechaSolicitud, FechaVencimiento, PlanPagos, GarantiaInfo, Origen, 
+          TipoPrenda, AvaluoPrendario, ObservacionTecnicaPrenda, ValorCobertura
+        )
+        VALUES (
+          @id, @socioId, @memberId, @amount, @balance, @rate, @installmentsCount, @type, @status, 
+          SYSDATETIME(), @dueDate, @installments, @garantiaInfo, @origen, 
+          @tipoPrenda, @avaluoPrendario, @observacionTecnicaPrenda, @valorCobertura
+        )
       `);
 
-    return res.json({ ok: true, message: 'Solicitud de crédito registrada con éxito' });
+    return res.json({ ok: true, message: 'Solicitud de crédito registrada con éxito', solicitudId: autoSolicitudId });
   } catch (err) {
     console.error('[create loan]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
@@ -823,8 +903,9 @@ app.post('/api/socios/loans/update', async (req, res) => {
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
+
 app.post('/api/socios/loans/approve', async (req, res) => {
-  const { id, ids, reason, usuarioId } = req.body || {};
+  const { id, ids, reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount } = req.body || {};
   const targetIds = Array.isArray(ids) ? ids : (id ? [id] : []);
   if (targetIds.length === 0 || !reason) {
     return res.status(400).json({ ok: false, error: 'ids y dictamen técnico son requeridos' });
@@ -854,7 +935,7 @@ app.post('/api/socios/loans/approve', async (req, res) => {
         // 1. Obtener la solicitud de crédito
         const checkRes = await transaction.request()
           .input('id', sql.NVarChar(50), loanId)
-          .query('SELECT Identificacion, Monto, Plazo, Estado FROM dbo.SolicitudesCredito WHERE SolicitudID = @id');
+          .query('SELECT Identificacion, Monto, Plazo, Tasa, Estado FROM dbo.SolicitudesCredito WHERE SolicitudID = @id');
 
         if (checkRes.recordset.length === 0) {
           throw new Error(`Solicitud de crédito ${loanId} no encontrada`);
@@ -872,14 +953,57 @@ app.post('/api/socios/loans/approve', async (req, res) => {
           throw new Error(`Límite Excedido: El Jefe de Crédito solo puede aprobar montos de hasta $50,000.00 USD. La solicitud ${loanId} de $${loanAmount.toFixed(2)} USD requiere aprobación de un Administrador.`);
         }
 
-        // 2. Actualizar estado del crédito a APROBADO (no realiza desembolso)
+        let finalAmount = loanAmount;
+        let newPlanPagos = null;
+
+        // Si se define un monto menor (Análisis de Sensibilidad)
+        if (proposedAmount && parseFloat(proposedAmount) < loanAmount) {
+          finalAmount = parseFloat(proposedAmount);
+          const rateVal = parseFloat(loan.Tasa);
+          const termVal = parseInt(loan.Plazo, 10);
+          const r = (rateVal / 100) / 12;
+          const n = termVal;
+          const monthlyPayment = finalAmount * (r / (1 - Math.pow(1 + r, -n)));
+          let balance = finalAmount;
+          const newInstallments = [];
+          for (let i = 1; i <= n; i++) {
+            const interest = balance * r;
+            const capital = monthlyPayment - interest;
+            balance -= capital;
+            newInstallments.push({
+              number: i,
+              date: `Mes ${i}`,
+              capital: Math.max(0, parseFloat(capital.toFixed(2))),
+              interest: Math.max(0, parseFloat(interest.toFixed(2))),
+              total: parseFloat(monthlyPayment.toFixed(2)),
+              status: 'PENDIENTE'
+            });
+          }
+          newPlanPagos = JSON.stringify(newInstallments);
+        }
+
+        // 2. Actualizar estado del crédito a APROBADO, tipo de aprobación, acta y monto propuesto
         await transaction.request()
           .input('id', sql.NVarChar(50), loanId)
           .input('reason', sql.NVarChar(500), reason)
-          .query("UPDATE dbo.SolicitudesCredito SET Estado = 'APROBADO', Observaciones = @reason WHERE SolicitudID = @id");
+          .input('tipoAprobacion', sql.NVarChar(50), tipoAprobacion || 'ASESOR')
+          .input('actaSesion', sql.NVarChar(100), actaSesion || null)
+          .input('monto', sql.Decimal(15, 2), finalAmount)
+          .input('newPlanPagos', sql.NVarChar(sql.MAX), newPlanPagos)
+          .query(`
+            UPDATE dbo.SolicitudesCredito 
+            SET Estado = 'APROBADO', 
+                Observaciones = @reason,
+                TipoAprobacion = @tipoAprobacion,
+                ActaSesion = @actaSesion,
+                Monto = @monto,
+                Saldo = @monto,
+                PlanPagos = COALESCE(@newPlanPagos, PlanPagos)
+            WHERE SolicitudID = @id
+          `);
 
         // 3. Registrar en auditoría
-        const auditDetail = `Aprobación de solicitud de crédito ${loanId} por $${loanAmount.toFixed(2)} USD. Dictamen: ${reason}. Aprobado por: ${approverId} (${approverRole})`;
+        const auditDetail = `Aprobación de crédito ${loanId} ($${finalAmount.toFixed(2)} USD, Tipo: ${tipoAprobacion || 'ASESOR'}${actaSesion ? `, Acta: ${actaSesion}` : ''}). Dictamen: ${reason}. Aprobado por: ${approverId}`;
         await transaction.request()
           .input('usuarioId', sql.NVarChar(20), approverId)
           .input('concepto', sql.NVarChar(100), 'Aprobación de Crédito')
@@ -935,7 +1059,7 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
         // 1. Obtener la solicitud de crédito en estado APROBADO
         const checkRes = await transaction.request()
           .input('id', sql.NVarChar(50), loanId)
-          .query('SELECT Identificacion, Monto, Plazo, Estado FROM dbo.SolicitudesCredito WHERE SolicitudID = @id');
+          .query('SELECT Identificacion, Monto, Plazo, Tasa, Estado, PlanPagos, Origen, SocioID, TipoPrenda, AvaluoPrendario, ObservacionTecnicaPrenda, ValorCobertura, TipoAprobacion, ActaSesion, Tipo FROM dbo.SolicitudesCredito WHERE SolicitudID = @id');
 
         if (checkRes.recordset.length === 0) {
           throw new Error('Solicitud de crédito no encontrada');
@@ -947,11 +1071,14 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
         }
 
         const loanAmount = parseFloat(loan.Monto);
+        const plazoVal = parseInt(loan.Plazo, 10);
+        const rateVal = parseFloat(loan.Tasa);
 
-        // 2. Calcular descuentos iniciales
-        const comision = parseFloat((loanAmount * 0.01).toFixed(2)); // 1.0% Comisión
-        const fondo = parseFloat((loanAmount * 0.005).toFixed(2));   // 0.5% Fondo Irrepartible
-        const totalDescuentos = parseFloat((comision + fondo).toFixed(2));
+        // 2. Calcular descuentos iniciales contables (SEPS)
+        const comision = parseFloat((loanAmount * 0.01).toFixed(2));       // 1.0% Comisión
+        const fondo = parseFloat((loanAmount * 0.005).toFixed(2));         // 0.5% Fondo Irrepartible
+        const solca = parseFloat((loanAmount * 0.005).toFixed(2));         // 0.5% Retención SOLCA (Contribución Ley SOLCA)
+        const totalDescuentos = parseFloat((comision + fondo + solca).toFixed(2));
         const netoDisbursed = parseFloat((loanAmount - totalDescuentos).toFixed(2));
 
         // 3. Obtener la cuenta de ahorros del socio
@@ -978,17 +1105,128 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('nuevoSaldo', sql.Decimal(18, 2), newBalance)
           .query('UPDATE dbo.CuentasAhorro SET Saldo = @nuevoSaldo WHERE CuentaId = @cuentaId');
 
-        // 5. Actualizar estado del crédito y guardar detalle de descuentos
-        const descuentosObj = { comision, fondo, totalDescuentos, netoDisbursed };
+        // 5. Insertar el registro formal en dbo.Creditos
+        const disburseDate = new Date();
+        const dueDate = new Date();
+        dueDate.setMonth(dueDate.getMonth() + plazoVal);
+        const dueDateStr = dueDate.toISOString().split('T')[0];
+
+        await transaction.request()
+          .input('creditoId', sql.NVarChar(50), loanId)
+          .input('solicitudId', sql.NVarChar(50), loanId)
+          .input('socioId', sql.BigInt, loan.SocioID)
+          .input('monto', sql.Decimal(15, 2), loanAmount)
+          .input('saldo', sql.Decimal(15, 2), loanAmount)
+          .input('tasa', sql.Decimal(5, 2), rateVal)
+          .input('plazo', sql.Int, plazoVal)
+          .input('tipo', sql.NVarChar(100), loan.Tipo)
+          .input('estado', sql.NVarChar(30), 'VIGENTE')
+          .input('fechaVencimiento', sql.NVarChar(50), dueDateStr)
+          .input('tipoAprobacion', sql.NVarChar(50), loan.TipoAprobacion)
+          .input('actaSesion', sql.NVarChar(100), loan.ActaSesion)
+          .input('tipoPrenda', sql.NVarChar(100), loan.TipoPrenda)
+          .input('avaluoPrendario', sql.Decimal(15,2), loan.AvaluoPrendario)
+          .input('observacionTecnicaPrenda', sql.NVarChar(500), loan.ObservacionTecnicaPrenda)
+          .input('valorCobertura', sql.Decimal(10,2), loan.ValorCobertura)
+          .query(`
+            INSERT INTO dbo.Creditos (
+              CreditoID, SolicitudID, SocioID, Monto, Saldo, Tasa, Plazo, Tipo, Estado, 
+              FechaDesembolso, FechaVencimiento, TipoAprobacion, ActaSesion, 
+              TipoPrenda, AvaluoPrendario, ObservacionTecnicaPrenda, ValorCobertura
+            )
+            VALUES (
+              @creditoId, @solicitudId, @socioId, @monto, @saldo, @tasa, @plazo, @tipo, @estado, 
+              SYSDATETIME(), @fechaVencimiento, @tipoAprobacion, @actaSesion, 
+              @tipoPrenda, @avaluoPrendario, @observacionTecnicaPrenda, @valorCobertura
+            )
+          `);
+
+        // 6. Generar e Insertar Tabla de Amortización Relacional y Rubros
+        const planPagosText = loan.PlanPagos;
+        const planSimulado = planPagosText ? JSON.parse(planPagosText) : [];
+        const newPlan = [];
+        let runningBalance = loanAmount;
+
+        for (const inst of planSimulado) {
+          const cuotaDate = new Date(disburseDate);
+          cuotaDate.setMonth(cuotaDate.getMonth() + inst.number);
+          const cuotaDateStr = cuotaDate.toISOString().split('T')[0];
+
+          const capital = parseFloat(inst.capital);
+          const interest = parseFloat(inst.interest);
+          
+          // Seguro de desgravamen: 0.08% mensual sobre saldo capital
+          const seguroDesgravamen = parseFloat((runningBalance * 0.0008).toFixed(2));
+          // SOLCA: 0.5% del monto total dividido entre plazo cuotas
+          const solcaRubro = parseFloat(((loanAmount * 0.005) / plazoVal).toFixed(2));
+          // Gastos Administrativos: 1.50 USD fijos por cuota
+          const gastosAdmin = 1.50;
+          const installmentTotal = parseFloat((capital + interest + seguroDesgravamen + solcaRubro + gastosAdmin).toFixed(2));
+
+          // Restar capital para el saldo de la siguiente cuota
+          runningBalance = Math.max(0, runningBalance - capital);
+
+          const amortRes = await transaction.request()
+            .input('creditoId', sql.NVarChar(50), loanId)
+            .input('numeroCuota', sql.Int, inst.number)
+            .input('fechaPago', sql.NVarChar(50), cuotaDateStr)
+            .input('capital', sql.Decimal(15, 2), capital)
+            .input('interes', sql.Decimal(15, 2), interest)
+            .input('seguroDesgravamen', sql.Decimal(15, 2), seguroDesgravamen)
+            .input('contribucionSOLCA', sql.Decimal(15, 2), solcaRubro)
+            .input('gastosAdministrativos', sql.Decimal(15, 2), gastosAdmin)
+            .input('total', sql.Decimal(15, 2), installmentTotal)
+            .query(`
+              INSERT INTO dbo.TablaDeAmortizacion (CreditoID, NumeroCuota, FechaPago, Capital, Interes, SeguroDesgravamen, ContribucionSOLCA, GastosAdministrativos, Total, Estado)
+              VALUES (@creditoId, @numeroCuota, @fechaPago, @capital, @interes, @seguroDesgravamen, @contribucionSOLCA, @gastosAdministrativos, @total, 'PENDIENTE');
+              SELECT SCOPE_IDENTITY() AS id;
+            `);
+          
+          const amortId = amortRes.recordset[0].id;
+
+          // Guardar rubros detallados
+          const rubros = [
+            { nombre: 'Capital', monto: capital },
+            { nombre: 'Interes', monto: interest },
+            { nombre: 'Seguro de Desgravamen', monto: seguroDesgravamen },
+            { nombre: 'SOLCA', monto: solcaRubro },
+            { nombre: 'Gastos Administrativos', monto: gastosAdmin }
+          ];
+
+          for (const r of rubros) {
+            await transaction.request()
+              .input('amortizacionId', sql.Int, amortId)
+              .input('nombreRubro', sql.NVarChar(50), r.nombre)
+              .input('monto', sql.Decimal(15, 2), r.monto)
+              .query("INSERT INTO dbo.RubrosCreditos (AmortizacionID, NombreRubro, Monto, Estado) VALUES (@amortizacionId, @nombreRubro, @monto, 'PENDIENTE')");
+          }
+
+          newPlan.push({
+            number: inst.number,
+            date: cuotaDateStr,
+            capital,
+            interest,
+            seguroDesgravamen,
+            contribucionSOLCA: solcaRubro,
+            gastosAdministrativos: gastosAdmin,
+            total: installmentTotal,
+            status: 'PENDIENTE'
+          });
+        }
+
+        // 7. Actualizar SolicitudesCredito
+        const descuentosObj = { comision, fondo, solca, totalDescuentos, netoDisbursed };
         await transaction.request()
           .input('id', sql.NVarChar(50), loanId)
           .input('descuentos', sql.NVarChar(sql.MAX), JSON.stringify(descuentosObj))
-          .query("UPDATE dbo.SolicitudesCredito SET Estado = 'VIGENTE', FechaSolicitud = SYSDATETIME(), DescuentosDesembolso = @descuentos WHERE SolicitudID = @id");
+          .input('newPlan', sql.NVarChar(sql.MAX), JSON.stringify(newPlan))
+          .input('dueDate', sql.NVarChar(50), dueDateStr)
+          .query("UPDATE dbo.SolicitudesCredito SET Estado = 'VIGENTE', FechaSolicitud = SYSDATETIME(), FechaVencimiento = @dueDate, DescuentosDesembolso = @descuentos, PlanPagos = @newPlan WHERE SolicitudID = @id");
 
-        // 6. Partida Contable Contraloría SEPS (Desembolso con Descuentos)
+        // 8. Partida Contable Contraloría SEPS
         const concept = `DESEMBOLSO CRÉDITO ${loanId}`;
         
-        // Asiento 1: Debe en Cartera de Créditos Vigentes (1.2.01) por el capital completo solicitado
+        // Asiento 1: Debe en Cartera de Créditos Vigentes (1.2.01) por el capital completo solicitado (Activo)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
           .input('cuentaContable', sql.NVarChar(20), '1.2.01')
@@ -999,7 +1237,7 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('usuarioId', sql.NVarChar(50), approverId)
           .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
 
-        // Asiento 2: Haber en Depósitos de Ahorro del Socio por el neto desembolsado
+        // Asiento 2: Haber en Depósitos de Ahorro del Socio por el neto acreditado (Activo/Pasivo interno)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
           .input('cuentaContable', sql.NVarChar(20), account.CuentaActiva)
@@ -1010,7 +1248,7 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('usuarioId', sql.NVarChar(50), approverId)
           .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
 
-        // Asiento 3: Haber en Cuenta de Ingreso por Comisión (5.2.01)
+        // Asiento 3: Haber en Cuenta de Ingreso por Comisión (5.2.01) (Ingreso)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
           .input('cuentaContable', sql.NVarChar(20), '5.2.01')
@@ -1021,7 +1259,7 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('usuarioId', sql.NVarChar(50), approverId)
           .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
 
-        // Asiento 4: Haber en Fondo Irrepartible de Reserva (3.2.01)
+        // Asiento 4: Haber en Fondo Irrepartible de Reserva (3.2.01) (Patrimonio)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
           .input('cuentaContable', sql.NVarChar(20), '3.2.01')
@@ -1032,8 +1270,19 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('usuarioId', sql.NVarChar(50), approverId)
           .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
 
-        // 7. Registrar en auditoría
-        const auditDetail = `Desembolso de fondos de crédito ${loanId} por $${loanAmount.toFixed(2)} USD (Neto: $${netoDisbursed.toFixed(2)} USD, Comisión: $${comision.toFixed(2)} USD, Fondo: $${fondo.toFixed(2)} USD). Desembolsado por: ${approverId} (${approverRole})`;
+        // Asiento 5: Haber en Retenciones por Pagar Ley SOLCA (2.5.04) (Pasivo)
+        await transaction.request()
+          .input('socioId', sql.BigInt, account.SocioId)
+          .input('cuentaContable', sql.NVarChar(20), '2.5.04')
+          .input('concepto', sql.NVarChar(200), `RETENCIÓN SOLCA CRÉDITO ${loanId}`)
+          .input('debe', sql.Decimal(18, 2), 0.00)
+          .input('haber', sql.Decimal(18, 2), solca)
+          .input('numeroCuenta', sql.NVarChar(20), account.NumeroCuenta)
+          .input('usuarioId', sql.NVarChar(50), approverId)
+          .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
+
+        // 9. Registrar en auditoría
+        const auditDetail = `Desembolso de fondos de crédito ${loanId} por $${loanAmount.toFixed(2)} USD (Neto: $${netoDisbursed.toFixed(2)} USD, Comisión: $${comision.toFixed(2)} USD, Fondo: $${fondo.toFixed(2)} USD, SOLCA: $${solca.toFixed(2)} USD). Desembolsado por: ${approverId} (${approverRole})`;
         await transaction.request()
           .input('usuarioId', sql.NVarChar(20), approverId)
           .input('concepto', sql.NVarChar(100), 'Desembolso de Crédito')
@@ -1051,6 +1300,155 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
     return res.json({ ok: true, successes, failures });
   } catch (err) {
     console.error('[disburse loan]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/socios/:id/scoring ──────────────────────────────────────────────
+app.get('/api/socios/:id/scoring', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const pool = await sql.connect(sqlConfig);
+    
+    // 1. Obtener socio y patrimonio
+    const socioRes = await pool.request()
+      .input('id', sql.NVarChar(50), id)
+      .query("SELECT SOCIOID, Identificacion, PrimerNombre, Apellidos, PatrimonioIngresos, ValorVivienda FROM dbo.RegistroSocios WHERE Identificacion = @id OR CAST(SOCIOID AS VARCHAR) = @id");
+    
+    if (socioRes.recordset.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Socio no encontrado' });
+    }
+    
+    const socio = socioRes.recordset[0];
+    const pat = socio.PatrimonioIngresos ? JSON.parse(socio.PatrimonioIngresos) : {};
+    const valorVivienda = parseFloat(socio.ValorVivienda) || 0;
+    
+    // 2. Obtener créditos de SolicitudesCredito
+    const loansRes = await pool.request()
+      .input('socioId', sql.BigInt, socio.SOCIOID)
+      .query("SELECT SolicitudID, Monto, Saldo, Tasa, Plazo, Estado, PlanPagos FROM dbo.SolicitudesCredito WHERE SocioID = @socioId");
+    
+    const loans = loansRes.recordset;
+    
+    // Algoritmo de scoring
+    let score = 200; // Puntaje inicial
+    
+    let totalLoans = loans.length;
+    let paidLoansNoMora = 0;
+    let totalInstallments = 0;
+    let lateInstallments = 0;
+    let totalDelayDays = 0;
+    
+    for (const loan of loans) {
+      const plan = loan.PlanPagos ? JSON.parse(loan.PlanPagos) : [];
+      let hasMora = false;
+      
+      for (const inst of plan) {
+        totalInstallments++;
+        const due = inst.date ? new Date(inst.date) : null;
+        
+        if (inst.status === 'PAGADO') {
+          if (inst.paidDate && due) {
+            const paid = new Date(inst.paidDate);
+            const delay = Math.max(0, Math.floor((paid - due) / (1000 * 60 * 60 * 24)));
+            if (delay > 3) {
+              hasMora = true;
+              totalDelayDays += delay;
+              lateInstallments++;
+              score -= (delay - 3) * 5; // penalización de puntualidad
+            } else {
+              score += 2; // incentivo de puntualidad
+            }
+          } else {
+            score += 2;
+          }
+        } else if (inst.status === 'PENDIENTE') {
+          if (due && new Date() > due) {
+            const delay = Math.max(0, Math.floor((new Date() - due) / (1000 * 60 * 60 * 24)));
+            if (delay > 3) {
+              hasMora = true;
+              totalDelayDays += delay;
+              lateInstallments++;
+              score -= (delay - 3) * 5;
+            }
+          }
+        }
+      }
+      
+      if (loan.Estado === 'PAGADO' && !hasMora) {
+        paidLoansNoMora++;
+        score += 50; // +50 por cada crédito liquidado sin mora
+      }
+    }
+    
+    // 3. Variables de Buró Real
+    const ingresoSueldo = parseFloat(pat.ingresoSueldo) || 0;
+    const ingresoComercial = parseFloat(pat.ingresoComercial) || 0;
+    const ingresoOtros = parseFloat(pat.ingresoOtros) || 0;
+    const ingresosTotales = ingresoSueldo + ingresoComercial + ingresoOtros;
+    
+    const gastosMensuales = parseFloat(pat.gastosMensuales) || (ingresosTotales * 0.4);
+    const deudasExternas = parseFloat(pat.deudasExternas) || 0;
+    const capacidadPago = ingresosTotales - gastosMensuales - deudasExternas;
+    
+    // Ajuste por capacidad de pago
+    if (capacidadPago > 500) {
+      score += Math.min(150, Math.floor(capacidadPago / 10));
+    } else if (capacidadPago < 0) {
+      score -= Math.min(100, Math.floor(Math.abs(capacidadPago) / 5));
+    }
+    
+    // Morosidad promedio
+    const avgDelayDays = lateInstallments > 0 ? (totalDelayDays / lateInstallments) : 0;
+    score -= Math.min(150, Math.floor(avgDelayDays * 10));
+    
+    // Patrimonio (bienes / deuda)
+    const totalBienes = valorVivienda + (parseFloat(pat.totalBienes) || (valorVivienda * 0.2) || 5000);
+    const activeLocalDebt = loans.filter(l => l.Estado === 'VIGENTE' || l.Estado === 'VENCIDO').reduce((sum, l) => sum + parseFloat(l.Saldo), 0);
+    const deudaTotal = deudasExternas + activeLocalDebt;
+    const relacionBienesDeuda = deudaTotal > 0 ? (totalBienes / deudaTotal) : 3.0;
+    
+    if (relacionBienesDeuda > 1.5) {
+      score += 100;
+    } else if (relacionBienesDeuda < 1.0) {
+      score -= 50;
+    }
+    
+    score = Math.max(0, Math.min(1000, score));
+    
+    let rating = 'REGULAR';
+    if (score >= 800) rating = 'EXCELENTE';
+    else if (score >= 600) rating = 'BUENO';
+    else if (score >= 400) rating = 'REGULAR';
+    else if (score >= 200) rating = 'MALO';
+    else rating = 'NEGADO';
+    
+    // Guardar el scoringScore calculado en la base de datos si tiene alguna solicitud activa
+    await pool.request()
+      .input('socioId', sql.BigInt, socio.SOCIOID)
+      .input('score', sql.Int, score)
+      .query('UPDATE dbo.SolicitudesCredito SET ScoringScore = @score WHERE SocioID = @socioId AND Estado = \'SOLICITADO\'');
+
+    const result = {
+      score,
+      rating,
+      lastUpdate: new Date().toISOString(),
+      totalLoans,
+      paidLoansNoMora,
+      delinquencyDays: totalDelayDays,
+      avgDelayDays,
+      capacidadPago,
+      ingresosTotales,
+      gastosMensuales,
+      deudasExternas,
+      totalBienes,
+      deudaTotal,
+      relacionBienesDeuda
+    };
+    
+    return res.json({ ok: true, data: result });
+  } catch (err) {
+    console.error('[get scoring]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
@@ -1619,10 +2017,13 @@ app.get('/api/socios/buscar', async (req, res) => {
             rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
             rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
             sm.RutaImagen AS RutaImagenMapa,
-            ct.RutaImagen AS RutaImagenCroquis
+            ct.RutaImagen AS RutaImagenCroquis,
+            ex.RutaCaraFrontal AS RutaCaraFrontal,
+            ex.RutaCaraPosterior AS RutaCaraPosterior
           FROM dbo.RegistroSocios rs
           LEFT JOIN dbo.SocioUbicacionMapa sm ON sm.SOCIOID = rs.SOCIOID
           LEFT JOIN dbo.SocioCroquisTrabajo ct ON ct.SOCIOID = rs.SOCIOID
+          LEFT JOIN dbo.SocioDocumentoExcepcion ex ON ex.SOCIOID = rs.SOCIOID
           WHERE (rs.Identificacion = @exactQ OR rs.NumeroSocio = @exactQ OR rs.Apellidos LIKE @q OR rs.PrimerNombre LIKE @q)
             AND rs.Estado = 'ACTIVO'
         `);
@@ -1635,10 +2036,13 @@ app.get('/api/socios/buscar', async (req, res) => {
             rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
             rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
             sm.RutaImagen AS RutaImagenMapa,
-            ct.RutaImagen AS RutaImagenCroquis
+            ct.RutaImagen AS RutaImagenCroquis,
+            ex.RutaCaraFrontal AS RutaCaraFrontal,
+            ex.RutaCaraPosterior AS RutaCaraPosterior
           FROM dbo.RegistroSocios rs
           LEFT JOIN dbo.SocioUbicacionMapa sm ON sm.SOCIOID = rs.SOCIOID
           LEFT JOIN dbo.SocioCroquisTrabajo ct ON ct.SOCIOID = rs.SOCIOID
+          LEFT JOIN dbo.SocioDocumentoExcepcion ex ON ex.SOCIOID = rs.SOCIOID
           WHERE rs.Estado = 'ACTIVO'
         `);
     }
@@ -1736,6 +2140,8 @@ app.get('/api/socios/buscar', async (req, res) => {
         spousePhone: r.TelefonoConyuge || '',
         rutaImagenMapa: r.RutaImagenMapa || '',
         rutaImagenCroquis: r.RutaImagenCroquis || '',
+        rutaCaraFrontal: r.RutaCaraFrontal || '',
+        rutaCaraPosterior: r.RutaCaraPosterior || '',
         accounts: accountsResult.recordset,
         transactions: txsResult.recordset,
         loans: loans

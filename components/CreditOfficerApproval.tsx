@@ -31,7 +31,7 @@ interface CreditOfficerApprovalProps {
   users: User[];
   currentUser?: User;
   onUpdateUser: (user: User) => void;
-  onApprove: (loanId: string, memberId: string, reason: string) => void;
+  onApprove: (loanId: string, memberId: string, reason: string, tipoAprobacion?: string, actaSesion?: string, proposedAmount?: number) => void;
   onReject: (loanId: string, memberId: string, reason: string) => void;
   activeTab?: 'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA';
   onActiveTabChange?: (tab: 'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA') => void;
@@ -98,8 +98,16 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
   const [newLoanDpfValor, setNewLoanDpfValor] = useState('');
   const [newLoanGrupoNombre, setNewLoanGrupoNombre] = useState('');
   const [newLoanGrupoIntegrantes, setNewLoanGrupoIntegrantes] = useState('');
-
-  // Estados para operaciones en lote
+  const [newLoanPrendariaType, setNewLoanPrendariaType] = useState('Vehículo');
+  const [newLoanPrendariaObservation, setNewLoanPrendariaObservation] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showPostSubmitModal, setShowPostSubmitModal] = useState(false);
+  const [submittedLoanDetails, setSubmittedLoanDetails] = useState<{ id: string, amount: number, term: number, rate: number, category: string } | null>(null);
+  const [approvalType, setApprovalType] = useState<'ASESOR' | 'COMITE'>('ASESOR');
+  const [actaSesion, setActaSesion] = useState('');
+  const [proposedSensitivityAmount, setProposedSensitivityAmount] = useState('');
+  const [bureauScoreData, setBureauScoreData] = useState<any>(null);
+  const [isLoadingBureauScore, setIsLoadingBureauScore] = useState(false);  // Estados para operaciones en lote
   const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
   const [selectedApprovedIds, setSelectedApprovedIds] = useState<string[]>([]);
   const [bulkReason, setBulkReason] = useState('');
@@ -325,6 +333,101 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     return { monthlyPayment, totalInterest: (monthlyPayment * n) - p, totalPayable: monthlyPayment * n, installments };
   }, [numNewLoanAmount, isNewLoanAmountValid, newLoanTerm, selectedRate, customRate, config]);
 
+  // Fetch Bureau Score when selectedLoan changes
+  useEffect(() => {
+    if (selectedLoan) {
+      const fetchBureauScore = async () => {
+        setIsLoadingBureauScore(true);
+        try {
+          const res = await fetch(`/api/socios/${selectedLoan.member.id}/scoring`);
+          const data = await res.json();
+          if (data.ok) {
+            setBureauScoreData(data.data);
+          } else {
+            setBureauScoreData(null);
+          }
+        } catch (err) {
+          console.error("Error fetching bureau score:", err);
+          setBureauScoreData(null);
+        } finally {
+          setIsLoadingBureauScore(false);
+        }
+      };
+      fetchBureauScore();
+      setProposedSensitivityAmount(selectedLoan.loan.amount.toString());
+      setApprovalType('ASESOR');
+      setActaSesion('');
+    } else {
+      setBureauScoreData(null);
+    }
+  }, [selectedLoan]);
+
+  // Recalculate simulation for sensitivity analysis
+  const sensitivitySimulation = useMemo(() => {
+    if (!selectedLoan || !proposedSensitivityAmount) return null;
+    const loanAmount = parseFloat(proposedSensitivityAmount);
+    if (isNaN(loanAmount) || loanAmount <= 0) return null;
+    
+    const rateVal = selectedLoan.loan.rate;
+    const plazoVal = selectedLoan.loan.installmentsCount;
+    const r = (rateVal / 100) / 12;
+    const n = plazoVal;
+    const monthlyPayment = loanAmount * (r / (1 - Math.pow(1 + r, -n)));
+    
+    let balance = loanAmount;
+    const installments = [];
+    let runningBalance = loanAmount;
+    let totalCapital = 0;
+    let totalInterest = 0;
+    let totalSeguro = 0;
+    let totalSolca = 0;
+    let totalGastos = 0;
+    let totalPayable = 0;
+
+    for (let i = 1; i <= n; i++) {
+      const interest = balance * r;
+      const capital = monthlyPayment - interest;
+      balance -= capital;
+      
+      const seguroDesgravamen = parseFloat((runningBalance * 0.0008).toFixed(2));
+      const solcaRubro = parseFloat(((loanAmount * 0.005) / n).toFixed(2));
+      const gastosAdmin = 1.50;
+      const total = parseFloat((capital + interest + seguroDesgravamen + solcaRubro + gastosAdmin).toFixed(2));
+      
+      totalCapital += capital;
+      totalInterest += interest;
+      totalSeguro += seguroDesgravamen;
+      totalSolca += solcaRubro;
+      totalGastos += gastosAdmin;
+      totalPayable += total;
+
+      installments.push({
+        number: i,
+        date: `Mes ${i}`,
+        capital: Math.max(0, capital),
+        interest: Math.max(0, interest),
+        seguroDesgravamen,
+        contribucionSOLCA: solcaRubro,
+        gastosAdministrativos: gastosAdmin,
+        total
+      });
+
+      runningBalance = Math.max(0, runningBalance - capital);
+    }
+
+    return {
+      monthlyPayment,
+      totalCapital,
+      totalInterest,
+      totalSeguro,
+      totalSolca,
+      totalGastos,
+      totalPayable,
+      installments
+    };
+  }, [selectedLoan, proposedSensitivityAmount]);
+
+
   const pendingLoans = useMemo(() => users.flatMap(u => 
     (u.loans || []).filter(l => l.status === 'SOLICITADO').map(l => ({ loan: l, member: u }))
   ), [users]);
@@ -384,18 +487,31 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         if (currentUserRole === UserRole.MANAGER && loanAmount > 50000.00) {
           return alert(`Límite Excedido: Como Jefe de Crédito, su límite de aprobación es de $50,000.00 USD. Esta operación de $${loanAmount.toFixed(2)} USD requiere ser aprobada por un Administrador.`);
         }
+        if (approvalType === 'COMITE' && !actaSesion.trim()) {
+          return alert("El número de Acta de Sesión es obligatorio para la aprobación por Comité.");
+        }
       }
 
       if (window.confirm(isApproval ? "¿CONFIRMA la aprobación de la solicitud?" : "¿RECHAZA esta solicitud?")) {
         setIsProcessing(true);
         try {
           if (isApproval) {
-            onApprove(selectedLoan.loan.id, selectedLoan.member.id, reasonText);
+            onApprove(
+              selectedLoan.loan.id, 
+              selectedLoan.member.id, 
+              reasonText, 
+              approvalType, 
+              actaSesion.trim(), 
+              proposedSensitivityAmount ? parseFloat(proposedSensitivityAmount) : undefined
+            );
           } else {
             onReject(selectedLoan.loan.id, selectedLoan.member.id, reasonText);
           }
           setSelectedLoan(null);
           setOfficerReason('');
+          setApprovalType('ASESOR');
+          setActaSesion('');
+          setProposedSensitivityAmount('');
         } catch (err) {
           console.error(err);
         } finally {
@@ -520,12 +636,65 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     }
   };
 
+  const handleExitClick = () => {
+    const isDirty = 
+      newLoanAmount.trim() !== '' || 
+      newLoanWarrantyType !== 'SOLIDARIA' ||
+      newLoanPrendariaValuation.trim() !== '' ||
+      newLoanPrendariaDescription.trim() !== '' ||
+      newLoanPrendariaObservation.trim() !== '' ||
+      newLoanSolidariaGuarantorName.trim() !== '' ||
+      newLoanSolidariaGuarantorId.trim() !== '' ||
+      newLoanHipotecariaInmueble.trim() !== '' ||
+      newLoanHipotecariaAvaluo.trim() !== '' ||
+      newLoanDpfNumero.trim() !== '' ||
+      newLoanDpfValor.trim() !== '' ||
+      newLoanGrupoNombre.trim() !== '';
+    if (isDirty) {
+      setShowExitConfirm(true);
+    } else {
+      setSelectedUserForLoan(null);
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setSelectedUserForLoan(null);
+    setNewLoanAmount('');
+    setMemberSearch('');
+    setNewLoanSolidariaGuarantorName('');
+    setNewLoanSolidariaGuarantorId('');
+    setNewLoanPrendariaValuation('');
+    setNewLoanPrendariaInsurance('');
+    setNewLoanPrendariaDescription('');
+    setNewLoanPrendariaObservation('');
+    setNewLoanHipotecariaInmueble('');
+    setNewLoanHipotecariaAvaluo('');
+    setNewLoanHipotecariaRegistro('');
+    setNewLoanDpfNumero('');
+    setNewLoanDpfValor('');
+    setNewLoanGrupoNombre('');
+    setNewLoanGrupoIntegrantes('');
+    setShowExitConfirm(false);
+  };
+
   // Advisor loan request creation
   const handleCreateLoanRequest = async () => {
     if (!selectedUserForLoan || !simulation || !selectedRate) return;
 
     if (memberCertBalance < 1.00) {
       return alert(`No se puede radicar crédito: El socio debe poseer al menos $1.00 USD en Certificados de Aportación. Saldo actual: $${memberCertBalance.toFixed(2)} USD.`);
+    }
+
+    if (newLoanWarrantyType === 'PRENDARIA') {
+      if (!newLoanPrendariaValuation.trim() || isNaN(parseFloat(newLoanPrendariaValuation)) || parseFloat(newLoanPrendariaValuation) <= 0) {
+        return alert("El Valor Comercial y Avalúo es obligatorio y debe ser mayor a 0 para Garantía Prendaria.");
+      }
+      if (!newLoanPrendariaDescription.trim()) {
+        return alert("La Descripción Detallada del bien prendado es obligatoria.");
+      }
+      if (!newLoanPrendariaObservation.trim()) {
+        return alert("La Observación Técnica (número de motor/chasis/estado) es obligatoria.");
+      }
     }
 
     const rateVal = parseFloat(customRate) || selectedRate.rate;
@@ -537,7 +706,13 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     const warrantyInfo = {
       tipo: newLoanWarrantyType,
       solidaria: newLoanWarrantyType === 'SOLIDARIA' ? { garanteNombre: newLoanSolidariaGuarantorName, garanteCedula: newLoanSolidariaGuarantorId } : null,
-      prendaria: newLoanWarrantyType === 'PRENDARIA' ? { descripcion: newLoanPrendariaDescription, avaluo: parseFloat(newLoanPrendariaValuation) || 0, aseguradora: newLoanPrendariaInsurance } : null,
+      prendaria: newLoanWarrantyType === 'PRENDARIA' ? { 
+        descripcion: newLoanPrendariaDescription, 
+        avaluo: parseFloat(newLoanPrendariaValuation) || 0, 
+        aseguradora: newLoanPrendariaInsurance,
+        tipoPrenda: newLoanPrendariaType,
+        observacion: newLoanPrendariaObservation
+      } : null,
       hipotecaria: newLoanWarrantyType === 'HIPOTECARIA' ? { inmueble: newLoanHipotecariaInmueble, avaluo: parseFloat(newLoanHipotecariaAvaluo) || 0, registro: newLoanHipotecariaRegistro } : null,
       depositoPlazo: newLoanWarrantyType === 'DEPOSITO_PLAZO' ? { dpfNumero: newLoanDpfNumero, dpfValor: parseFloat(newLoanDpfValor) || 0 } : null,
       grupoSolidario: newLoanWarrantyType === 'GRUPO_SOLIDARIO' ? { grupoNombre: newLoanGrupoNombre, integrantes: parseInt(newLoanGrupoIntegrantes) || 0 } : null
@@ -564,8 +739,17 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     try {
       const res = await DataService.applyLoan(newLoan);
       if (res.ok) {
-        alert("¡Solicitud de crédito creada e ingresada con éxito!");
+        // Guardar detalles del préstamo para el modal resumen
+        setSubmittedLoanDetails({
+          id: (res as any).solicitudId || newLoan.id,
+          amount: newLoan.amount,
+          term: newLoan.installmentsCount,
+          rate: newLoan.rate,
+          category: newLoan.type
+        });
         
+        setShowPostSubmitModal(true);
+
         // Clear the engram store
         const useRemoteApi = import.meta.env.VITE_USE_REMOTE_API === 'true';
         if (useRemoteApi) {
@@ -587,13 +771,6 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
         }
-        setSelectedUserForLoan(null);
-        setNewLoanAmount('');
-        setMemberSearch('');
-        setNewLoanSolidariaGuarantorName('');
-        setNewLoanSolidariaGuarantorId('');
-        setNewLoanPrendariaValuation('');
-        setNewLoanPrendariaInsurance('');
       } else {
         alert("Error al guardar solicitud: " + (res.message || ''));
       }
@@ -716,12 +893,446 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     }
   };
 
+  const handlePrintPagare = (loan: Loan, member: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return alert("Por favor permita las ventanas emergentes para imprimir.");
+    
+    // Generar la tabla de amortización detallada en HTML
+    let tableHtml = `
+      <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:11px; font-family:sans-serif;">
+        <thead>
+          <tr style="background-color:#14532D; color:white; font-weight:bold; text-transform:uppercase; font-size:9px;">
+            <th style="border:1px solid #ddd; padding:6px; text-align:center;">Cuota</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:center;">Vencimiento</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">Capital ($)</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">Interés ($)</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">Seg. Desgravamen ($)</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">SOLCA ($)</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">Gasto Adm ($)</th>
+            <th style="border:1px solid #ddd; padding:6px; text-align:right;">Total ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    let totalCapital = 0;
+    let totalInteres = 0;
+    let totalSeguro = 0;
+    let totalSolca = 0;
+    let totalGasto = 0;
+    let totalPagar = 0;
+
+    (loan.installments || []).forEach(inst => {
+      const cap = Number(inst.capital) || 0;
+      const int = Number(inst.interest) || 0;
+      const seg = Number((inst as any).seguroDesgravamen) || 0;
+      const sol = Number((inst as any).contribucionSOLCA) || 0;
+      const gas = Number((inst as any).gastosAdministrativos) || 0;
+      const tot = Number(inst.total) || 0;
+
+      totalCapital += cap;
+      totalInteres += int;
+      totalSeguro += seg;
+      totalSolca += sol;
+      totalGasto += gas;
+      totalPagar += tot;
+
+      tableHtml += `
+        <tr>
+          <td style="border:1px solid #ddd; padding:5px; text-align:center; font-weight:bold;">${inst.number}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:center;">${inst.date || 'N/A'}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${cap.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${int.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${seg.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${sol.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${gas.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right; font-weight:bold; color:#14532D;">$${tot.toFixed(2)}</td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `
+        <tr style="background-color:#f9f9f9; font-weight:bold;">
+          <td colspan="2" style="border:1px solid #ddd; padding:6px; text-align:center; text-transform:uppercase;">Total General</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalCapital.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalInteres.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalSeguro.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalSolca.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalGasto.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right; color:#14532D; font-size:12px;">$${totalPagar.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
+    `;
+
+    const warrantyText = loan.garantiaInfo?.tipo === 'PRENDARIA' 
+      ? `Garantía Prendaria sobre: ${loan.garantiaInfo.prendaria.tipoPrenda || ''} - ${loan.garantiaInfo.prendaria.descripcion || ''} (Valor Comercial/Avalúo: $${(loan.garantiaInfo.prendaria.avaluo || 0).toLocaleString()} USD, Observación Técnica: ${loan.garantiaInfo.prendaria.observacion || ''})`
+      : loan.garantiaInfo?.tipo === 'HIPOTECARIA'
+      ? `Garantía Hipotecaria sobre: ${loan.garantiaInfo.hipotecaria.inmueble || ''} (Avalúo: $${(loan.garantiaInfo.hipotecaria.avaluo || 0).toLocaleString()} USD)`
+      : `Garantía Personal / Solidaria con firma de Garante: ${loan.garantiaInfo?.solidaria?.garanteNombre || 'N/A'} (C.I. ${loan.garantiaInfo?.solidaria?.garanteCedula || 'N/A'})`;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Pagaré a la Orden - ${loan.id}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #333; line-height: 1.5; font-size: 11px; }
+            .header { text-align: center; border-bottom: 2px solid #14532D; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+            .header p { margin: 4px 0 0 0; font-size: 9px; font-weight: bold; color: #666; }
+            .title { text-align: center; font-size: 14px; font-weight: bold; text-transform: uppercase; margin: 20px 0 10px 0; color: #111; letter-spacing: 0.5px; }
+            .legal-text { text-align: justify; margin-bottom: 25px; text-indent: 30px; font-size: 11px; }
+            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px; color: #14532D; }
+            .signatures { margin-top: 50px; display: grid; grid-template-cols: 1fr 1fr; gap: 30px; text-align: center; font-size: 10px; }
+            .sig-box { border-top: 1px solid #333; margin-top: 45px; padding-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <p>SISTEMA DE CARTERA - FORMATO DE CONTRATO SEPS ECUADOR</p>
+          </div>
+          <div class="title">Pagaré a la Orden Nro. ${loan.id}</div>
+          <div class="legal-text">
+            Por el presente Pagaré a la Orden, yo, <strong>${member.name.toUpperCase()}</strong>, de nacionalidad ecuatoriana, con Cédula de Identidad Nro. <strong>${member.id}</strong>, en mi calidad de Deudor Principal, me obligo a pagar incondicionalmente a la orden de la <strong>COOPERATIVA DE AHORRO Y CRÉDITO CAJA PATATE LTDA.</strong>, en sus oficinas principales de la provincia de Tungurahua, la cantidad de <strong>$${loan.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong> (DÓLARES DE LOS ESTADOS UNIDOS DE AMÉRICA), más los intereses de financiamiento pactados a la tasa efectiva anual fija del <strong>${loan.rate}%</strong>, amortizable de acuerdo al calendario de pagos adjunto.
+          </div>
+          <div class="legal-text">
+            En caso de mora o retraso en el pago de una o más cuotas del dividendo mensual, la Cooperativa de Ahorro y Crédito Caja Patate Ltda. queda expresamente facultada para declarar vencido el plazo total de esta obligación y exigir el pago inmediato del saldo de capital restante, aplicando la tasa máxima de interés por mora regulada por la SEPS. Los gastos judiciales y extrajudiciales que demande el cobro de esta obligación serán de mi cuenta exclusiva. Declaro recibir los fondos a entera satisfacción y me someto a los jueces competentes de este cantón.
+          </div>
+          
+          <div class="section-title">Detalle de Garantía Constituida</div>
+          <div style="margin: 8px 0; font-size: 10px; font-weight: bold; color: #555;">
+            ${warrantyText}
+          </div>
+
+          <div class="section-title">Calendario de Amortización de Deuda</div>
+          ${tableHtml}
+
+          <div class="signatures">
+            <div>
+              <div class="sig-box">
+                <strong>Firma del Socio Deudor Principal</strong><br/>
+                Nombre: ${member.name.toUpperCase()}<br/>
+                C.I.: ${member.id}
+              </div>
+            </div>
+            <div>
+              <div class="sig-box">
+                <strong>${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? 'Firma de Codeudor Solidario (Garante)' : 'Firma de Representación / Legalización'}</strong><br/>
+                Nombre: ${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? (loan.garantiaInfo?.solidaria?.garanteNombre || '').toUpperCase() : 'COOPERATIVA CAJA PATATE'}<br/>
+                C.I. / R.U.C.: ${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? (loan.garantiaInfo?.solidaria?.garanteCedula || '') : '1891813608001'}
+              </div>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handlePrintDiario = (loan: Loan, member: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return alert("Por favor permita las ventanas emergentes para imprimir.");
+
+    const comision = loan.amount * 0.01;
+    const fondo = loan.amount * 0.005;
+    const solca = loan.amount * 0.005;
+    const totalDescuentos = comision + fondo + solca;
+    const netoDisbursed = loan.amount - totalDescuentos;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Diario Contable - ${loan.id}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 35px; color: #333; font-size: 11px; }
+            .header { border-bottom: 3px double #14532D; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
+            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; }
+            .header p { margin: 5px 0 0 0; font-size: 10px; font-weight: bold; color: #666; }
+            .meta-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
+            .meta-item span { display: block; font-size: 9px; color: #777; text-transform: uppercase; font-weight: bold; }
+            .meta-item strong { font-size: 11px; color: #111; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th { background-color: #14532D; color: white; text-transform: uppercase; font-size: 9px; border: 1px solid #ddd; padding: 8px; text-align: left; }
+            td { border: 1px solid #ddd; padding: 8px; font-size: 10px; }
+            .total-row { font-weight: bold; background-color: #f5f5f5; }
+            .signatures { margin-top: 60px; display: grid; grid-template-cols: 1fr 1fr 1fr; gap: 20px; text-align: center; font-size: 9px; }
+            .sig-box { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <p>COMPROBANTE DE DIARIO CONTABLE AUTOMÁTICO - REGISTRO DE CARTERA</p>
+          </div>
+          
+          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #14532D;">
+            ASIENTO DE DIARIO Nro: DSC-${loan.id}
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item"><span>Código de Operación</span><strong>${loan.id}</strong></div>
+            <div class="meta-item"><span>Socio / Cliente</span><strong>${member.name.toUpperCase()} (C.I. ${member.id})</strong></div>
+            <div class="meta-item"><span>Fecha Valor</span><strong>${loan.startDate || new Date().toLocaleDateString('es-EC')}</strong></div>
+            <div class="meta-item"><span>Línea / Producto</span><strong>${loan.type} (Tasa: ${loan.rate}% TEA)</strong></div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 15%;">Código Contable</th>
+                <th style="width: 55%;">Nombre de la Cuenta / Concepto</th>
+                <th style="width: 15%; text-align: right;">Debe ($)</th>
+                <th style="width: 15%; text-align: right;">Haber ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1.2.01</strong></td>
+                <td>
+                  <strong>CARTERA DE CRÉDITO VIGENTE - MICROCRÉDITO</strong><br/>
+                  <span style="color:#666; font-size:9px; font-style:italic;">Registro inicial de la colocación de capital - Operación ${loan.id}</span>
+                </td>
+                <td style="text-align: right; font-weight: bold;">$${loan.amount.toFixed(2)}</td>
+                <td style="text-align: right;">$0.00</td>
+              </tr>
+              <tr>
+                <td><strong>2.1.01.01</strong></td>
+                <td>
+                  <strong>DEPÓSITOS DE AHORRO SUCURSAL - VISTA</strong><br/>
+                  <span style="color:#666; font-size:9px; font-style:italic;">Acreditación de fondos netos desembolsados en cuenta de ahorros socio</span>
+                </td>
+                <td style="text-align: right;">$0.00</td>
+                <td style="text-align: right; font-weight: bold;">$${netoDisbursed.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td><strong>5.2.01</strong></td>
+                <td>
+                  <strong>INGRESOS POR COMISIONES DE SERVICIOS DE CRÉDITO</strong><br/>
+                  <span style="color:#666; font-size:9px; font-style:italic;">Retención 1.0% por concepto de gastos operativos de radicación</span>
+                </td>
+                <td style="text-align: right;">$0.00</td>
+                <td style="text-align: right; font-weight: bold;">$${comision.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td><strong>3.2.01</strong></td>
+                <td>
+                  <strong>FONDO DE RESERVA IRREPARTIBLE INSTITUCIONAL</strong><br/>
+                  <span style="color:#666; font-size:9px; font-style:italic;">Retención 0.5% destinado a fondo patrimonial obligatorio</span>
+                </td>
+                <td style="text-align: right;">$0.00</td>
+                <td style="text-align: right; font-weight: bold;">$${fondo.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td><strong>2.5.04</strong></td>
+                <td>
+                  <strong>RETENCIONES POR PAGAR LEY CONTRIBUCIÓN SOLCA</strong><br/>
+                  <span style="color:#666; font-size:9px; font-style:italic;">Retención 0.5% según normativa SEPS para contribución de salud contra el cáncer</span>
+                </td>
+                <td style="text-align: right;">$0.00</td>
+                <td style="text-align: right; font-weight: bold;">$${solca.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="2" style="text-align: center; text-transform: uppercase;">Sumas Iguales</td>
+                <td style="text-align: right; color:#14532D; font-size:11px;">$${loan.amount.toFixed(2)}</td>
+                <td style="text-align: right; color:#14532D; font-size:11px;">$${loan.amount.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 30px; font-size: 10px; font-weight: bold;">
+            GLOSA: Registro del desembolso de fondos correspondiente al crédito Nro. ${loan.id} del socio ${member.name.toUpperCase()} según resolución del departamento de crédito.
+          </div>
+
+          <div class="signatures">
+            <div>
+              <div class="sig-box">
+                <strong>Elaborado por:</strong><br/>
+                Asesor de Crédito
+              </div>
+            </div>
+            <div>
+              <div class="sig-box">
+                <strong>Revisado por:</strong><br/>
+                Contabilidad General
+              </div>
+            </div>
+            <div>
+              <div class="sig-box">
+                <strong>Autorizado por:</strong><br/>
+                Jefe de Crédito / Gerencia
+              </div>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handlePrintSolicitud = (loan: Loan, member: User) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return alert("Por favor permita las ventanas emergentes para imprimir.");
+
+    const warrantyInfo = loan.garantiaInfo || {} as any;
+    let warrantyDetailHtml = '';
+
+    if (warrantyInfo.tipo === 'PRENDARIA') {
+      const prendaria = warrantyInfo.prendaria || {};
+      warrantyDetailHtml = `
+        <div class="grid">
+          <div><span>Tipo de Prenda</span><strong>${prendaria.tipoPrenda || 'N/A'}</strong></div>
+          <div><span>Valor Comercial y Avalúo</span><strong>$${(prendaria.avaluo || 0).toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong></div>
+          <div><span>Descripción del Bien</span><strong>${prendaria.descripcion || 'N/A'}</strong></div>
+          <div><span>Observación Técnica (Motor/Chasis)</span><strong>${prendaria.observacion || 'N/A'}</strong></div>
+          <div><span>Compañía Aseguradora</span><strong>${prendaria.aseguradora || 'N/A'}</strong></div>
+          <div><span>Porcentaje de Cobertura</span><strong>${prendaria.avaluo && loan.amount ? ((prendaria.avaluo / loan.amount) * 100).toFixed(2) : '0.00'}%</strong></div>
+        </div>
+      `;
+    } else if (warrantyInfo.tipo === 'HIPOTECARIA') {
+      const hipo = warrantyInfo.hipotecaria || {};
+      warrantyDetailHtml = `
+        <div class="grid">
+          <div><span>Detalle Inmueble</span><strong>${hipo.inmueble || 'N/A'}</strong></div>
+          <div><span>Avalúo Comercial</span><strong>$${(hipo.avaluo || 0).toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong></div>
+          <div><span>Detalle Registro Propiedad</span><strong>${hipo.registro || 'N/A'}</strong></div>
+        </div>
+      `;
+    } else if (warrantyInfo.tipo === 'SOLIDARIA') {
+      const sol = warrantyInfo.solidaria || {};
+      warrantyDetailHtml = `
+        <div class="grid">
+          <div><span>Nombre Completo del Garante</span><strong>${sol.garanteNombre || 'N/A'}</strong></div>
+          <div><span>Cédula del Garante</span><strong>${sol.garanteCedula || 'N/A'}</strong></div>
+        </div>
+      `;
+    } else if (warrantyInfo.tipo === 'DEPOSITO_PLAZO') {
+      const dpf = warrantyInfo.depositoPlazo || {};
+      warrantyDetailHtml = `
+        <div class="grid">
+          <div><span>Número de Cuenta/DPF</span><strong>${dpf.dpfNumero || 'N/A'}</strong></div>
+          <div><span>Valor Pignorado</span><strong>$${(dpf.dpfValor || 0).toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong></div>
+        </div>
+      `;
+    } else if (warrantyInfo.tipo === 'GRUPO_SOLIDARIO') {
+      const grp = warrantyInfo.grupoSolidario || {};
+      warrantyDetailHtml = `
+        <div class="grid">
+          <div><span>Nombre de Grupo Solidario</span><strong>${grp.grupoNombre || 'N/A'}</strong></div>
+          <div><span>Número de Integrantes</span><strong>${grp.integrantes || '0'} personas</strong></div>
+        </div>
+      `;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Reimpresión Solicitud - ${loan.id}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 35px; color: #333; font-size: 11px; }
+            .header { border-bottom: 2px solid #14532D; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
+            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; }
+            .header p { margin: 5px 0 0 0; font-size: 10px; font-weight: bold; color: #666; }
+            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 25px; color: #14532D; }
+            .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 10px; }
+            .grid div span { display: block; font-size: 9px; color: #777; text-transform: uppercase; font-weight: bold; }
+            .grid div strong { font-size: 11px; color: #111; }
+            .signatures { margin-top: 60px; display: grid; grid-template-cols: 1fr 1fr; gap: 40px; text-align: center; font-size: 10px; }
+            .sig-box { border-top: 1px solid #333; margin-top: 45px; padding-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <p>HISTÓRICO GENERAL - EXPEDIENTE DE SOLICITUD DE CRÉDITO ORIGINAL</p>
+          </div>
+          
+          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #14532D;">
+            CÓDIGO DE SOLICITUD: ${loan.id}
+          </div>
+
+          <div class="section-title">Datos del Socio Solicitante</div>
+          <div class="grid">
+            <div><span>Nombres Completos</span><strong>${member.name.toUpperCase()}</strong></div>
+            <div><span>Identificación (C.I.)</span><strong>${member.id}</strong></div>
+            <div><span>ID de Socio Contable</span><strong>${(loan as any).socioId || member.id}</strong></div>
+            <div><span>Origen de Radicación</span><strong>${loan.origen || 'CAJA_PATATE'}</strong></div>
+          </div>
+
+          <div class="section-title">Condiciones de Crédito Solicitadas</div>
+          <div class="grid">
+            <div><span>Monto Solicitado</span><strong>$${loan.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong></div>
+            <div><span>Plazo Solicitado</span><strong>${loan.installmentsCount} meses</strong></div>
+            <div><span>Tasa Aplicada</span><strong>${loan.rate}% TEA</strong></div>
+            <div><span>Línea de Crédito</span><strong>${loan.type}</strong></div>
+          </div>
+
+          <div class="section-title">Estructura de Garantías</div>
+          <div>
+            <div style="margin-top: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #555;">
+              Tipo: ${warrantyInfo.tipo || 'SOLIDARIA'}
+            </div>
+            ${warrantyDetailHtml}
+          </div>
+
+          <div class="section-title">Auditoría de Aprobación y Dictamen Técnico</div>
+          <div class="grid">
+            <div><span>Estado de Solicitud</span><strong>${loan.status}</strong></div>
+            <div><span>Tipo Aprobación</span><strong>${(loan as any).tipoAprobacion || 'ASESOR'}</strong></div>
+            <div><span>Acta de Sesión Comité</span><strong>${(loan as any).actaSesion || 'No Aplica'}</strong></div>
+            <div><span>Fecha de Operación</span><strong>${loan.startDate || new Date().toLocaleDateString('es-EC')}</strong></div>
+          </div>
+          <div style="margin-top: 12px; font-size: 10px; background-color: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #eee;">
+            <span style="display: block; font-size: 8px; color: #777; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">DICTAMEN TÉCNICO REGISTRADO</span>
+            <strong>${loan.comments || 'Sin dictamen u observaciones registradas.'}</strong>
+          </div>
+
+          <div class="signatures">
+            <div>
+              <div class="sig-box">
+                <strong>Firma del Socio Deudor</strong>
+              </div>
+            </div>
+            <div>
+              <div class="sig-box">
+                <strong>Firma de Responsabilidad Asesor</strong>
+              </div>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   // Layout selection back to overview
   if (selectedLoan) {
     const { loan, member } = selectedLoan;
     const isOfficerLimited = currentUserRole === UserRole.CREDIT_OFFICER && loan.amount > 20000.00;
     const isManagerLimited = currentUserRole === UserRole.MANAGER && loan.amount > 50000.00;
     const isApprovalBlocked = isOfficerLimited || isManagerLimited;
+
+    // Determine color code for bureau score
+    let scoreColorClass = 'bg-slate-100 text-slate-700';
+    let scoreProgressColor = 'bg-slate-400';
+    if (bureauScoreData) {
+      if (bureauScoreData.score >= 800) {
+        scoreColorClass = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+        scoreProgressColor = 'bg-emerald-600';
+      } else if (bureauScoreData.score >= 600) {
+        scoreColorClass = 'bg-teal-50 border-teal-200 text-teal-700';
+        scoreProgressColor = 'bg-teal-600';
+      } else if (bureauScoreData.score >= 400) {
+        scoreColorClass = 'bg-amber-50 border-amber-200 text-amber-700';
+        scoreProgressColor = 'bg-amber-500';
+      } else {
+        scoreColorClass = 'bg-rose-50 border-rose-200 text-rose-700';
+        scoreProgressColor = 'bg-rose-600';
+      }
+    }
 
     return (
       <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in duration-300 pb-10">
@@ -738,40 +1349,234 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <p className="text-xs font-bold opacity-70">Capital Solicitado</p>
             </div>
           </div>
-          <div className="p-10 space-y-10">
+          
+          <div className="p-10 space-y-8">
             <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div><p className="text-[10px] font-black text-slate-400 uppercase">Socio</p><p className="font-black text-[#14532D] text-lg uppercase">{member.name}</p></div>
-              <div><p className="text-[10px] font-black text-slate-400 uppercase">Condiciones</p><p className="font-black text-slate-800">{loan.rate}% • {loan.installmentsCount} Meses</p></div>
+              <div><p className="text-[10px] font-black text-slate-400 uppercase">Condiciones Originales</p><p className="font-black text-slate-800">{loan.rate}% • {loan.installmentsCount} Meses</p></div>
             </div>
 
-            {/* Warnings regarding limits */}
-            {isApprovalBlocked && (
-              <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 flex gap-4 items-start">
-                <AlertTriangle size={24} className="text-amber-600 shrink-0 mt-0.5" />
+            {/* Role block validation check */}
+            {currentUserRole === UserRole.CREDIT_OFFICER ? (
+              <div className="p-6 bg-rose-50 rounded-2xl border border-rose-200 text-rose-900 flex gap-4 items-start">
+                <ShieldAlert size={24} className="text-rose-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-black uppercase">Aprobación Restringida por Rol</p>
+                  <p className="text-xs font-black uppercase">Sin Permiso de Aprobación</p>
                   <p className="text-[11px] font-semibold mt-1">
-                    {isOfficerLimited ? 'Como Asesor de Crédito (CREDIT_OFFICER), su límite máximo es de $20,000.00 USD.' : ''}
-                    {isManagerLimited ? 'Como Jefe de Crédito (MANAGER), su límite máximo es de $50,000.00 USD.' : ''}
-                    {' Para aprobar este crédito de $'}{loan.amount.toLocaleString()}{' USD se requiere que un perfil con rol superior apruebe la solicitud.'}
+                    Como Asesor de Crédito (CREDIT_OFFICER), usted no tiene permisos de escritura en la aprobación de créditos ni acceso al Buró Interno. Las solicitudes deben ser gestionadas por un Jefe de Crédito o Administrador.
                   </p>
                 </div>
               </div>
-            )}
+            ) : (
+              <>
+                {/* ── SECCIÓN A: BURÓ DE CRÉDITO INTERNO (SCORING) ── */}
+                <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
+                  <div className="flex justify-between items-center border-b pb-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <Scale size={18} className="text-[#14532D]" />
+                      Buró de Crédito Interno (Normativa SEPS)
+                    </h3>
+                    {isLoadingBureauScore && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                        <Loader2 size={12} className="animate-spin text-[#14532D]" /> Cargando Score...
+                      </span>
+                    )}
+                  </div>
 
-            <textarea value={officerReason} onChange={e => setOfficerReason(e.target.value)} placeholder="Escriba el dictamen técnico o justificación para la aprobación/rechazo..." className="w-full p-8 bg-slate-50 border-4 border-slate-100 rounded-[2rem] h-40 outline-none focus:border-[#14532D] font-bold text-slate-800" />
-            <div className="flex gap-4">
-              <button onClick={() => handleDecision(false)} className="flex-1 py-5 border-4 border-red-50 hover:bg-red-50 text-red-600 rounded-2xl font-black transition-all">RECHAZAR</button>
-              <button 
-                onClick={() => handleDecision(true)} 
-                disabled={isApprovalBlocked}
-                className={`flex-[2] py-5 text-white rounded-2xl font-black transition-all ${
-                  isApprovalBlocked ? 'bg-slate-300 border-none cursor-not-allowed text-slate-500' : 'bg-[#14532D] hover:bg-emerald-800 border-b-8 border-[#FACC15]'
-                }`}
-              >
-                APROBAR SOLICITUD
-              </button>
-            </div>
+                  {bureauScoreData ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className={`p-6 rounded-2xl border flex flex-col justify-between ${scoreColorClass}`}>
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-wider">Score Calificado</p>
+                          <p className="text-4xl font-black mt-2">{bureauScoreData.score} <span className="text-xs font-bold">/ 1000 pts</span></p>
+                        </div>
+                        <div className="mt-4">
+                          <span className="text-[9px] font-black px-2.5 py-1 rounded bg-white/60 uppercase">
+                            Calificación: {bureauScoreData.rating}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-2 space-y-4 text-xs font-bold text-slate-600">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-3 bg-slate-50 rounded-xl">
+                            <span className="text-[8px] font-black text-slate-400 uppercase block">Capacidad de Pago</span>
+                            <span className="text-slate-800 text-[11px]">
+                              ${bureauScoreData.capacidadPago.toFixed(2)} USD / mes
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
+                              (Ingresos: ${bureauScoreData.ingresosTotales.toFixed(2)} - Gastos: ${bureauScoreData.gastosMensuales.toFixed(2)})
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-slate-50 rounded-xl">
+                            <span className="text-[8px] font-black text-slate-400 uppercase block">Solvencia (Patrimonio)</span>
+                            <span className="text-slate-800 text-[11px]">
+                              Relación Bienes/Deuda: {bureauScoreData.relacionBienesDeuda.toFixed(2)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
+                              (Bienes: ${bureauScoreData.totalBienes.toFixed(2)} - Deuda: ${bureauScoreData.deudaTotal.toFixed(2)})
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-slate-50 rounded-xl">
+                            <span className="text-[8px] font-black text-slate-400 uppercase block">Morosidad Histórica</span>
+                            <span className="text-slate-800 text-[11px]">
+                              Atraso Promedio: {bureauScoreData.avgDelayDays.toFixed(1)} días
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
+                              (Días totales de mora acumulados: {bureauScoreData.delinquencyDays})
+                            </span>
+                          </div>
+
+                          <div className="p-3 bg-slate-50 rounded-xl">
+                            <span className="text-[8px] font-black text-slate-400 uppercase block">Historial Financiero</span>
+                            <span className="text-slate-800 text-[11px]">
+                              Créditos Liquidados: {bureauScoreData.paidLoansNoMora} / {bureauScoreData.totalLoans}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
+                              (Créditos liquidados sin mora: +50 pts cada uno)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-50 text-slate-400 text-center rounded-xl text-[10px] font-black uppercase">
+                      No se pudo cargar el análisis del buró para este socio
+                    </div>
+                  )}
+                </div>
+
+                {/* ── SECCIÓN B: ANÁLISIS DE SENSIBILIDAD (REDUCCIÓN RIESGO) ── */}
+                <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
+                  <div className="border-b pb-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <TrendingUp size={18} className="text-[#14532D]" />
+                      Análisis de Sensibilidad de Capital (Mitigación de Riesgo)
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[9px] font-black text-slate-400 uppercase block mb-1">Monto de Capital Propuesto ($)</label>
+                        <input 
+                          type="number" 
+                          max={loan.amount}
+                          min={100}
+                          value={proposedSensitivityAmount} 
+                          onChange={e => setProposedSensitivityAmount(e.target.value)} 
+                          className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#14532D] focus:border-[#14532D] outline-none"
+                        />
+                        <p className="text-[10px] font-semibold text-slate-400 mt-1">
+                          Límite máximo permitido: ${loan.amount.toLocaleString()} USD (Monto solicitado originalmente).
+                        </p>
+                      </div>
+
+                      {proposedSensitivityAmount && parseFloat(proposedSensitivityAmount) < loan.amount && (
+                        <div className="p-3.5 bg-amber-50 text-amber-800 border border-amber-100 rounded-xl text-[10px] font-bold">
+                          ✓ Se ha reducido el capital propuesto de $${loan.amount.toLocaleString()} a $${parseFloat(proposedSensitivityAmount).toLocaleString()} USD para reducir el nivel de riesgo de insolvencia.
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      {sensitivitySimulation ? (
+                        <div className="p-5 bg-slate-50 rounded-2xl border text-xs font-bold text-slate-700 space-y-2 font-sans">
+                          <span className="text-[8px] font-black text-slate-400 uppercase block border-b pb-1.5 mb-2">Simulación del Plan de Pagos Ajustado</span>
+                          <div className="flex justify-between"><span>Capital Recalculado:</span><span className="text-slate-900">${parseFloat(proposedSensitivityAmount).toLocaleString()} USD</span></div>
+                          <div className="flex justify-between"><span>Pago Mensual Estimado:</span><span className="text-[#14532D]">${sensitivitySimulation.monthlyPayment.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between"><span>Total Intereses:</span><span>${sensitivitySimulation.totalInterest.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between"><span>Seguro de Desgravamen:</span><span>${sensitivitySimulation.totalSeguro.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between"><span>Contribución SOLCA (0.5%):</span><span>${sensitivitySimulation.totalSolca.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between"><span>Gastos Administrativos:</span><span>${sensitivitySimulation.totalGastos.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between border-t pt-2 mt-2 font-black text-slate-900"><span>Nuevo Total de Deuda:</span><span>${sensitivitySimulation.totalPayable.toFixed(2)} USD</span></div>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-dashed rounded-2xl text-center text-slate-400 text-[10px] font-black uppercase">
+                          Ingrese un monto de capital válido para simular el recálculo
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Warnings regarding limits */}
+                {isApprovalBlocked && (
+                  <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 flex gap-4 items-start">
+                    <AlertTriangle size={24} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-black uppercase">Aprobación Restringida por Rol</p>
+                      <p className="text-[11px] font-semibold mt-1">
+                        {isOfficerLimited ? 'Como Asesor de Crédito (CREDIT_OFFICER), su límite máximo es de $20,000.00 USD.' : ''}
+                        {isManagerLimited ? 'Como Jefe de Crédito (MANAGER), su límite máximo es de $50,000.00 USD.' : ''}
+                        {' Para aprobar este crédito de $'}{loan.amount.toLocaleString()}{' USD se requiere que un perfil con rol superior apruebe la solicitud.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── SECCIÓN C: CONFIGURACIÓN DE APROBACIÓN CONTABLE ── */}
+                <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
+                  <div className="border-b pb-4">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <ShieldCheck size={18} className="text-[#14532D]" />
+                      Instancia y Resoluciones de Aprobación
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase block">Tipo de Resolución / Aprobación</label>
+                      <select 
+                        value={approvalType} 
+                        onChange={e => setApprovalType(e.target.value as any)} 
+                        className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-xs text-slate-700 focus:border-[#14532D] outline-none"
+                      >
+                        <option value="ASESOR">Aprobado por Asesor (Monto Autonomía Financiera)</option>
+                        <option value="COMITE">Aprobado por Comité de Crédito (Mayor Cuantía)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase block">
+                        Número de Acta de Sesión {approvalType === 'COMITE' && '*'}
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder={approvalType === 'COMITE' ? "Obligatorio (Ej: ACTA-COMITE-012)" : "Opcional"} 
+                        value={actaSesion} 
+                        onChange={e => setActaSesion(e.target.value)} 
+                        className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-xs outline-none ${
+                          approvalType === 'COMITE' && !actaSesion.trim() ? 'border-amber-400 focus:border-amber-500' : 'focus:border-[#14532D]'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <textarea 
+                  value={officerReason} 
+                  onChange={e => setOfficerReason(e.target.value)} 
+                  placeholder="Escriba el dictamen técnico o justificación para la aprobación/rechazo..." 
+                  className="w-full p-8 bg-slate-50 border-4 border-slate-100 rounded-[2rem] h-40 outline-none focus:border-[#14532D] font-bold text-slate-800" 
+                />
+                
+                <div className="flex gap-4">
+                  <button onClick={() => handleDecision(false)} className="flex-1 py-5 border-4 border-red-50 hover:bg-red-50 text-red-600 rounded-2xl font-black transition-all">RECHAZAR</button>
+                  <button 
+                    onClick={() => handleDecision(true)} 
+                    disabled={isApprovalBlocked}
+                    className={`flex-[2] py-5 text-white rounded-2xl font-black transition-all ${
+                      isApprovalBlocked ? 'bg-slate-300 border-none cursor-not-allowed text-slate-500' : 'bg-[#14532D] hover:bg-emerald-800 border-b-8 border-[#FACC15]'
+                    }`}
+                  >
+                    APROBAR SOLICITUD
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1027,15 +1832,23 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       {/* TAB 2: GENERAR SOLICITUD DE CREDITO */}
       {activeTab === 'NEW_LOAN' && (
         <div className="bg-white p-8 lg:p-12 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-8">
-          <div className="flex items-center gap-6 border-b pb-6">
-            <div className="w-12 h-12 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center"><UserCheck size={24} /></div>
-            <div>
-              <h3 className="text-xl font-black text-slate-800">Radicar Solicitud desde Asesor</h3>
-              <p className="text-slate-500 font-medium text-xs">Cree y registre una solicitud directamente en nombre de un socio.</p>
+          <div className="flex items-center justify-between border-b pb-6">
+            <div className="flex items-center gap-6">
+              <div className="w-12 h-12 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center"><UserCheck size={24} /></div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Radicar Solicitud desde Asesor</h3>
+                <p className="text-slate-500 font-medium text-xs">Cree y registre una solicitud directamente en nombre de un socio.</p>
+              </div>
             </div>
-          </div>
-
-          {!selectedUserForLoan ? (
+            {selectedUserForLoan && (
+              <button 
+                onClick={handleExitClick}
+                className="flex items-center gap-2 px-4 py-2 border border-slate-200 hover:border-red-500 hover:text-red-500 rounded-xl text-slate-500 font-black text-[10px] uppercase transition-all"
+              >
+                <ArrowLeft size={16} /> Regresar
+              </button>
+            )}
+          </div>          {!selectedUserForLoan ? (
             <div className="space-y-4">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Socio Destinatario</label>
               <div className="relative">
@@ -1164,16 +1977,50 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       <input type="text" disabled={memberCertBalance < 1.00} placeholder="Cédula del Garante" value={newLoanSolidariaGuarantorId} onChange={e => setNewLoanSolidariaGuarantorId(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
                     </div>
                   )}
-
                   {newLoanWarrantyType === 'PRENDARIA' && (
-                    <div className="grid grid-cols-3 gap-3 pt-2 animate-in fade-in duration-300">
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Descripción del Bien (Marca/Modelo/Año)" value={newLoanPrendariaDescription} onChange={e => setNewLoanPrendariaDescription(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
-                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Monto Avalúo ($)" value={newLoanPrendariaValuation} onChange={e => setNewLoanPrendariaValuation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Compañía Aseguradora" value={newLoanPrendariaInsurance} onChange={e => setNewLoanPrendariaInsurance(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
-                    </div>
-                  )}
+                    <div className="space-y-3 pt-2 animate-in fade-in duration-300">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase">Tipo de Prenda *</label>
+                          <select value={newLoanPrendariaType} onChange={e => setNewLoanPrendariaType(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white">
+                            <option value="Vehículo">Vehículo</option>
+                            <option value="Maquinaria">Maquinaria</option>
+                            <option value="Joyas">Joyas</option>
+                            <option value="Otros">Otros Bienes Muebles</option>
+                          </select>
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase">Valor Comercial y Avalúo ($) *</label>
+                          <input type="number" disabled={memberCertBalance < 1.00} placeholder="Monto Avalúo" value={newLoanPrendariaValuation} onChange={e => setNewLoanPrendariaValuation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase">Compañía Aseguradora</label>
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Compañía Aseguradora" value={newLoanPrendariaInsurance} onChange={e => setNewLoanPrendariaInsurance(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase">Descripción Detallada *</label>
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Descripción del Bien (Marca/Modelo/Año)" value={newLoanPrendariaDescription} onChange={e => setNewLoanPrendariaDescription(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase">Observación Técnica (Estado/Motor/Chasis) *</label>
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle estado físico, número motor/chasis" value={newLoanPrendariaObservation} onChange={e => setNewLoanPrendariaObservation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                        </div>
+                      </div>
 
-                  {newLoanWarrantyType === 'HIPOTECARIA' && (
+                      {/* Valor de Cobertura calculation */}
+                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                        <span>Valor de Cobertura Garantizado:</span>
+                        <span className="text-xs bg-emerald-100 px-3 py-1 rounded-lg">
+                          {newLoanAmount && parseFloat(newLoanPrendariaValuation) > 0
+                            ? ((parseFloat(newLoanPrendariaValuation) / parseFloat(newLoanAmount)) * 100).toFixed(2)
+                            : '0.00'} %
+                        </span>
+                      </div>
+                    </div>
+                  )}                  {newLoanWarrantyType === 'HIPOTECARIA' && (
                     <div className="grid grid-cols-3 gap-3 pt-2 animate-in fade-in duration-300">
                       <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle Inmueble (Finca/Clave Catastral)" value={newLoanHipotecariaInmueble} onChange={e => setNewLoanHipotecariaInmueble(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
                       <input type="number" disabled={memberCertBalance < 1.00} placeholder="Avalúo Comercial ($)" value={newLoanHipotecariaAvaluo} onChange={e => setNewLoanHipotecariaAvaluo(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
@@ -1463,6 +2310,27 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
                   <div className="flex flex-wrap gap-3 w-full lg:w-auto border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-8 border-slate-100 justify-end">
                     <button 
+                      onClick={() => handlePrintPagare(loan, member)}
+                      className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-[#14532D] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
+                    >
+                      <Printer size={12} /> Pagaré
+                    </button>
+
+                    <button 
+                      onClick={() => handlePrintDiario(loan, member)}
+                      className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-[#14532D] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
+                    >
+                      <Printer size={12} /> Asiento
+                    </button>
+
+                    <button 
+                      onClick={() => handlePrintSolicitud(loan, member)}
+                      className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
+                    >
+                      <Printer size={12} /> Solicitud
+                    </button>
+
+                    <button 
                       onClick={() => setSelectedLoanForStatusChange({ loan, member })}
                       className="px-5 py-3 border border-slate-200 rounded-xl font-black text-[10px] text-slate-600 hover:bg-slate-50 uppercase tracking-wider transition-all"
                     >
@@ -1494,6 +2362,122 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               );
             })}
             {allActiveLoansForCartera.length === 0 && <div className="py-20 text-center opacity-20"><Search size={80} className="mx-auto mb-4" /><p className="font-black uppercase tracking-widest">No se encontraron créditos registrados</p></div>}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: CONFIRMACIÓN REGRESAR CON CAMBIOS SIN GUARDAR */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shadow-inner">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Cambios sin guardar</h3>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">Tiene cambios sin guardar. ¿Está seguro que desea regresar a la selección de socio? Perderá los campos ingresados.</p>
+              <div className="flex gap-4 w-full pt-4">
+                <button onClick={() => setShowExitConfirm(false)} className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all">Cancelar</button>
+                <button onClick={handleConfirmExit} className="flex-1 py-3 bg-[#14532D] text-white hover:bg-emerald-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all">Sí, regresar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: CONFIRMACIÓN RESUMEN EJECUTIVO (POST-SUBMIT) */}
+      {showPostSubmitModal && submittedLoanDetails && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[2.5rem] p-10 max-w-lg w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200 relative">
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 border-b pb-4">
+                <div className="w-12 h-12 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center"><ShieldCheck size={24} /></div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Solicitud Creada e Ingresada</h3>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase">Código: {submittedLoanDetails.id}</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4 font-sans">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Resumen Ejecutivo</h4>
+                <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
+                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Línea de Crédito</span><span className="uppercase text-[#14532D] font-black">{submittedLoanDetails.category}</span></div>
+                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Monto Solicitado</span><span className="text-slate-900">${submittedLoanDetails.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span></div>
+                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Plazo de Pago</span><span>{submittedLoanDetails.term} meses</span></div>
+                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Tasa Aplicada</span><span>{submittedLoanDetails.rate}% TEA</span></div>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button 
+                  onClick={() => {
+                    setShowPostSubmitModal(false);
+                    setSubmittedLoanDetails(null);
+                    setSelectedUserForLoan(null);
+                    setNewLoanAmount('');
+                    setMemberSearch('');
+                  }} 
+                  className="flex-1 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all"
+                >
+                  Cerrar Ventana
+                </button>
+                <button 
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>Solicitud de Crédito - ${submittedLoanDetails.id}</title>
+                            <style>
+                              body { font-family: sans-serif; padding: 40px; color: #333; }
+                              .header { border-bottom: 3px double #14532D; padding-bottom: 20px; text-align: center; }
+                              .header h1 { color: #14532D; margin: 0; font-size: 24px; text-transform: uppercase; }
+                              .header p { margin: 5px 0 0 0; font-size: 12px; font-weight: bold; }
+                              .summary-title { font-size: 14px; text-transform: uppercase; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #14532D; }
+                              .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 15px; font-size: 13px; }
+                              .grid div span { display: block; font-size: 10px; color: #777; text-transform: uppercase; font-weight: bold; }
+                              .signatures { margin-top: 60px; display: grid; grid-template-cols: 1fr 1fr; gap: 40px; text-align: center; font-size: 12px; }
+                              .sig-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; font-weight: bold; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="header">
+                              <h1>COOPERATIVA DE AHORRO Y CRÉDITO CAJA PATATE</h1>
+                              <p>PORTAL ASESOR - COMPROBANTE DE RADICACIÓN DE SOLICITUD</p>
+                            </div>
+                            <div class="summary-title">Resumen de la Solicitud</div>
+                            <div class="grid">
+                              <div><span>Código Solicitud</span><strong>${submittedLoanDetails.id}</strong></div>
+                              <div><span>Socio ID</span><strong>${selectedUserForLoan?.id}</strong></div>
+                              <div><span>Socio Nombre</span><strong>${selectedUserForLoan?.name}</strong></div>
+                              <div><span>Monto Solicitado</span><strong>$${submittedLoanDetails.amount.toLocaleString()} USD</strong></div>
+                              <div><span>Plazo</span><strong>${submittedLoanDetails.term} Meses</strong></div>
+                              <div><span>Tasa Aplicada</span><strong>${submittedLoanDetails.rate}% TEA</strong></div>
+                              <div><span>Garantía</span><strong>${newLoanWarrantyType}</strong></div>
+                              <div><span>Fecha Registro</span><strong>${new Date().toLocaleDateString()}</strong></div>
+                            </div>
+                            <div class="signatures">
+                              <div>
+                                <div class="sig-line">Firma del Socio Deudor</div>
+                              </div>
+                              <div>
+                                <div class="sig-line">Firma del Asesor de Crédito</div>
+                              </div>
+                            </div>
+                            <script>window.print();</script>
+                          </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
+                    }
+                  }} 
+                  className="flex-1 py-4 bg-[#14532D] text-white hover:bg-emerald-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Printer size={16} /> Imprimir Comprobante
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -40,7 +40,7 @@ if (process.env.SQL_SERVER_INSTANCE) {
 }
 
 const API_BASE = 'http://localhost:8080/api';
-const TEST_LOAN_ID = 'CRD-TEST-MIGRATION-999';
+let TEST_LOAN_ID = 'CRD-TEST-MIGRATION-999';
 const TEST_CEDULA = '1720884012'; // Jorge Vladimir de la captura
 
 async function sleep(ms) {
@@ -61,7 +61,12 @@ async function runTests() {
     console.log('\n🧹 Limpiando solicitudes de prueba anteriores...');
     await pool.request()
       .input('id', sql.NVarChar(50), TEST_LOAN_ID)
-      .query("DELETE FROM dbo.SolicitudesCredito WHERE SolicitudID = @id");
+      .query(`
+        DELETE FROM dbo.RubrosCreditos WHERE AmortizacionID IN (SELECT AmortizacionID FROM dbo.TablaDeAmortizacion WHERE CreditoID = @id);
+        DELETE FROM dbo.TablaDeAmortizacion WHERE CreditoID = @id;
+        DELETE FROM dbo.Creditos WHERE CreditoID = @id;
+        DELETE FROM dbo.SolicitudesCredito WHERE SolicitudID = @id;
+      `);
     
     await pool.request()
       .input('id', TEST_LOAN_ID)
@@ -124,7 +129,8 @@ async function runTests() {
     if (!applyData.ok) {
       throw new Error(`Fallo al aplicar al crédito: ${applyData.error}`);
     }
-    console.log('✅ Solicitud registrada con éxito en estado SOLICITADO.');
+    TEST_LOAN_ID = applyData.solicitudId;
+    console.log(`✅ Solicitud registrada con éxito en estado SOLICITADO (ID: ${TEST_LOAN_ID}).`);
 
     // Verificar en BD
     const dbLoan = await pool.request()
@@ -251,7 +257,8 @@ async function runTests() {
     
     const comision = 5000.00 * 0.01;
     const fondo = 5000.00 * 0.005;
-    const neto = 5000.00 - comision - fondo;
+    const solca = 5000.00 * 0.005;
+    const neto = 5000.00 - comision - fondo - solca;
     const expectedBalance = balanceAfterApprove + neto;
 
     if (Math.abs(balanceAfterDisburse - expectedBalance) < 0.01) {
@@ -270,10 +277,10 @@ async function runTests() {
       console.log(`   - Cuenta: ${e.CuentaContable} | Debe: $${e.Debe.toFixed(2)} | Haber: $${e.Haber.toFixed(2)} | Concepto: ${e.Concepto}`);
     });
 
-    if (ledgerEntries.recordset.length === 4) {
-      console.log('✅ Verificación exitosa: Se generaron exactamente los 4 asientos de la SEPS.');
+    if (ledgerEntries.recordset.length === 5) {
+      console.log('✅ Verificación exitosa: Se generaron exactamente los 5 asientos de la SEPS.');
     } else {
-      throw new Error(`❌ ERROR: Cantidad incorrecta de asientos contables. Esperados: 4, Generados: ${ledgerEntries.recordset.length}`);
+      throw new Error(`❌ ERROR: Cantidad incorrecta de asientos contables. Esperados: 5, Generados: ${ledgerEntries.recordset.length}`);
     }
 
     // 6. Validar ruta de reportes
@@ -296,7 +303,12 @@ async function runTests() {
     console.log('\n🧹 Limpiando solicitud de prueba finalizada...');
     await pool.request()
       .input('id', sql.NVarChar(50), TEST_LOAN_ID)
-      .query("DELETE FROM dbo.SolicitudesCredito WHERE SolicitudID = @id");
+      .query(`
+        DELETE FROM dbo.RubrosCreditos WHERE AmortizacionID IN (SELECT AmortizacionID FROM dbo.TablaDeAmortizacion WHERE CreditoID = @id);
+        DELETE FROM dbo.TablaDeAmortizacion WHERE CreditoID = @id;
+        DELETE FROM dbo.Creditos WHERE CreditoID = @id;
+        DELETE FROM dbo.SolicitudesCredito WHERE SolicitudID = @id;
+      `);
     
     // Reversar el balance de ahorros para no alterar datos de producción
     await pool.request()
