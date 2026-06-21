@@ -40,6 +40,8 @@ interface DepositoPlazo {
   NumeroRenovacion: number;
   FechaApertura: string;
   FechaVencimiento: string;
+  FechaAperturaFmt?: string;
+  FechaVencimientoFmt?: string;
   FechaLiquidacion?: string;
   DiasRestantes: number;
   DescripcionRango: string;
@@ -376,22 +378,22 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
 
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 min-h-full bg-slate-50">
+    <div className="flex flex-col gap-4 p-4 md:p-6 min-h-full bg-transparent">
 
       {/* Header KPIs */}
       {resumen && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Capital Captado', value: fmtUSD(resumen.capitalActivo || 0), icon: <Banknote size={18} />, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
-            { label: 'DPF Activos', value: resumen.activos || 0, icon: <PiggyBank size={18} />, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-            { label: 'Vencen Hoy', value: resumen.vencimientosHoy || 0, icon: <AlertTriangle size={18} />, color: resumen.vencimientosHoy > 0 ? 'text-amber-700' : 'text-slate-400', bg: resumen.vencimientosHoy > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200' },
-            { label: 'Interés Proyectado', value: fmtUSD(resumen.interesProyectadoTotal || 0), icon: <TrendingUp size={18} />, color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
+            { label: 'Capital Captado',    value: fmtUSD(resumen.capitalActivo || 0),           icon: <Banknote size={18} />,      color: 'text-emerald-400', glow: 'shadow-emerald-900/50', bg: 'bg-white/[0.05] border-emerald-500/20' },
+            { label: 'DPF Activos',        value: resumen.activos || 0,                          icon: <PiggyBank size={18} />,     color: 'text-blue-400',    glow: 'shadow-blue-900/50',    bg: 'bg-white/[0.05] border-blue-500/20'    },
+            { label: 'Vencen Hoy',         value: resumen.vencimientosHoy || 0,                  icon: <AlertTriangle size={18} />, color: resumen.vencimientosHoy > 0 ? 'text-amber-400' : 'text-white/20', glow: 'shadow-amber-900/50', bg: resumen.vencimientosHoy > 0 ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/[0.03] border-white/[0.06]' },
+            { label: 'Interés Proyectado', value: fmtUSD(resumen.interesProyectadoTotal || 0),   icon: <TrendingUp size={18} />,    color: 'text-violet-400',  glow: 'shadow-violet-900/50',  bg: 'bg-white/[0.05] border-violet-500/20' },
           ].map((k, i) => (
             <div key={i} className={`rounded-2xl border p-4 flex items-center gap-3 ${k.bg}`}>
-              <div className={`p-2 rounded-xl bg-white shadow-sm ${k.color}`}>{k.icon}</div>
+              <div className={`p-2 rounded-xl bg-white/10 shadow-lg ${k.glow} ${k.color}`}>{k.icon}</div>
               <div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">{k.label}</p>
-                <p className={`text-lg font-black ${k.color}`}>{k.value}</p>
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-wide">{k.label}</p>
+                <p className={`text-xl font-black tabular-nums ${k.color}`}>{k.value}</p>
               </div>
             </div>
           ))}
@@ -400,7 +402,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
 
       {/* Alerta global */}
       {alerta && (
-        <div className={`rounded-2xl p-4 flex items-start gap-3 border ${alerta.tipo === 'ok' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : alerta.tipo === 'warn' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+        <div className={`rounded-2xl p-4 flex items-start gap-3 border ${alerta.tipo === 'ok' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : alerta.tipo === 'warn' ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' : 'bg-red-500/15 border-red-500/30 text-red-300'}`}>
           {alerta.tipo === 'ok' ? <CheckCircle2 size={18} className="shrink-0 mt-0.5" /> : alerta.tipo === 'warn' ? <AlertTriangle size={18} className="shrink-0 mt-0.5" /> : <XCircle size={18} className="shrink-0 mt-0.5" />}
           <p className="text-sm font-bold whitespace-pre-line">{alerta.msg}</p>
           <button onClick={() => setAlerta(null)} className="ml-auto shrink-0"><X size={16} /></button>
@@ -408,11 +410,11 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-        <div className="flex overflow-x-auto border-b border-slate-100">
+      <div className="bg-white/[0.04] rounded-2xl border border-white/[0.08] overflow-hidden shadow-2xl">
+        <div className="flex overflow-x-auto border-b border-white/[0.07]">
           {TABS.filter(t => t.id !== 'TASAS' || isAdmin).map(tab => (
             <button key={tab.id} onClick={() => onActiveTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${activeTab === tab.id ? 'border-[#14532D] text-[#14532D] bg-emerald-50' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+              className={`flex items-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${activeTab === tab.id ? 'border-emerald-400 text-emerald-400 bg-emerald-500/10' : 'border-transparent text-white/35 hover:text-white/70 hover:bg-white/[0.04]'}`}>
               {tab.icon}{tab.label}
             </button>
           ))}
@@ -426,14 +428,14 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
               {/* Filtros */}
               <div className="flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[200px]">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
-                  <input value={filtroBusqueda} onChange={e => setFiltroBusqueda(e.target.value)} onKeyDown={e => e.key === 'Enter' && cargarDepositos()} placeholder="Buscar por cédula, nombre o código..." className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#14532D] font-medium" />
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <input value={filtroBusqueda} onChange={e => setFiltroBusqueda(e.target.value)} onKeyDown={e => e.key === 'Enter' && cargarDepositos()} placeholder="Buscar por cédula, nombre o código..." className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 placeholder-white/25 focus:outline-none focus:border-emerald-500/50 font-medium" />
                 </div>
-                <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="px-3 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-700 focus:outline-none focus:border-[#14532D]">
-                  <option value="">Todos los estados</option>
-                  {['ACTIVO','VENCIDO','LIQUIDADO','CANCELADO','RENOVADO'].map(e => <option key={e} value={e}>{e}</option>)}
+                <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} className="px-3 py-2.5 text-sm rounded-xl border border-white/[0.1] bg-white/[0.06] font-bold text-white/70 focus:outline-none focus:border-emerald-500/50">
+                  <option value="" className="bg-[#1A2E1C]">Todos los estados</option>
+                  {['ACTIVO','VENCIDO','LIQUIDADO','CANCELADO','RENOVADO'].map(e => <option key={e} value={e} className="bg-[#1A2E1C]">{e}</option>)}
                 </select>
-                <button onClick={cargarDepositos} className="flex items-center gap-2 px-4 py-2.5 bg-[#14532D] text-white text-sm font-black rounded-xl hover:bg-emerald-800 transition-all">
+                <button onClick={cargarDepositos} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-emerald-900/30">
                   <RefreshCw size={15} /> Actualizar
                 </button>
               </div>
@@ -442,16 +444,16 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
               {loading ? (
                 <div className="flex items-center justify-center py-16 text-slate-300"><RefreshCw size={24} className="animate-spin" /></div>
               ) : depositos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                <div className="flex flex-col items-center justify-center py-16 text-white/25">
                   <PiggyBank size={40} className="mb-3 opacity-30" />
                   <p className="font-bold text-sm">No se encontraron Depósitos a Plazo Fijo</p>
-                  <button onClick={() => onActiveTabChange('NUEVA')} className="mt-4 px-4 py-2 bg-[#14532D] text-white text-xs font-black rounded-xl hover:bg-emerald-800 transition-all flex items-center gap-2"><Plus size={14} />Nueva Inversión</button>
+                  <button onClick={() => onActiveTabChange('NUEVA')} className="mt-4 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/30"><Plus size={14} />Nueva Inversión</button>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <div className="overflow-x-auto rounded-xl border border-white/[0.07]">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      <tr className="bg-white/[0.04] text-[10px] font-black text-white/40 uppercase tracking-wider">
                         <th className="px-3 py-3 text-left">Certificado</th>
                         <th className="px-3 py-3 text-left">Socio / Cédula</th>
                         <th className="px-3 py-3 text-right">Capital</th>
@@ -464,28 +466,28 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                     </thead>
                     <tbody>
                       {depositos.map(d => (
-                        <tr key={d.DepositoID} className="border-t border-slate-50 hover:bg-slate-50 transition-colors">
+                        <tr key={d.DepositoID} className="border-t border-white/[0.04] hover:bg-white/[0.04] transition-colors">
                           <td className="px-3 py-3">
-                            <p className="font-black text-[#14532D] text-xs">{d.DepositoID}</p>
-                            {d.NumeroRenovacion > 0 && <span className="text-[9px] text-purple-600 font-bold">Renovación #{d.NumeroRenovacion}</span>}
+                            <p className="font-black text-emerald-400 text-xs">{d.DepositoID}</p>
+                            {d.NumeroRenovacion > 0 && <span className="text-[9px] text-violet-400 font-bold">Renovación #{d.NumeroRenovacion}</span>}
                           </td>
                           <td className="px-3 py-3">
-                            <p className="font-bold text-slate-800 text-xs truncate max-w-[150px]">{d.NombreSocio}</p>
-                            <p className="text-[10px] text-slate-400">{d.Identificacion}</p>
+                            <p className="font-bold text-white/80 text-xs truncate max-w-[150px]">{d.NombreSocio}</p>
+                            <p className="text-[10px] text-white/35">{d.Identificacion}</p>
                           </td>
-                          <td className="px-3 py-3 text-right font-black text-slate-800">{fmtUSD(d.MontoCapital)}</td>
+                          <td className="px-3 py-3 text-right font-black text-white/80 tabular-nums">{fmtUSD(d.MontoCapital)}</td>
                           <td className="px-3 py-3 text-center">
-                            <p className="font-black text-[#14532D] text-xs">{d.TasaNominalAnual}% TNA</p>
-                            <p className="text-[10px] text-slate-400">{d.PlazosDias} días</p>
+                            <p className="font-black text-emerald-400 text-xs">{d.TasaNominalAnual}% TNA</p>
+                            <p className="text-[10px] text-white/35">{d.PlazosDias} días</p>
                           </td>
                           <td className="px-3 py-3 text-right">
-                            <p className="font-black text-emerald-700 text-xs">{fmtUSD(d.InteresNetoProyectado)}</p>
-                            <p className="text-[9px] text-slate-400">Ret. {fmtUSD(d.RetencionProyectada)}</p>
+                            <p className="font-black text-emerald-300 text-xs tabular-nums">{fmtUSD(d.InteresNetoProyectado)}</p>
+                            <p className="text-[9px] text-white/30">Ret. {fmtUSD(d.RetencionProyectada)}</p>
                           </td>
                           <td className="px-3 py-3 text-center">
-                            <p className="font-bold text-xs text-slate-700">{d.FechaVencimiento}</p>
+                            <p className="font-bold text-xs text-white/60">{d.FechaVencimiento}</p>
                             {d.Estado === 'ACTIVO' && (
-                              <p className={`text-[9px] font-black ${d.DiasRestantes <= 0 ? 'text-red-600' : d.DiasRestantes <= 7 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              <p className={`text-[9px] font-black ${d.DiasRestantes <= 0 ? 'text-red-400' : d.DiasRestantes <= 7 ? 'text-amber-400' : 'text-white/30'}`}>
                                 {d.DiasRestantes <= 0 ? 'VENCIDO' : `${d.DiasRestantes}d restantes`}
                               </p>
                             )}
@@ -493,12 +495,12 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                           <td className="px-3 py-3 text-center"><EstadoBadge estado={d.Estado} /></td>
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1 justify-center">
-                              <button onClick={() => verDetalle(d.DepositoID)} title="Ver detalle" className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><FileText size={14} /></button>
+                              <button onClick={() => verDetalle(d.DepositoID)} title="Ver detalle" className="p-1.5 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><FileText size={14} /></button>
                               {canOperate && ['ACTIVO','VENCIDO'].includes(d.Estado) && (
                                 <>
-                                  <button onClick={() => liquidarDPF(d)} title="Liquidar" className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"><CheckCircle2 size={14} /></button>
-                                  {d.Estado === 'ACTIVO' && <button onClick={() => cancelarDPF(d)} title="Cancelar anticipado" className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"><XCircle size={14} /></button>}
-                                  <button onClick={() => { setRenovarDPF(d); setRenovarTasaID(''); setRenovarPlazo(d.PlazosDias.toString()); }} title="Renovar" className="p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-all"><RotateCcw size={14} /></button>
+                                  <button onClick={() => liquidarDPF(d)} title="Liquidar" className="p-1.5 rounded-lg text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"><CheckCircle2 size={14} /></button>
+                                  {d.Estado === 'ACTIVO' && <button onClick={() => cancelarDPF(d)} title="Cancelar anticipado" className="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"><XCircle size={14} /></button>}
+                                  <button onClick={() => { setRenovarDPF(d); setRenovarTasaID(''); setRenovarPlazo(d.PlazosDias.toString()); }} title="Renovar" className="p-1.5 rounded-lg text-white/30 hover:text-violet-400 hover:bg-violet-500/10 transition-all"><RotateCcw size={14} /></button>
                                 </>
                               )}
                             </div>
@@ -517,23 +519,23 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
             <div className="grid md:grid-cols-2 gap-6">
               {/* Formulario */}
               <div className="space-y-5">
-                <h3 className="font-black text-[#14532D] text-sm uppercase tracking-wide flex items-center gap-2"><Plus size={16} />Datos del Depósito</h3>
+                <h3 className="font-black text-emerald-400 text-sm uppercase tracking-wide flex items-center gap-2"><Plus size={16} />Datos del Depósito</h3>
 
                 {/* Búsqueda de socio */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Socio Inversionista</label>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Socio Inversionista</label>
                   <div className="flex gap-2">
-                    <input value={cedulaBuscar} onChange={e => setCedulaBuscar(e.target.value)} onKeyDown={e => e.key === 'Enter' && buscarSocio()} placeholder="Cédula / RUC del socio" className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D]" />
-                    <button onClick={buscarSocio} disabled={buscandoSocio} className="px-4 py-3 bg-[#14532D] text-white rounded-xl font-black text-sm hover:bg-emerald-800 transition-all disabled:opacity-50 flex items-center gap-2">
+                    <input value={cedulaBuscar} onChange={e => setCedulaBuscar(e.target.value)} onKeyDown={e => e.key === 'Enter' && buscarSocio()} placeholder="Cédula / RUC del socio" className="flex-1 px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 placeholder-white/25 text-sm font-bold focus:outline-none focus:border-emerald-500/50" />
+                    <button onClick={buscarSocio} disabled={buscandoSocio} className="px-4 py-3 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl font-black text-sm transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-emerald-900/30">
                       {buscandoSocio ? <RefreshCw size={15} className="animate-spin" /> : <Search size={15} />}
                     </button>
                   </div>
                   {socioEncontrado && (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-3">
-                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
                       <div>
-                        <p className="font-black text-emerald-800 text-sm">{socioEncontrado.NombreCompleto}</p>
-                        <p className="text-xs text-emerald-600">CI: {socioEncontrado.Identificacion} {socioEncontrado.SaldoAhorro !== undefined && `· Saldo: ${fmtUSD(socioEncontrado.SaldoAhorro)}`}</p>
+                        <p className="font-black text-emerald-300 text-sm">{socioEncontrado.NombreCompleto}</p>
+                        <p className="text-xs text-emerald-500/80">CI: {socioEncontrado.Identificacion} {socioEncontrado.SaldoAhorro !== undefined && `· Saldo: ${fmtUSD(socioEncontrado.SaldoAhorro)}`}</p>
                       </div>
                     </div>
                   )}
@@ -541,64 +543,64 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
 
                 {/* Tramo de tasa */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tramo de Plazo</label>
-                  <select value={formTasaID} onChange={e => setFormTasaID(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D] text-slate-700">
-                    <option value="">— Seleccione tramo —</option>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Tramo de Plazo</label>
+                  <select value={formTasaID} onChange={e => setFormTasaID(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 text-sm font-bold focus:outline-none focus:border-emerald-500/50">
+                    <option value="" className="bg-[#1A2E1C]">— Seleccione tramo —</option>
                     {tasas.filter(t => t.Activo).map(t => (
-                      <option key={t.TasaID} value={t.TasaID}>{t.DescripcionRango} → {t.TasaNominalAnual}% TNA (Mín: {fmtUSD(t.MontoMinimo)})</option>
+                      <option key={t.TasaID} value={t.TasaID} className="bg-[#1A2E1C]">{t.DescripcionRango} → {t.TasaNominalAnual}% TNA (Mín: {fmtUSD(t.MontoMinimo)})</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Monto */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monto a Invertir (USD)</label>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Monto a Invertir (USD)</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-                    <input type="number" min="0" step="0.01" value={formMonto} onChange={e => setFormMonto(e.target.value)} placeholder="0.00" className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D]" />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-white/30">$</span>
+                    <input type="number" min="0" step="0.01" value={formMonto} onChange={e => setFormMonto(e.target.value)} placeholder="0.00" className="w-full pl-8 pr-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 placeholder-white/20 text-sm font-bold focus:outline-none focus:border-emerald-500/50" />
                   </div>
                 </div>
 
                 {/* Plazo */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Plazo en Días</label>
-                  <input type="number" min="1" value={formPlazo} onChange={e => setFormPlazo(e.target.value)} placeholder="Ej: 90, 180, 360..." className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D]" />
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Plazo en Días</label>
+                  <input type="number" min="1" value={formPlazo} onChange={e => setFormPlazo(e.target.value)} placeholder="Ej: 90, 180, 360..." className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 placeholder-white/20 text-sm font-bold focus:outline-none focus:border-emerald-500/50" />
                 </div>
 
                 {/* Renovación y Modalidad */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Al Vencimiento</label>
-                    <select value={formRenovacion} onChange={e => setFormRenovacion(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D] text-slate-700">
-                      <option value="NO_RENOVAR">No Renovar</option>
-                      <option value="AUTOMATICO">Auto-Renovar</option>
-                      <option value="MANUAL">Renovación Manual</option>
+                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Al Vencimiento</label>
+                    <select value={formRenovacion} onChange={e => setFormRenovacion(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/70 text-sm font-bold focus:outline-none focus:border-emerald-500/50">
+                      <option value="NO_RENOVAR" className="bg-[#1A2E1C]">No Renovar</option>
+                      <option value="AUTOMATICO" className="bg-[#1A2E1C]">Auto-Renovar</option>
+                      <option value="MANUAL" className="bg-[#1A2E1C]">Renovación Manual</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pago de Interés</label>
-                    <select value={formModalidad} onChange={e => setFormModalidad(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D] text-slate-700">
-                      <option value="AL_VENCIMIENTO">Al Vencimiento</option>
-                      <option value="MENSUAL">Mensual</option>
-                      <option value="TRIMESTRAL">Trimestral</option>
+                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Pago de Interés</label>
+                    <select value={formModalidad} onChange={e => setFormModalidad(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/70 text-sm font-bold focus:outline-none focus:border-emerald-500/50">
+                      <option value="AL_VENCIMIENTO" className="bg-[#1A2E1C]">Al Vencimiento</option>
+                      <option value="MENSUAL" className="bg-[#1A2E1C]">Mensual</option>
+                      <option value="TRIMESTRAL" className="bg-[#1A2E1C]">Trimestral</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Observaciones (opcional)</label>
-                  <textarea value={formObs} onChange={e => setFormObs(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium focus:outline-none focus:border-[#14532D] resize-none" placeholder="Instrucciones especiales, procedencia de fondos, etc." />
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Observaciones (opcional)</label>
+                  <textarea value={formObs} onChange={e => setFormObs(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/70 placeholder-white/20 text-sm font-medium focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Instrucciones especiales, procedencia de fondos, etc." />
                 </div>
 
                 <button onClick={abrirConfirm} disabled={!socioEncontrado || !preview || loading}
-                  className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-sm hover:bg-emerald-800 transition-all disabled:opacity-40 flex items-center justify-center gap-3 shadow-lg">
+                  className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-2xl font-black text-sm transition-all disabled:opacity-30 flex items-center justify-center gap-3 shadow-xl shadow-emerald-900/40">
                   <PiggyBank size={18} /> APERTURAR DEPÓSITO A PLAZO FIJO
                 </button>
               </div>
 
               {/* Preview / Simulador */}
               <div className="space-y-4">
-                <h3 className="font-black text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2"><TrendingUp size={16} className="text-[#FACC15]" />Simulación de Rendimiento</h3>
+                <h3 className="font-black text-white/60 text-sm uppercase tracking-wide flex items-center gap-2"><TrendingUp size={16} className="text-amber-400" />Simulación de Rendimiento</h3>
                 {preview ? (
                   <div className="bg-gradient-to-br from-[#14532D] to-emerald-700 rounded-2xl p-6 text-white space-y-4 shadow-xl">
                     <div className="flex items-center justify-between">
@@ -629,25 +631,25 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-slate-100 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 text-slate-400 border-2 border-dashed border-slate-200 min-h-[350px]">
+                  <div className="bg-white/[0.03] rounded-2xl p-8 flex flex-col items-center justify-center gap-3 text-white/25 border-2 border-dashed border-white/[0.08] min-h-[350px]">
                     <TrendingUp size={36} className="opacity-30" />
                     <p className="font-bold text-sm">Complete los datos para ver la simulación</p>
                   </div>
                 )}
 
                 {/* Tabla de tasas vigentes */}
-                <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tasas Vigentes — Plan de Cuentas SEPS</p>
+                <div className="bg-white/[0.04] rounded-xl border border-white/[0.07] overflow-hidden">
+                  <div className="px-4 py-3 border-b border-white/[0.06]">
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Tasas Vigentes — Plan de Cuentas SEPS</p>
                   </div>
                   <table className="w-full text-xs">
-                    <thead><tr className="text-[9px] font-black text-slate-400 uppercase">{['Tramo','TNA','Cuenta SEPS'].map(h => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
+                    <thead><tr className="text-[9px] font-black text-white/30 uppercase">{['Tramo','TNA','Cuenta SEPS'].map(h => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
                     <tbody>
                       {tasas.filter(t => t.Activo).map(t => (
-                        <tr key={t.TasaID} className={`border-t border-slate-50 ${formTasaID === t.TasaID.toString() ? 'bg-emerald-50' : ''}`}>
-                          <td className="px-3 py-2 font-medium text-slate-700">{t.DescripcionRango}</td>
-                          <td className="px-3 py-2 font-black text-[#14532D]">{t.TasaNominalAnual}%</td>
-                          <td className="px-3 py-2 font-mono text-slate-500">{t.CuentaContableDPF}</td>
+                        <tr key={t.TasaID} className={`border-t border-white/[0.04] ${formTasaID === t.TasaID.toString() ? 'bg-emerald-500/10' : ''}`}>
+                          <td className="px-3 py-2 font-medium text-white/60">{t.DescripcionRango}</td>
+                          <td className="px-3 py-2 font-black text-emerald-400">{t.TasaNominalAnual}%</td>
+                          <td className="px-3 py-2 font-mono text-white/35">{t.CuentaContableDPF}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -661,11 +663,11 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
           {activeTab === 'VENCIMIENTOS' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2"><Calendar size={16} className="text-amber-500" />DPF por Vencer (próximos 30 días)</h3>
-                <button onClick={cargarVencimientos} className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-200 transition-all"><RefreshCw size={13} />Actualizar</button>
+                <h3 className="font-black text-white/70 text-sm uppercase tracking-wide flex items-center gap-2"><Calendar size={16} className="text-amber-400" />DPF por Vencer (próximos 30 días)</h3>
+                <button onClick={cargarVencimientos} className="flex items-center gap-2 px-3 py-2 bg-white/[0.06] text-white/50 text-xs font-black rounded-xl hover:bg-white/10 transition-all"><RefreshCw size={13} />Actualizar</button>
               </div>
               {vencimientos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                <div className="flex flex-col items-center justify-center py-16 text-white/25">
                   <CheckCircle2 size={40} className="mb-3 opacity-30 text-emerald-400" />
                   <p className="font-bold text-sm">No hay DPF por vencer en los próximos 30 días</p>
                 </div>
@@ -675,24 +677,24 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                     const urgente = d.DiasRestantes <= 0;
                     const proximo = d.DiasRestantes <= 7 && d.DiasRestantes > 0;
                     return (
-                      <div key={d.DepositoID} className={`rounded-2xl border p-4 ${urgente ? 'bg-red-50 border-red-200' : proximo ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
+                      <div key={d.DepositoID} className={`rounded-2xl border p-4 ${urgente ? 'bg-red-500/10 border-red-500/30' : proximo ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/[0.04] border-white/[0.07]'}`}>
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${urgente ? 'bg-red-200 text-red-800' : proximo ? 'bg-amber-200 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${urgente ? 'bg-red-500/20 text-red-400' : proximo ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-white/50'}`}>
                                 {urgente ? '¡VENCIDO!' : proximo ? `${d.DiasRestantes}d` : `${d.DiasRestantes}d`}
                               </span>
                               <span className="font-black text-[#14532D] text-sm">{d.DepositoID}</span>
                               <EstadoBadge estado={d.Estado} />
                             </div>
-                            <p className="font-bold text-slate-800 text-sm">{d.NombreSocio}</p>
-                            <p className="text-xs text-slate-500">{d.Identificacion} · {d.DescripcionRango}</p>
+                            <p className="font-bold text-white/80 text-sm">{d.NombreSocio}</p>
+                            <p className="text-xs text-white/40">{d.Identificacion} · {d.DescripcionRango}</p>
                             <div className="grid grid-cols-3 gap-3 mt-3">
-                              <div><p className="text-[9px] text-slate-400 font-bold uppercase">Capital</p><p className="font-black text-slate-800">{fmtUSD(d.MontoCapital)}</p></div>
-                              <div><p className="text-[9px] text-slate-400 font-bold uppercase">Tasa / Plazo</p><p className="font-black text-[#14532D]">{d.TasaNominalAnual}% / {d.PlazosDias}d</p></div>
-                              <div><p className="text-[9px] text-slate-400 font-bold uppercase">Int. Neto</p><p className="font-black text-emerald-700">{fmtUSD(d.InteresNetoProyectado)}</p></div>
+                              <div><p className="text-[9px] text-white/35 font-bold uppercase">Capital</p><p className="font-black text-white/80 tabular-nums">{fmtUSD(d.MontoCapital)}</p></div>
+                              <div><p className="text-[9px] text-white/35 font-bold uppercase">Tasa / Plazo</p><p className="font-black text-emerald-400">{d.TasaNominalAnual}% / {d.PlazosDias}d</p></div>
+                              <div><p className="text-[9px] text-white/35 font-bold uppercase">Int. Neto</p><p className="font-black text-emerald-300 tabular-nums">{fmtUSD(d.InteresNetoProyectado)}</p></div>
                             </div>
-                            <p className="text-[10px] text-slate-500 mt-2">Apertura: {d.FechaApertura} · Vence: <strong>{d.FechaVencimiento}</strong></p>
+                            <p className="text-[10px] text-white/35 mt-2">Apertura: {d.FechaApertura} · Vence: <strong className="text-white/60">{d.FechaVencimiento}</strong></p>
                           </div>
                           {canOperate && (
                             <div className="flex flex-col gap-2">
@@ -713,20 +715,20 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
           {activeTab === 'TASAS' && isAdmin && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Settings size={18} className="text-[#14532D]" />
+                <Settings size={18} className="text-emerald-400" />
                 <div>
-                  <h3 className="font-black text-slate-800 text-sm uppercase">Configuración de Tasas SEPS</h3>
-                  <p className="text-[10px] text-slate-500">Las tasas no pueden superar el techo BCE referencial. Retención 2% LORTI es fija por ley.</p>
+                  <h3 className="font-black text-white/80 text-sm uppercase">Configuración de Tasas SEPS</h3>
+                  <p className="text-[10px] text-white/35">Las tasas no pueden superar el techo BCE referencial. Retención 2% LORTI es fija por ley.</p>
                 </div>
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                <Info size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700 font-bold">Las tasas pasivas son reguladas por el BCE (Banco Central del Ecuador). La tasa máxima permitida por tramo se muestra en la columna "Techo BCE". Superarla bloquea el guardado.</p>
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2">
+                <Info size={15} className="text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-300/80 font-bold">Las tasas pasivas son reguladas por el BCE (Banco Central del Ecuador). La tasa máxima permitida por tramo se muestra en la columna "Techo BCE". Superarla bloquea el guardado.</p>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
+              <div className="overflow-x-auto rounded-xl border border-white/[0.07]">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-white/[0.04] text-[10px] font-black text-white/40 uppercase tracking-wider">
                       {['Tramo / Cuenta SEPS','Días','Techo BCE','Tasa Activa %','Monto Mín.','Penaliz. %','Activo',''].map(h => <th key={h} className="px-3 py-3 text-left">{h}</th>)}
                     </tr>
                   </thead>
@@ -736,19 +738,19 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                       const tna = e.TasaNominalAnual !== undefined ? e.TasaNominalAnual : t.TasaNominalAnual;
                       const changed = Object.keys(e).length > 0;
                       return (
-                        <tr key={t.TasaID} className={`border-t border-slate-50 ${changed ? 'bg-emerald-50' : ''}`}>
+                        <tr key={t.TasaID} className={`border-t border-white/[0.04] ${changed ? 'bg-emerald-500/10' : 'hover:bg-white/[0.03]'}`}>
                           <td className="px-3 py-3">
-                            <p className="font-black text-slate-800 text-xs">{t.DescripcionRango}</p>
-                            <p className="font-mono text-[10px] text-slate-400">{t.CuentaContableDPF}</p>
+                            <p className="font-black text-white/80 text-xs">{t.DescripcionRango}</p>
+                            <p className="font-mono text-[10px] text-white/35">{t.CuentaContableDPF}</p>
                           </td>
-                          <td className="px-3 py-3 text-xs text-slate-600 font-bold">{t.DiasDesde}–{t.DiasHasta >= 9999 ? '∞' : t.DiasHasta}</td>
-                          <td className="px-3 py-3 text-xs font-black text-red-600">{t.TasaMaximaBCE}%</td>
+                          <td className="px-3 py-3 text-xs text-white/50 font-bold">{t.DiasDesde}–{t.DiasHasta >= 9999 ? '∞' : t.DiasHasta}</td>
+                          <td className="px-3 py-3 text-xs font-black text-red-400">{t.TasaMaximaBCE}%</td>
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1">
                               <input type="number" min="0" max={t.TasaMaximaBCE} step="0.01"
                                 value={tna}
                                 onChange={ev => setEditTasas(p => ({ ...p, [t.TasaID]: { ...p[t.TasaID], TasaNominalAnual: parseFloat(ev.target.value) } }))}
-                                className={`w-20 px-2 py-1.5 rounded-lg border text-xs font-black focus:outline-none ${parseFloat(tna as any) > t.TasaMaximaBCE ? 'border-red-400 bg-red-50 text-red-700' : 'border-slate-200 bg-white focus:border-[#14532D]'}`} />
+                                className={`w-20 px-2 py-1.5 rounded-lg border text-xs font-black focus:outline-none ${parseFloat(tna as any) > t.TasaMaximaBCE ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-white/[0.1] bg-white/[0.06] text-white/80 focus:border-emerald-500/50'}`} />
                               <span className="text-xs text-slate-400">%</span>
                             </div>
                           </td>
@@ -758,7 +760,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                               <input type="number" min="0" step="1"
                                 value={e.MontoMinimo !== undefined ? e.MontoMinimo : t.MontoMinimo}
                                 onChange={ev => setEditTasas(p => ({ ...p, [t.TasaID]: { ...p[t.TasaID], MontoMinimo: parseFloat(ev.target.value) } }))}
-                                className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold focus:outline-none focus:border-[#14532D]" />
+                                className="w-20 px-2 py-1.5 rounded-lg border border-white/[0.1] bg-white/[0.06] text-white/80 text-xs font-bold focus:outline-none focus:border-emerald-500/50" />
                             </div>
                           </td>
                           <td className="px-3 py-3">
@@ -766,7 +768,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                               <input type="number" min="0" max="100" step="1"
                                 value={e.PorcentajePenalizacion !== undefined ? e.PorcentajePenalizacion : t.PorcentajePenalizacion}
                                 onChange={ev => setEditTasas(p => ({ ...p, [t.TasaID]: { ...p[t.TasaID], PorcentajePenalizacion: parseFloat(ev.target.value) } }))}
-                                className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold focus:outline-none focus:border-[#14532D]" />
+                                className="w-16 px-2 py-1.5 rounded-lg border border-white/[0.1] bg-white/[0.06] text-white/80 text-xs font-bold focus:outline-none focus:border-emerald-500/50" />
                               <span className="text-xs text-slate-400">%</span>
                             </div>
                           </td>
@@ -791,8 +793,8 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                   </tbody>
                 </table>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 font-bold space-y-1">
-                <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest mb-2">Cuentas del Plan Contable SEPS — Módulo DPF</p>
+              <div className="bg-white/[0.04] border border-white/[0.07] rounded-xl p-4 text-xs text-white/40 font-bold space-y-1">
+                <p className="font-black text-white/60 uppercase text-[10px] tracking-widest mb-2">Cuentas del Plan Contable SEPS — Módulo DPF</p>
                 <p>2.1.03.05 · Depósitos a Plazo de 1 a 30 días</p>
                 <p>2.1.03.10 · Depósitos a Plazo de 31 a 90 días</p>
                 <p>2.1.03.15 · Depósitos a Plazo de 91 a 180 días</p>
@@ -809,30 +811,30 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
           {activeTab === 'CONTABILIDAD' && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <FileText size={18} className="text-[#14532D]" />
-                <h3 className="font-black text-slate-800 text-sm uppercase">Registro Contable DPF</h3>
+                <FileText size={18} className="text-emerald-400" />
+                <h3 className="font-black text-white/80 text-sm uppercase">Registro Contable DPF</h3>
               </div>
               {depositos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-slate-400"><FileText size={40} className="mb-3 opacity-30" /><p className="font-bold text-sm">Sin registros para mostrar</p></div>
+                <div className="flex flex-col items-center justify-center py-16 text-white/25"><FileText size={40} className="mb-3 opacity-30" /><p className="font-bold text-sm">Sin registros para mostrar</p></div>
               ) : (
                 <div className="space-y-3">
                   {depositos.filter(d => ['LIQUIDADO','CANCELADO','RENOVADO'].includes(d.Estado) || d.Estado === 'ACTIVO').slice(0, 20).map(d => (
                     <button key={d.DepositoID} onClick={() => verDetalle(d.DepositoID)}
-                      className="w-full bg-white rounded-xl border border-slate-100 p-4 flex items-center justify-between hover:border-[#14532D] hover:bg-emerald-50 transition-all text-left">
+                      className="w-full bg-white/[0.04] rounded-xl border border-white/[0.07] p-4 flex items-center justify-between hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all text-left">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center"><FileText size={18} className="text-[#14532D]" /></div>
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"><FileText size={18} className="text-emerald-400" /></div>
                         <div>
-                          <p className="font-black text-slate-800 text-sm">{d.DepositoID}</p>
-                          <p className="text-xs text-slate-500">{d.NombreSocio} · {d.FechaApertura}</p>
+                          <p className="font-black text-emerald-400 text-sm">{d.DepositoID}</p>
+                          <p className="text-xs text-white/40">{d.NombreSocio} · {d.FechaApertura}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-black text-slate-800">{fmtUSD(d.MontoCapital)}</p>
-                          <p className="text-xs text-slate-400">{d.CuentaContableDPF}</p>
+                          <p className="font-black text-white/80 tabular-nums">{fmtUSD(d.MontoCapital)}</p>
+                          <p className="text-xs text-white/30">{d.CuentaContableDPF}</p>
                         </div>
                         <EstadoBadge estado={d.Estado} />
-                        <ChevronDown size={16} className="text-slate-300" />
+                        <ChevronDown size={16} className="text-white/20" />
                       </div>
                     </button>
                   ))}
@@ -847,15 +849,15 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
       {/* Modal: Detalle DPF + Asientos Contables */}
       {detalleDPF && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white rounded-t-3xl border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+          <div className="bg-[#0F2012] border border-white/[0.1] rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-[#0F2012]/95 backdrop-blur-sm rounded-t-3xl border-b border-white/[0.07] px-6 py-4 flex items-center justify-between">
               <div>
-                <p className="font-black text-[#14532D] text-lg">{detalleDPF.dpf.DepositoID}</p>
-                <p className="text-xs text-slate-500">{detalleDPF.dpf.NombreSocio} · {detalleDPF.dpf.Identificacion}</p>
+                <p className="font-black text-emerald-400 text-lg">{detalleDPF.dpf.DepositoID}</p>
+                <p className="text-xs text-white/40">{detalleDPF.dpf.NombreSocio} · {detalleDPF.dpf.Identificacion}</p>
               </div>
               <div className="flex items-center gap-3">
                 <EstadoBadge estado={detalleDPF.dpf.Estado} />
-                <button onClick={() => setDetalleDPF(null)} className="p-2 rounded-xl hover:bg-slate-100 transition-all"><X size={18} /></button>
+                <button onClick={() => setDetalleDPF(null)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white/80 transition-all"><X size={18} /></button>
               </div>
             </div>
             <div className="p-6 space-y-6">
@@ -875,9 +877,9 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                   { label: 'Aperturado por', value: detalleDPF.dpf.UsuarioAperturaID },
                   { label: 'Renovaciones', value: detalleDPF.dpf.NumeroRenovacion.toString() },
                 ].map((f, i) => (
-                  <div key={i} className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{f.label}</p>
-                    <p className="font-black text-slate-800 text-sm mt-0.5">{f.value}</p>
+                  <div key={i} className="bg-white/[0.05] border border-white/[0.07] rounded-xl p-3">
+                    <p className="text-[9px] font-black text-white/35 uppercase tracking-widest">{f.label}</p>
+                    <p className="font-black text-white/80 text-sm mt-0.5">{f.value}</p>
                   </div>
                 ))}
               </div>
@@ -885,26 +887,26 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
               {/* Asientos contables */}
               {detalleDPF.asientos.length > 0 && (
                 <div>
-                  <p className="font-black text-slate-700 text-sm uppercase tracking-wide mb-3 flex items-center gap-2"><FileText size={15} />Asientos Contables SEPS</p>
-                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <p className="font-black text-white/60 text-sm uppercase tracking-wide mb-3 flex items-center gap-2"><FileText size={15} className="text-emerald-400" />Asientos Contables SEPS</p>
+                  <div className="overflow-x-auto rounded-xl border border-white/[0.07]">
                     <table className="w-full text-xs">
-                      <thead><tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase">{['Tipo','Cuenta','Nombre','Debe','Haber','Concepto','Fecha'].map(h => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
+                      <thead><tr className="bg-white/[0.04] text-[9px] font-black text-white/35 uppercase">{['Tipo','Cuenta','Nombre','Debe','Haber','Concepto','Fecha'].map(h => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
                       <tbody>
                         {detalleDPF.asientos.map(a => (
-                          <tr key={a.AsientoID} className="border-t border-slate-50">
-                            <td className="px-3 py-2"><span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-600">{a.TipoOperacion.replace('_', ' ')}</span></td>
-                            <td className="px-3 py-2 font-mono text-slate-700 font-bold">{a.CuentaContable}</td>
-                            <td className="px-3 py-2 text-slate-600 max-w-[150px] truncate">{a.NombreCuenta}</td>
-                            <td className="px-3 py-2 font-black text-right text-slate-800">{a.DebeAmount > 0 ? fmtUSD(a.DebeAmount) : '-'}</td>
-                            <td className="px-3 py-2 font-black text-right text-emerald-700">{a.HaberAmount > 0 ? fmtUSD(a.HaberAmount) : '-'}</td>
-                            <td className="px-3 py-2 text-slate-500 max-w-[180px] truncate">{a.Concepto}</td>
-                            <td className="px-3 py-2 text-slate-400">{a.FechaAsiento.slice(0, 10)}</td>
+                          <tr key={a.AsientoID} className="border-t border-white/[0.04]">
+                            <td className="px-3 py-2"><span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-white/10 text-white/50">{a.TipoOperacion.replace('_', ' ')}</span></td>
+                            <td className="px-3 py-2 font-mono text-emerald-400 font-bold">{a.CuentaContable}</td>
+                            <td className="px-3 py-2 text-white/50 max-w-[150px] truncate">{a.NombreCuenta}</td>
+                            <td className="px-3 py-2 font-black text-right text-white/70 tabular-nums">{a.DebeAmount > 0 ? fmtUSD(a.DebeAmount) : '-'}</td>
+                            <td className="px-3 py-2 font-black text-right text-emerald-400 tabular-nums">{a.HaberAmount > 0 ? fmtUSD(a.HaberAmount) : '-'}</td>
+                            <td className="px-3 py-2 text-white/35 max-w-[180px] truncate">{a.Concepto}</td>
+                            <td className="px-3 py-2 text-white/30">{a.FechaAsiento.slice(0, 10)}</td>
                           </tr>
                         ))}
-                        <tr className="border-t-2 border-slate-200 bg-slate-50">
-                          <td colSpan={3} className="px-3 py-2 font-black text-slate-700 uppercase text-[10px] tracking-widest">TOTALES</td>
-                          <td className="px-3 py-2 font-black text-right text-slate-800">{fmtUSD(detalleDPF.asientos.reduce((s, a) => s + a.DebeAmount, 0))}</td>
-                          <td className="px-3 py-2 font-black text-right text-emerald-700">{fmtUSD(detalleDPF.asientos.reduce((s, a) => s + a.HaberAmount, 0))}</td>
+                        <tr className="border-t-2 border-white/[0.1] bg-white/[0.04]">
+                          <td colSpan={3} className="px-3 py-2 font-black text-white/50 uppercase text-[10px] tracking-widest">TOTALES</td>
+                          <td className="px-3 py-2 font-black text-right text-white/80 tabular-nums">{fmtUSD(detalleDPF.asientos.reduce((s, a) => s + a.DebeAmount, 0))}</td>
+                          <td className="px-3 py-2 font-black text-right text-emerald-400 tabular-nums">{fmtUSD(detalleDPF.asientos.reduce((s, a) => s + a.HaberAmount, 0))}</td>
                           <td colSpan={2} />
                         </tr>
                       </tbody>
@@ -920,30 +922,30 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
       {/* Modal: Renovar DPF */}
       {renovarDPF && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
+          <div className="bg-[#0F2012] border border-white/[0.1] rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-[#14532D] text-lg flex items-center gap-2"><RotateCcw size={20} />Renovar DPF</h3>
-              <button onClick={() => setRenovarDPF(null)} className="p-2 rounded-xl hover:bg-slate-100"><X size={18} /></button>
+              <h3 className="font-black text-emerald-400 text-lg flex items-center gap-2"><RotateCcw size={20} />Renovar DPF</h3>
+              <button onClick={() => setRenovarDPF(null)} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white/80 transition-all"><X size={18} /></button>
             </div>
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-              <p className="font-black text-emerald-800 text-sm">{renovarDPF.DepositoID}</p>
-              <p className="text-xs text-emerald-600">{renovarDPF.NombreSocio} · Capital: {fmtUSD(renovarDPF.MontoCapital)}</p>
-              <p className="text-xs text-emerald-600">Tasa anterior: {renovarDPF.TasaNominalAnual}% / {renovarDPF.PlazosDias} días</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+              <p className="font-black text-emerald-400 text-sm">{renovarDPF.DepositoID}</p>
+              <p className="text-xs text-white/50">{renovarDPF.NombreSocio} · Capital: {fmtUSD(renovarDPF.MontoCapital)}</p>
+              <p className="text-xs text-white/35">Tasa anterior: {renovarDPF.TasaNominalAnual}% / {renovarDPF.PlazosDias} días</p>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nuevo Tramo (vacío = mismo tramo)</label>
-              <select value={renovarTasaID} onChange={e => setRenovarTasaID(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D] text-slate-700">
-                <option value="">— Mantener tramo actual —</option>
-                {tasas.filter(t => t.Activo).map(t => <option key={t.TasaID} value={t.TasaID}>{t.DescripcionRango} → {t.TasaNominalAnual}% TNA</option>)}
+              <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Nuevo Tramo (vacío = mismo tramo)</label>
+              <select value={renovarTasaID} onChange={e => setRenovarTasaID(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/70 text-sm font-bold focus:outline-none focus:border-emerald-500/50">
+                <option value="" className="bg-[#1A2E1C]">— Mantener tramo actual —</option>
+                {tasas.filter(t => t.Activo).map(t => <option key={t.TasaID} value={t.TasaID} className="bg-[#1A2E1C]">{t.DescripcionRango} → {t.TasaNominalAnual}% TNA</option>)}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nuevo Plazo en Días (vacío = mismo plazo)</label>
-              <input type="number" min="1" value={renovarPlazo} onChange={e => setRenovarPlazo(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:border-[#14532D]" />
+              <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Nuevo Plazo en Días (vacío = mismo plazo)</label>
+              <input type="number" min="1" value={renovarPlazo} onChange={e => setRenovarPlazo(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-white/[0.1] bg-white/[0.06] text-white/80 text-sm font-bold focus:outline-none focus:border-emerald-500/50" />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setRenovarDPF(null)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">Cancelar</button>
-              <button onClick={ejecutarRenovacion} disabled={loading} className="flex-1 py-3 bg-purple-600 text-white rounded-2xl font-black text-sm hover:bg-purple-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+              <button onClick={() => setRenovarDPF(null)} className="flex-1 py-3 bg-white/[0.06] text-white/60 rounded-2xl font-black text-sm hover:bg-white/10 transition-all">Cancelar</button>
+              <button onClick={ejecutarRenovacion} disabled={loading} className="flex-1 py-3 bg-violet-600/80 hover:bg-violet-500 text-white rounded-2xl font-black text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30">
                 {loading ? <RefreshCw size={15} className="animate-spin" /> : <RotateCcw size={15} />} Confirmar Renovación
               </button>
             </div>
@@ -954,15 +956,15 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
       {/* Modal: Confirmación genérica */}
       {confirmOpen && confirmData && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
+          <div className="bg-[#0F2012] border border-white/[0.1] rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center"><AlertTriangle size={28} className="text-amber-500" /></div>
-              <h3 className="font-black text-slate-800 text-base uppercase tracking-tight">{confirmData.titulo}</h3>
-              <p className="text-sm text-slate-600 font-bold whitespace-pre-line leading-relaxed">{confirmData.msg}</p>
+              <div className="w-14 h-14 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-900/30"><AlertTriangle size={28} className="text-amber-400" /></div>
+              <h3 className="font-black text-white/90 text-base uppercase tracking-tight">{confirmData.titulo}</h3>
+              <p className="text-sm text-white/50 font-bold whitespace-pre-line leading-relaxed">{confirmData.msg}</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">Cancelar</button>
-              <button onClick={confirmData.accion} className="flex-1 py-4 bg-[#14532D] text-white rounded-2xl font-black text-sm hover:bg-emerald-800 transition-all">Confirmar</button>
+              <button onClick={() => setConfirmOpen(false)} className="flex-1 py-4 bg-white/[0.06] text-white/60 rounded-2xl font-black text-sm hover:bg-white/10 transition-all">Cancelar</button>
+              <button onClick={confirmData.accion} className="flex-1 py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-900/40">Confirmar</button>
             </div>
           </div>
         </div>
