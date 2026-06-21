@@ -905,7 +905,8 @@ app.post('/api/socios/loans/update', async (req, res) => {
 });
 
 app.post('/api/socios/loans/approve', async (req, res) => {
-  const { id, ids, reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount } = req.body || {};
+  const { id, ids, reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount,
+          icePorcentaje, iceEstado, iceCuotaMensual, iceIngresoNeto, iceDeudaExterna } = req.body || {};
   const targetIds = Array.isArray(ids) ? ids : (id ? [id] : []);
   if (targetIds.length === 0 || !reason) {
     return res.status(400).json({ ok: false, error: 'ids y dictamen técnico son requeridos' });
@@ -982,7 +983,7 @@ app.post('/api/socios/loans/approve', async (req, res) => {
           newPlanPagos = JSON.stringify(newInstallments);
         }
 
-        // 2. Actualizar estado del crédito a APROBADO, tipo de aprobación, acta y monto propuesto
+        // 2. Actualizar estado del crédito a APROBADO, tipo de aprobación, acta, monto e ICE
         await transaction.request()
           .input('id', sql.NVarChar(50), loanId)
           .input('reason', sql.NVarChar(500), reason)
@@ -990,15 +991,25 @@ app.post('/api/socios/loans/approve', async (req, res) => {
           .input('actaSesion', sql.NVarChar(100), actaSesion || null)
           .input('monto', sql.Decimal(15, 2), finalAmount)
           .input('newPlanPagos', sql.NVarChar(sql.MAX), newPlanPagos)
+          .input('icePorcentaje', sql.Decimal(6, 2), icePorcentaje != null ? parseFloat(icePorcentaje) : null)
+          .input('iceEstado', sql.NVarChar(10), iceEstado || null)
+          .input('iceCuotaMensual', sql.Decimal(15, 2), iceCuotaMensual != null ? parseFloat(iceCuotaMensual) : null)
+          .input('iceIngresoNeto', sql.Decimal(15, 2), iceIngresoNeto != null ? parseFloat(iceIngresoNeto) : null)
+          .input('iceDeudaExterna', sql.Decimal(15, 2), iceDeudaExterna != null ? parseFloat(iceDeudaExterna) : null)
           .query(`
-            UPDATE dbo.SolicitudesCredito 
-            SET Estado = 'APROBADO', 
+            UPDATE dbo.SolicitudesCredito
+            SET Estado = 'APROBADO',
                 Observaciones = @reason,
                 TipoAprobacion = @tipoAprobacion,
                 ActaSesion = @actaSesion,
                 Monto = @monto,
                 Saldo = @monto,
-                PlanPagos = COALESCE(@newPlanPagos, PlanPagos)
+                PlanPagos = COALESCE(@newPlanPagos, PlanPagos),
+                ICEPorcentaje     = @icePorcentaje,
+                ICEEstado         = @iceEstado,
+                ICECuotaMensual   = @iceCuotaMensual,
+                ICEIngresoNeto    = @iceIngresoNeto,
+                ICEDeudaExterna   = @iceDeudaExterna
             WHERE SolicitudID = @id
           `);
 

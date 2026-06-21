@@ -385,16 +385,21 @@ export default function App() {
   };
 
   const handleApproveLoan = async (
-    loanId: string, 
-    memberId: string, 
-    reason: string, 
-    tipoAprobacion?: string, 
-    actaSesion?: string, 
-    proposedAmount?: number
+    loanId: string,
+    memberId: string,
+    reason: string,
+    tipoAprobacion?: string,
+    actaSesion?: string,
+    proposedAmount?: number,
+    icePorcentaje?: number,
+    iceEstado?: string,
+    iceCuotaMensual?: number,
+    iceIngresoNeto?: number,
+    iceDeudaExterna?: number
   ) => {
     if (useRemoteApi) {
       try {
-        const res = await DataService.approveLoan(loanId, reason, currentUser?.id, tipoAprobacion, actaSesion, proposedAmount);
+        const res = await DataService.approveLoan(loanId, reason, currentUser?.id, tipoAprobacion, actaSesion, proposedAmount, icePorcentaje, iceEstado, iceCuotaMensual, iceIngresoNeto, iceDeudaExterna);
         if (res.ok) {
           await showCustomAlert("¡SOLICITUD APROBADA!\nLa solicitud ha sido aprobada con éxito. Proceda al desembolso de fondos.", "success", "Crédito Aprobado");
           await reloadAllUsers();

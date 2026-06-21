@@ -31,7 +31,7 @@ interface CreditOfficerApprovalProps {
   users: User[];
   currentUser?: User;
   onUpdateUser: (user: User) => void;
-  onApprove: (loanId: string, memberId: string, reason: string, tipoAprobacion?: string, actaSesion?: string, proposedAmount?: number) => void;
+  onApprove: (loanId: string, memberId: string, reason: string, tipoAprobacion?: string, actaSesion?: string, proposedAmount?: number, icePorcentaje?: number, iceEstado?: string, iceCuotaMensual?: number, iceIngresoNeto?: number, iceDeudaExterna?: number) => void;
   onReject: (loanId: string, memberId: string, reason: string) => void;
   activeTab?: 'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA';
   onActiveTabChange?: (tab: 'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA') => void;
@@ -427,6 +427,16 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     };
   }, [selectedLoan, proposedSensitivityAmount]);
 
+  // ICE — Índice de Capacidad de Endeudamiento (SEPS Art.8)
+  const iceData = useMemo(() => {
+    if (!bureauScoreData || !sensitivitySimulation) return null;
+    const ingresoNeto = bureauScoreData.ingresosTotales - bureauScoreData.gastosMensuales;
+    const cuota = sensitivitySimulation.monthlyPayment;
+    const deudaExt = bureauScoreData.deudasExternas ?? 0;
+    const ice = ingresoNeto > 0 ? ((cuota + deudaExt) / ingresoNeto) * 100 : 999;
+    const estado: 'APROBADO' | 'ALERTA' | 'BLOQUEADO' = ice <= 40 ? 'APROBADO' : ice <= 50 ? 'ALERTA' : 'BLOQUEADO';
+    return { ice, estado, ingresoNeto, cuota, deudaExt };
+  }, [bureauScoreData, sensitivitySimulation]);
 
   const pendingLoans = useMemo(() => users.flatMap(u => 
     (u.loans || []).filter(l => l.status === 'SOLICITADO').map(l => ({ loan: l, member: u }))
@@ -497,12 +507,17 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         try {
           if (isApproval) {
             onApprove(
-              selectedLoan.loan.id, 
-              selectedLoan.member.id, 
-              reasonText, 
-              approvalType, 
-              actaSesion.trim(), 
-              proposedSensitivityAmount ? parseFloat(proposedSensitivityAmount) : undefined
+              selectedLoan.loan.id,
+              selectedLoan.member.id,
+              reasonText,
+              approvalType,
+              actaSesion.trim(),
+              proposedSensitivityAmount ? parseFloat(proposedSensitivityAmount) : undefined,
+              iceData?.ice,
+              iceData?.estado,
+              iceData?.cuota,
+              iceData?.ingresoNeto,
+              iceData?.deudaExt
             );
           } else {
             onReject(selectedLoan.loan.id, selectedLoan.member.id, reasonText);
@@ -1313,7 +1328,8 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     const { loan, member } = selectedLoan;
     const isOfficerLimited = currentUserRole === UserRole.CREDIT_OFFICER && loan.amount > 20000.00;
     const isManagerLimited = currentUserRole === UserRole.MANAGER && loan.amount > 50000.00;
-    const isApprovalBlocked = isOfficerLimited || isManagerLimited;
+    const isIceBlocked = iceData?.estado === 'BLOQUEADO';
+    const isApprovalBlocked = isOfficerLimited || isManagerLimited || isIceBlocked;
 
     // Determine color code for bureau score
     let scoreColorClass = 'bg-slate-100 text-slate-700';
@@ -1444,6 +1460,139 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   ) : (
                     <div className="p-4 bg-slate-50 text-slate-400 text-center rounded-xl text-[10px] font-black uppercase">
                       No se pudo cargar el análisis del buró para este socio
+                    </div>
+                  )}
+                </div>
+
+                {/* ── SECCIÓN ICE: ÍNDICE DE CAPACIDAD DE ENDEUDAMIENTO (SEPS) ── */}
+                <div className={`p-8 rounded-3xl border-2 space-y-5 ${
+                  !iceData ? 'bg-slate-50 border-slate-100'
+                  : iceData.estado === 'BLOQUEADO' ? 'bg-rose-50 border-rose-300'
+                  : iceData.estado === 'ALERTA'    ? 'bg-amber-50 border-amber-300'
+                  :                                   'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <div className="flex justify-between items-center border-b pb-4 border-current/20">
+                    <h3 className={`text-sm font-black uppercase tracking-wider flex items-center gap-2 ${
+                      !iceData ? 'text-slate-700'
+                      : iceData.estado === 'BLOQUEADO' ? 'text-rose-800'
+                      : iceData.estado === 'ALERTA'    ? 'text-amber-800'
+                      :                                   'text-emerald-800'
+                    }`}>
+                      <Scale size={18} />
+                      ICE — Índice de Capacidad de Endeudamiento
+                      <span className="text-[9px] font-semibold normal-case opacity-60">Res. SEPS-IGT-DNG-2018-0037 Art.8</span>
+                    </h3>
+                    {iceData && (
+                      <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider ${
+                        iceData.estado === 'BLOQUEADO' ? 'bg-rose-600 text-white'
+                        : iceData.estado === 'ALERTA'  ? 'bg-amber-500 text-white'
+                        :                                 'bg-emerald-600 text-white'
+                      }`}>
+                        {iceData.estado === 'BLOQUEADO' ? '⛔ BLOQUEADO' : iceData.estado === 'ALERTA' ? '⚠ ALERTA' : '✓ APROBADO'}
+                      </span>
+                    )}
+                  </div>
+
+                  {iceData ? (
+                    <div className="space-y-4">
+                      {/* Barra de progreso ICE */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black uppercase">
+                          <span className={
+                            iceData.estado === 'BLOQUEADO' ? 'text-rose-700'
+                            : iceData.estado === 'ALERTA'  ? 'text-amber-700'
+                            :                                 'text-emerald-700'
+                          }>
+                            ICE = {iceData.ice > 999 ? '>999' : iceData.ice.toFixed(1)}%
+                          </span>
+                          <span className="text-slate-500">Límite SEPS: ≤40% apto | 41-50% alerta | &gt;50% bloqueado</span>
+                        </div>
+                        <div className="relative h-5 bg-white rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                          {/* Zonas de color */}
+                          <div className="absolute inset-0 flex">
+                            <div className="bg-emerald-100" style={{ width: '40%' }} />
+                            <div className="bg-amber-100" style={{ width: '10%' }} />
+                            <div className="bg-rose-100" style={{ width: '50%' }} />
+                          </div>
+                          {/* Marcadores */}
+                          <div className="absolute top-0 bottom-0 w-px bg-emerald-500 opacity-60" style={{ left: '40%' }} />
+                          <div className="absolute top-0 bottom-0 w-px bg-amber-500 opacity-60" style={{ left: '50%' }} />
+                          {/* Barra de valor */}
+                          <div
+                            className={`absolute top-0 bottom-0 left-0 rounded-full transition-all duration-700 ${
+                              iceData.estado === 'BLOQUEADO' ? 'bg-rose-500'
+                              : iceData.estado === 'ALERTA'  ? 'bg-amber-500'
+                              :                                 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min(iceData.ice, 100)}%`, opacity: 0.75 }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-slate-700 mix-blend-multiply">
+                            {iceData.ice > 100 ? `${iceData.ice.toFixed(0)}% — EXCEDE MÁXIMO` : `${iceData.ice.toFixed(1)}%`}
+                          </span>
+                        </div>
+                        <div className="flex text-[8px] font-bold text-slate-400 justify-between px-0.5">
+                          <span>0%</span>
+                          <span className="text-emerald-600">40%</span>
+                          <span className="text-amber-600">50%</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+
+                      {/* Descomposición del ICE */}
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="p-3 bg-white rounded-2xl border border-slate-200">
+                          <p className="text-[8px] font-black text-slate-400 uppercase">Cuota Mensual</p>
+                          <p className="text-base font-black text-slate-800 tabular-nums">${iceData.cuota.toFixed(2)}</p>
+                          <p className="text-[8px] text-slate-400">(crédito solicitado)</p>
+                        </div>
+                        <div className="p-3 bg-white rounded-2xl border border-slate-200">
+                          <p className="text-[8px] font-black text-slate-400 uppercase">Deuda Externa/mes</p>
+                          <p className="text-base font-black text-slate-800 tabular-nums">${iceData.deudaExt.toFixed(2)}</p>
+                          <p className="text-[8px] text-slate-400">(obligaciones actuales)</p>
+                        </div>
+                        <div className="p-3 bg-white rounded-2xl border border-slate-200">
+                          <p className="text-[8px] font-black text-slate-400 uppercase">Ingreso Neto/mes</p>
+                          <p className="text-base font-black text-emerald-700 tabular-nums">${iceData.ingresoNeto.toFixed(2)}</p>
+                          <p className="text-[8px] text-slate-400">(ingresos - gastos)</p>
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] font-bold text-center text-slate-500">
+                        ICE = (${iceData.cuota.toFixed(2)} + ${iceData.deudaExt.toFixed(2)}) ÷ ${iceData.ingresoNeto.toFixed(2)} × 100 = <strong className={
+                          iceData.estado === 'BLOQUEADO' ? 'text-rose-700'
+                          : iceData.estado === 'ALERTA'  ? 'text-amber-700'
+                          :                                 'text-emerald-700'
+                        }>{iceData.ice.toFixed(2)}%</strong>
+                      </p>
+
+                      {iceData.estado === 'BLOQUEADO' && (
+                        <div className="p-4 bg-rose-100 rounded-2xl border border-rose-300 flex gap-3 items-start">
+                          <Ban size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs font-black text-rose-800 uppercase">Aprobación Bloqueada por ICE</p>
+                            <p className="text-[10px] font-semibold text-rose-700 mt-1">
+                              El ICE supera el 50% permitido por la Resolución SEPS. No es posible aprobar este crédito sin reducir el monto
+                              o eliminar deudas externas. Use el Análisis de Sensibilidad para ajustar el capital.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {iceData.estado === 'ALERTA' && (
+                        <div className="p-4 bg-amber-100 rounded-2xl border border-amber-300 flex gap-3 items-start">
+                          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs font-black text-amber-800 uppercase">Nivel de Riesgo Elevado</p>
+                            <p className="text-[10px] font-semibold text-amber-700 mt-1">
+                              ICE en zona de alerta (41-50%). La aprobación es posible pero el expediente debe incluir justificación adicional.
+                              Considere reducir el monto para mejorar el indicador.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-white text-slate-400 text-center rounded-xl text-[10px] font-black uppercase border border-slate-200">
+                      Esperando datos del buró y monto propuesto para calcular el ICE…
                     </div>
                   )}
                 </div>

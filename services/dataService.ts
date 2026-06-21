@@ -69,16 +69,24 @@ export class DataService {
     });
   }
   static async approveLoan(
-    loanId: string, 
-    reason: string, 
-    usuarioId?: string, 
-    tipoAprobacion?: string, 
-    actaSesion?: string, 
-    proposedAmount?: number
+    loanId: string,
+    reason: string,
+    usuarioId?: string,
+    tipoAprobacion?: string,
+    actaSesion?: string,
+    proposedAmount?: number,
+    icePorcentaje?: number,
+    iceEstado?: string,
+    iceCuotaMensual?: number,
+    iceIngresoNeto?: number,
+    iceDeudaExterna?: number
   ): Promise<{ ok: boolean, message?: string }> {
     return this.request<{ ok: boolean, message?: string }>('socios/loans/approve', {
       method: 'POST',
-      body: JSON.stringify({ ids: [loanId], reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount })
+      body: JSON.stringify({
+        ids: [loanId], reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount,
+        icePorcentaje, iceEstado, iceCuotaMensual, iceIngresoNeto, iceDeudaExterna
+      })
     });
   }
   static async approveLoans(loanIds: string[], reason: string, usuarioId?: string): Promise<{ ok: boolean, message?: string }> {
