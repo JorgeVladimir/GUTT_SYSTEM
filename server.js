@@ -3912,9 +3912,9 @@ app.post('/api/socios/transferir', async (req, res) => {
         .input('numeroCuenta', sql.NVarChar(20), origen.NumeroCuenta)
         .input('usuarioId', sql.NVarChar(20), usuarioId || 'SISTEMA')
         .query(`
-          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioID, FechaAsiento)
-          OUTPUT INSERTED.AsientoID
-          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId, SYSDATETIME())
+          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId)
+          OUTPUT INSERTED.AsientoId
+          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)
         `);
 
       await new sql.Request(transaction)
@@ -3926,8 +3926,8 @@ app.post('/api/socios/transferir', async (req, res) => {
         .input('numeroCuenta', sql.NVarChar(20), destino.NumeroCuenta)
         .input('usuarioId', sql.NVarChar(20), usuarioId || 'SISTEMA')
         .query(`
-          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioID, FechaAsiento)
-          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId, SYSDATETIME())
+          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId)
+          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)
         `);
 
       await transaction.commit();
@@ -3947,6 +3947,59 @@ app.post('/api/socios/transferir', async (req, res) => {
   } catch (err) {
     console.error('[transferir]', err.message);
     return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/contabilidad/libro-diario ────────────────────────────────────────
+app.get('/api/contabilidad/libro-diario', async (req, res) => {
+  const limite = Math.min(parseInt(req.query.limite || '100', 10), 500);
+  const desde  = req.query.desde || null;
+  const hasta  = req.query.hasta || null;
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    let query = `
+      SELECT TOP (@limite) rc.AsientoId, rc.SocioId, rc.CuentaContable, rc.Concepto,
+        rc.Debe, rc.Haber, rc.NumeroCuenta, rc.UsuarioId,
+        CONVERT(NVARCHAR(19), rc.Fecha, 120) AS FechaAsiento,
+        ISNULL(rs.PrimerNombre + ' ' + rs.PrimerApellido, 'Sistema') AS NombreSocio
+      FROM dbo.RegistroContable rc
+      LEFT JOIN dbo.RegistroSocios rs ON rc.SocioId = rs.SocioId
+      WHERE 1=1
+    `;
+    const request = pool.request().input('limite', sql.Int, limite);
+    if (desde) { query += ' AND rc.Fecha >= @desde'; request.input('desde', sql.DateTime, new Date(desde)); }
+    if (hasta) { query += ' AND rc.Fecha <= @hasta'; request.input('hasta', sql.DateTime, new Date(hasta)); }
+    query += ' ORDER BY rc.AsientoId DESC';
+
+    const result = await request.query(query);
+    return res.json({ ok: true, asientos: result.recordset });
+  } catch (err) {
+    console.error('[libro-diario]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/contabilidad/balance-comprobacion ────────────────────────────────
+app.get('/api/contabilidad/balance-comprobacion', async (req, res) => {
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request().query(`
+      SELECT CuentaContable,
+        SUM(Debe)  AS TotalDebe,
+        SUM(Haber) AS TotalHaber,
+        SUM(Debe) - SUM(Haber) AS Saldo,
+        COUNT(*)   AS NumAsientos
+      FROM dbo.RegistroContable
+      GROUP BY CuentaContable
+      ORDER BY CuentaContable
+    `);
+    const totalDebe  = result.recordset.reduce((s, r) => s + parseFloat(r.TotalDebe  || 0), 0);
+    const totalHaber = result.recordset.reduce((s, r) => s + parseFloat(r.TotalHaber || 0), 0);
+    return res.json({ ok: true, cuentas: result.recordset, totalDebe, totalHaber });
+  } catch (err) {
+    console.error('[balance-comprobacion]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
