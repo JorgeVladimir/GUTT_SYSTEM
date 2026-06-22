@@ -13,8 +13,9 @@ async function runTests() {
   // ── TEST 1: Estado de caja ─────────────────────────────────────────────
   console.log('------------------------------------------------------');
   console.log('1. GET /caja/control/estado — consulta de estado actual...');
+  const hoy = new Date().toISOString().split('T')[0];
   try {
-    const r = await fetch(`${API_BASE}/caja/control/estado`, { signal: AbortSignal.timeout(8000) });
+    const r = await fetch(`${API_BASE}/caja/control/estado?usuarioId=admin&fecha=${hoy}`, { signal: AbortSignal.timeout(8000) });
     const d = await r.json();
     if (!r.ok) throw new Error(`HTTP ${r.status}: ${d.error || JSON.stringify(d)}`);
     if (d.estado === undefined && d.Estado === undefined) throw new Error(`Sin campo estado: ${JSON.stringify(d)}`);

@@ -3624,7 +3624,7 @@ app.post('/api/dpf', async (req, res) => {
     const interesNetoProyectado = interesProyectado - retencionProyectada;
     const fechaVencimiento = new Date();
     fechaVencimiento.setDate(fechaVencimiento.getDate() + dias);
-    const idResult = await pool.request().execute('dbo.usp_GenerarIDDepositoPlazo');
+    const idResult = await pool.request().output('NuevoID', sql.NVarChar(20)).execute('dbo.usp_GenerarIDDepositoPlazo');
     const depositoID = idResult.output.NuevoID;
     await pool.request()
       .input('depositoID',             sql.NVarChar(20),  depositoID)
@@ -3817,7 +3817,7 @@ app.post('/api/dpf/:id/renovar', async (req, res) => {
     const nInt = parseFloat(dpf.MontoCapital) * (nTNA / 100) * (nuevoPlazo / 365);
     const nRet = nInt * 0.02;
     const nFechaVenc = new Date(); nFechaVenc.setDate(nFechaVenc.getDate() + nuevoPlazo);
-    const nuevoIDResult = await pool.request().execute('dbo.usp_GenerarIDDepositoPlazo');
+    const nuevoIDResult = await pool.request().output('NuevoID', sql.NVarChar(20)).execute('dbo.usp_GenerarIDDepositoPlazo');
     const nuevoDepositoID = nuevoIDResult.output.NuevoID;
     await pool.request()
       .input('dID', sql.NVarChar(20), nuevoDepositoID).input('sID', sql.BigInt, dpf.SOCIOID)

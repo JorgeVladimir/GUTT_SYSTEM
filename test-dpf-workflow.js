@@ -149,7 +149,7 @@ async function runTests() {
     console.log('6. Verificando estado LIQUIDADO en BD...');
     const dbCheck = await pool.request()
       .input('id', sql.NVarChar(50), testDepositoID)
-      .query("SELECT Estado, FechaLiquidacion FROM dbo.DepositosPlazoFijo WHERE DepositoID = @id");
+      .query("SELECT Estado, FechaLiquidacion FROM dbo.DepositosPlazo WHERE DepositoID = @id");
     if (dbCheck.recordset.length === 0) throw new Error('DPF no encontrado en BD tras liquidación.');
     if (dbCheck.recordset[0].Estado !== 'LIQUIDADO') throw new Error(`Estado en BD: ${dbCheck.recordset[0].Estado}`);
     console.log(`   ✅ Estado en BD: LIQUIDADO | Fecha: ${dbCheck.recordset[0].FechaLiquidacion}`);
@@ -162,7 +162,7 @@ async function runTests() {
       .input('id', sql.NVarChar(50), testDepositoID)
       .query(`
         DELETE FROM dbo.AsientosContablesDPF WHERE DepositoID = @id;
-        DELETE FROM dbo.DepositosPlazoFijo WHERE DepositoID = @id;
+        DELETE FROM dbo.DepositosPlazo WHERE DepositoID = @id;
       `);
     console.log('   ✅ BD limpia.');
     testDepositoID = null;
