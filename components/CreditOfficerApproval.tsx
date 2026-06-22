@@ -710,6 +710,10 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       if (!newLoanPrendariaObservation.trim()) {
         return alert("La Observación Técnica (número de motor/chasis/estado) es obligatoria.");
       }
+      const coberturaRatio = parseFloat(newLoanPrendariaValuation) / parseFloat(newLoanAmount || '1');
+      if (coberturaRatio < 1.2) {
+        return alert(`Cobertura insuficiente: ${(coberturaRatio * 100).toFixed(2)}%.\nLa garantía prendaria debe cubrir al menos el 120% del monto del crédito (Normativa SEPS).\nAvalúo mínimo requerido: $${(parseFloat(newLoanAmount || '0') * 1.2).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD.`);
+      }
     }
 
     const rateVal = parseFloat(customRate) || selectedRate.rate;
@@ -2160,14 +2164,20 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       </div>
 
                       {/* Valor de Cobertura calculation */}
-                      <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
-                        <span>Valor de Cobertura Garantizado:</span>
-                        <span className="text-xs bg-emerald-100 px-3 py-1 rounded-lg">
-                          {newLoanAmount && parseFloat(newLoanPrendariaValuation) > 0
-                            ? ((parseFloat(newLoanPrendariaValuation) / parseFloat(newLoanAmount)) * 100).toFixed(2)
-                            : '0.00'} %
-                        </span>
-                      </div>
+                      {(() => {
+                        const cobertura = newLoanAmount && parseFloat(newLoanPrendariaValuation) > 0
+                          ? (parseFloat(newLoanPrendariaValuation) / parseFloat(newLoanAmount)) * 100
+                          : 0;
+                        const ok = cobertura >= 120;
+                        return (
+                          <div className={`p-3 rounded-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider ${ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                            <span>Cobertura SEPS (mín. 120%):</span>
+                            <span className={`text-xs px-3 py-1 rounded-lg font-black ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                              {cobertura.toFixed(2)}% {ok ? '✓' : '✗ INSUFICIENTE'}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}                  {newLoanWarrantyType === 'HIPOTECARIA' && (
                     <div className="grid grid-cols-3 gap-3 pt-2 animate-in fade-in duration-300">
