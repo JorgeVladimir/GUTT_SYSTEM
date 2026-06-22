@@ -53,13 +53,13 @@ const ROLE_TRANSLATIONS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:          'from-amber-400 to-orange-500',
-  SUPER_USER:     'from-violet-400 to-purple-600',
-  MANAGER:        'from-blue-400 to-indigo-500',
-  ACCOUNTANT:     'from-teal-400 to-emerald-500',
-  TELLER:         'from-emerald-400 to-green-500',
-  CREDIT_OFFICER: 'from-rose-400 to-red-500',
-  MEMBER:         'from-slate-400 to-slate-500',
+  ADMIN:          'from-[#FACC15] to-[#D97706]',
+  SUPER_USER:     'from-[#FACC15] to-[#14532D]',
+  MANAGER:        'from-[#14532D] to-[#166534]',
+  ACCOUNTANT:     'from-[#14532D] to-[#15803D]',
+  TELLER:         'from-[#14532D] to-[#16A34A]',
+  CREDIT_OFFICER: 'from-[#8B1A1A] to-[#C9921A]',
+  MEMBER:         'from-[#1E3A2F] to-[#2D5A3D]',
 };
 
 const VIEW_TITLES: Record<string, string> = {
@@ -237,7 +237,7 @@ export const Layout: React.FC<LayoutProps> = ({
               <Clock size={11} />
               <span className="text-[10px] font-bold uppercase tracking-wider">{dateStr}</span>
             </div>
-            <span className="text-[11px] font-black text-emerald-400/80 tabular-nums">{timeStr}</span>
+            <span className="text-[11px] font-black text-[#FACC15]/80 tabular-nums">{timeStr}</span>
           </div>
         )}
 
@@ -323,7 +323,7 @@ export const Layout: React.FC<LayoutProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-bold text-white/80 truncate leading-none">{userName}</p>
-                <p className="text-[9px] font-bold text-emerald-400/70 uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
+                <p className="text-[9px] font-bold text-[#FACC15]/70 uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
               </div>
             </div>
           ) : (

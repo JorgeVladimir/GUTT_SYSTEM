@@ -72,8 +72,8 @@ const mapSocioFromApi = (s: any): SocioResult => ({
 const ESTADO_CONFIG = {
   ACTIVO:    { label: 'ACTIVO',    bg: 'bg-[#C9921A]/15',  text: 'text-[#E8B040]',  dot: 'bg-[#C9921A]'  },
   VENCIDO:   { label: 'VENCIDO',   bg: 'bg-[#D4620A]/15',  text: 'text-[#E07830]',  dot: 'bg-[#D4620A]'  },
-  LIQUIDADO: { label: 'LIQUIDADO', bg: 'bg-blue-500/15',   text: 'text-blue-400',   dot: 'bg-blue-500'   },
-  CANCELADO: { label: 'CANCELADO', bg: 'bg-red-500/15',    text: 'text-red-400',    dot: 'bg-red-500'    },
+  LIQUIDADO: { label: 'LIQUIDADO', bg: 'bg-[#1F2937]/40',  text: 'text-[#9CA3AF]', dot: 'bg-[#6B7280]'  },
+  CANCELADO: { label: 'CANCELADO', bg: 'bg-[#8B1A1A]/20',  text: 'text-[#F87171]', dot: 'bg-[#8B1A1A]'  },
   RENOVADO:  { label: 'RENOVADO',  bg: 'bg-[#8B1A1A]/20',  text: 'text-[#E8B040]',  dot: 'bg-[#C9921A]'  },
 };
 
