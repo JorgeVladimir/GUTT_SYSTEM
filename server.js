@@ -235,8 +235,8 @@ app.post('/api/auth/login.php', async (req, res) => {
     const pool = await sql.connect(sqlConfig);
     const result = await pool.request()
       .input('id', sql.NVarChar(20), cleanId)
-      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada FROM dbo.Usuarios WHERE UsuarioId = @id');
-    
+      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin FROM dbo.Usuarios WHERE UsuarioId = @id');
+
     if (result.recordset.length === 0) {
       return res.status(401).json({ ok: false, error: 'Credenciales inválidas' });
     }
@@ -261,7 +261,7 @@ app.post('/api/auth/login.php', async (req, res) => {
       accounts:      [],
       transactions:  [],
       loans:         [],
-      needsPinChange: !user.PasswordHash, // Obligatorio cambiar si es su primer ingreso (solo tiene PIN)
+      needsPinChange: user.RequiereCambioPin === 1 || user.RequiereCambioPin === true,
     });
   } catch (err) {
     console.error('[login]', err.message);
@@ -320,8 +320,8 @@ app.get('/api/users/get_profile.php', async (req, res) => {
     const pool = await sql.connect(sqlConfig);
     const result = await pool.request()
       .input('id', sql.NVarChar(20), id)
-      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada FROM dbo.Usuarios WHERE UsuarioId = @id');
-    
+      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin FROM dbo.Usuarios WHERE UsuarioId = @id');
+
     if (result.recordset.length === 0) {
       return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
     }
@@ -336,7 +336,7 @@ app.get('/api/users/get_profile.php', async (req, res) => {
       accounts:      [],
       transactions:  [],
       loans:         [],
-      needsPinChange: !user.PasswordHash,
+      needsPinChange: user.RequiereCambioPin === 1 || user.RequiereCambioPin === true,
     };
 
     return res.json(profile);

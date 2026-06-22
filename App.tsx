@@ -271,7 +271,7 @@ export default function App() {
   }, [users]);
 
   const navigateByRole = (user: User) => {
-    if (user.needsPinChange || user.pin === '1234') setView(AppView.CHANGE_PIN);
+    if (user.needsPinChange) setView(AppView.CHANGE_PIN);
     else {
       if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_USER) setView(AppView.ADMIN_HUB);
       else if (user.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
