@@ -42,13 +42,14 @@ if (process.env.SQL_SERVER_INSTANCE) {
 const API_BASE = 'http://localhost:5005/api';
 const TEST_MEMBER_CEDULA = '1720884012'; // Jorge Vladimir de la captura
 
-async function runSecurityTests() {
+async function runTests() {
   console.log('\n======================================================');
   console.log('🛡️  SUITE DE PRUEBAS DE SEGURIDAD Y QA (PENTESTING LÓGICO) 🛡️');
   console.log('======================================================\n');
 
   let successCount = 0;
   let failCount = 0;
+  const errors = [];
 
   // 🧪 PRUEBA 1: Bypass de Rol (Aprobación)
   // Un asesor intenta enviar un POST para aprobar un crédito
@@ -69,12 +70,13 @@ async function runSecurityTests() {
       console.log('   ✅ PRUEBA PASADA: El servidor denegó la aprobación del Asesor con código 403.');
       successCount++;
     } else {
-      console.log(`   ❌ PRUEBA FALLIDA: El servidor devolvió código ${res.status} y respuesta:`, data);
-      failCount++;
+      const msg = `Bypass aprobación: código ${res.status}, ok=${data.ok}`;
+      console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
+      errors.push(msg); failCount++;
     }
   } catch (err) {
     console.log('   ❌ PRUEBA CON ERROR:', err.message);
-    failCount++;
+    errors.push(err.message); failCount++;
   }
 
   // 🧪 PRUEBA 2: Bypass de Rol (Desembolso)
@@ -95,12 +97,13 @@ async function runSecurityTests() {
       console.log('   ✅ PRUEBA PASADA: El servidor denegó el desembolso del Asesor con código 403.');
       successCount++;
     } else {
-      console.log(`   ❌ PRUEBA FALLIDA: El servidor devolvió código ${res.status} y respuesta:`, data);
-      failCount++;
+      const msg = `Bypass desembolso: código ${res.status}, ok=${data.ok}`;
+      console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
+      errors.push(msg); failCount++;
     }
   } catch (err) {
     console.log('   ❌ PRUEBA CON ERROR:', err.message);
-    failCount++;
+    errors.push(err.message); failCount++;
   }
 
   // 🧪 PRUEBA 3: Inyección de Datos (Valor de Prenda Negativo)
@@ -138,12 +141,13 @@ async function runSecurityTests() {
       console.log('   ✅ PRUEBA PASADA: El servidor rechazó la solicitud con avalúo negativo con código 400.');
       successCount++;
     } else {
-      console.log(`   ❌ PRUEBA FALLIDA: El servidor devolvió código ${res.status} y respuesta:`, data);
-      failCount++;
+      const msg = `Inyección avalúo negativo: código ${res.status}, error="${data.error}"`;
+      console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
+      errors.push(msg); failCount++;
     }
   } catch (err) {
     console.log('   ❌ PRUEBA CON ERROR:', err.message);
-    failCount++;
+    errors.push(err.message); failCount++;
   }
 
   // 🧪 PRUEBA 4: Seguridad de Sesión (Denegación por Defecto)
@@ -165,17 +169,25 @@ async function runSecurityTests() {
       console.log('   ✅ PRUEBA PASADA: El servidor denegó la operación al no contar con un usuarioId válido (cae a rol restrictivo por defecto).');
       successCount++;
     } else {
-      console.log(`   ❌ PRUEBA FALLIDA: El servidor devolvió código ${res.status} y respuesta:`, data);
-      failCount++;
+      const msg = `Sesión sin credenciales: código ${res.status}, ok=${data.ok}`;
+      console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
+      errors.push(msg); failCount++;
     }
   } catch (err) {
     console.log('   ❌ PRUEBA CON ERROR:', err.message);
-    failCount++;
+    errors.push(err.message); failCount++;
   }
 
   console.log('\n======================================================');
   console.log(`📊 RESULTADOS: ${successCount} PASADAS, ${failCount} FALLIDAS`);
   console.log('======================================================\n');
+
+  return { passed: successCount, failed: failCount, errors };
 }
 
-runSecurityTests();
+export { runTests };
+
+import { pathToFileURL } from 'url';
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runTests().then(r => process.exit(r.failed > 0 ? 1 : 0));
+}

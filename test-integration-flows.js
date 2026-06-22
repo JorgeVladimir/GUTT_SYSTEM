@@ -47,7 +47,9 @@ async function runTests() {
   console.log('\n======================================================');
   console.log('🧪 INICIANDO SUITE DE PRUEBAS DE INTEGRACIÓN DIGITAL');
   console.log('======================================================\n');
-  
+
+  const errors = [];
+  let passed = 0;
   let pool;
   try {
     pool = await sql.connect(sqlConfig);
@@ -116,6 +118,7 @@ async function runTests() {
       throw new Error(`Fallo el registro del socio: ${registerData.error}`);
     }
     console.log(`✅ Socio registrado exitosamente. Nro Socio: ${registerData.numeroSocio}`);
+    passed++;
     
     // Verificar en DB
     const dbSocioRes = await pool.request()
@@ -131,6 +134,7 @@ async function runTests() {
       throw new Error('Los valores iniciales en ActivacionBancaLinea son incorrectos.');
     }
     console.log('✅ Registro en tabla dbo.ActivacionBancaLinea validado correctamente.');
+    passed++;
 
     // 2. Intento de login de socio bloqueado (requiere verificar correo)
     console.log('\n------------------------------------------------------');
@@ -151,6 +155,7 @@ async function runTests() {
     }
     const sentCode = loginData1.activationCode;
     console.log(`✅ Login denegado correctamente (Banca bloqueada). Código requerido: ${sentCode}`);
+    passed++;
 
     // 3. Confirmación de correo electrónico / Activación de banca
     console.log('\n------------------------------------------------------');
@@ -173,6 +178,7 @@ async function runTests() {
       throw new Error('La banca en línea no se marcó como activa en la base de datos.');
     }
     console.log('✅ Correo verificado y banca en línea activada en base de datos.');
+    passed++;
 
     // 4. Intento de login posterior a activación (debe pedir aceptar términos)
     console.log('\n------------------------------------------------------');
@@ -187,6 +193,7 @@ async function runTests() {
       throw new Error('El socio debería estar verificado pero no haber aceptado la ley de datos.');
     }
     console.log('✅ Banca móvil desbloqueada. Modal de Ley de Datos Personales requerido correctamente.');
+    passed++;
 
     // 5. Aceptación de la Ley de Protección de Datos Personales
     console.log('\n------------------------------------------------------');
@@ -210,6 +217,7 @@ async function runTests() {
       throw new Error('No se registró la fecha ni el estado de aceptación en la base de datos.');
     }
     console.log('✅ Aceptación registrada y fecha registrada en base de datos.');
+    passed++;
 
     // 6. Login final (acceso directo al dashboard)
     console.log('\n------------------------------------------------------');
@@ -224,6 +232,7 @@ async function runTests() {
       throw new Error('El socio debería ingresar directo sin modal ni bloqueos.');
     }
     console.log('✅ Acceso directo al Dashboard concedido. Flujo completo validado.');
+    passed++;
 
     // 7. Limpieza de datos de pruebas final
     console.log('\n------------------------------------------------------');
@@ -245,18 +254,22 @@ async function runTests() {
     console.log('\n======================================================');
     console.log('🎉 ¡TODAS LAS PRUEBAS SE COMPLETARON CON ÉXITO! (100% OK)');
     console.log('======================================================\n');
-    
+
     await pool.close();
-    process.exit(0);
+    return { passed, failed: 0, errors: [] };
   } catch (err) {
     console.error('\n❌ ERROR EN LA SUITE DE PRUEBAS DE INTEGRACIÓN:');
     console.error(err.message);
     console.log('======================================================\n');
-    if (pool) {
-      try { await pool.close(); } catch (_) {}
-    }
-    process.exit(1);
+    if (pool) { try { await pool.close(); } catch (_) {} }
+    errors.push(err.message);
+    return { passed, failed: 1, errors };
   }
 }
 
-runTests();
+export { runTests };
+
+import { pathToFileURL } from 'url';
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runTests().then(r => process.exit(r.failed > 0 ? 1 : 0));
+}

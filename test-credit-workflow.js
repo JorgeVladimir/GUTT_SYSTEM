@@ -52,6 +52,8 @@ async function runTests() {
   console.log('🧪 INICIANDO PRUEBAS DE INTEGRACIÓN: FLUJO DE CRÉDITOS');
   console.log('======================================================\n');
 
+  const errors = [];
+  let passed = 0;
   let pool;
   try {
     pool = await sql.connect(sqlConfig);
@@ -131,6 +133,7 @@ async function runTests() {
     }
     TEST_LOAN_ID = applyData.solicitudId;
     console.log(`✅ Solicitud registrada con éxito en estado SOLICITADO (ID: ${TEST_LOAN_ID}).`);
+    passed++;
 
     // Verificar en BD
     const dbLoan = await pool.request()
@@ -151,6 +154,7 @@ async function runTests() {
     const approveAsesorData = await approveAsesorRes.json();
     if (approveAsesorRes.status === 403 || !approveAsesorData.ok) {
       console.log(`✅ Aprobación denegada correctamente para el Asesor: "${approveAsesorData.error || approveAsesorData.message}"`);
+      passed++;
     } else {
       throw new Error('❌ ERROR: ¡El sistema permitió al Asesor aprobar el crédito!');
     }
@@ -181,6 +185,7 @@ async function runTests() {
       throw new Error(`Fallo al aprobar crédito como admin: ${approveAdminData.error || approveAdminData.message}`);
     }
     console.log('✅ Aprobado por Administrador con éxito.');
+    passed++;
 
     // Verificar en BD que el estado sea APROBADO y el saldo no haya cambiado
     const dbLoanApproved = await pool.request()
@@ -217,6 +222,7 @@ async function runTests() {
     const disburseAsesorData = await disburseAsesorRes.json();
     if (disburseAsesorRes.status === 403 || !disburseAsesorData.ok) {
       console.log(`✅ Desembolso denegado correctamente para el Asesor: "${disburseAsesorData.error || disburseAsesorData.message}"`);
+      passed++;
     } else {
       throw new Error('❌ ERROR: ¡El sistema permitió al Asesor desembolsar el crédito!');
     }
@@ -235,6 +241,7 @@ async function runTests() {
       throw new Error(`Fallo al desembolsar crédito como admin: ${err}`);
     }
     console.log('✅ Desembolso ejecutado con éxito.');
+    passed++;
 
     // Verificar en BD: Estado debe ser VIGENTE
     const dbLoanVigente = await pool.request()
@@ -295,6 +302,7 @@ async function runTests() {
     const testedLoan = allLoansData.loans.find(l => l.id === TEST_LOAN_ID);
     if (testedLoan && testedLoan.origen === 'CAJA_PATATE') {
       console.log('✅ Solicitud encontrada en reporte con origen correcto (CAJA_PATATE) y nombre del socio asociado.');
+      passed++;
     } else {
       throw new Error('❌ ERROR: Solicitud de prueba no encontrada en el reporte o sin origen correcto.');
     }
@@ -335,12 +343,19 @@ async function runTests() {
     console.log('======================================================\n');
 
     await pool.close();
+    return { passed, failed: 0, errors: [] };
   } catch (err) {
     console.error('\n❌ ERROR EN LA PRUEBA DE INTEGRACIÓN:');
     console.error(err.message);
-    if (pool) await pool.close();
-    process.exit(1);
+    if (pool) { try { await pool.close(); } catch (_) {} }
+    errors.push(err.message);
+    return { passed, failed: 1, errors };
   }
 }
 
-runTests();
+export { runTests };
+
+import { pathToFileURL } from 'url';
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runTests().then(r => process.exit(r.failed > 0 ? 1 : 0));
+}
