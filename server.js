@@ -3839,6 +3839,117 @@ app.post('/api/dpf/:id/renovar', async (req, res) => {
   }
 });
 
+// ── POST /api/socios/transferir ───────────────────────────────────────────────
+app.post('/api/socios/transferir', async (req, res) => {
+  const { cuentaOrigenId, cuentaDestinoId, monto, descripcion, usuarioId } = req.body || {};
+
+  if (!cuentaOrigenId || !cuentaDestinoId || !monto || parseFloat(monto) <= 0) {
+    return res.status(400).json({ ok: false, error: 'Datos de transferencia inválidos' });
+  }
+  if (String(cuentaOrigenId) === String(cuentaDestinoId)) {
+    return res.status(400).json({ ok: false, error: 'La cuenta origen y destino no pueden ser la misma' });
+  }
+
+  const numMonto = parseFloat(monto);
+  const concepto = descripcion?.trim() || 'TRANSFERENCIA ENTRE SOCIOS';
+
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const transaction = pool.transaction();
+    await transaction.begin();
+
+    try {
+      // 1. Obtener cuenta origen
+      const origenResult = await new sql.Request(transaction)
+        .input('cuentaId', sql.NVarChar(50), String(cuentaOrigenId).replace('ca-', ''))
+        .query(`
+          SELECT c.CuentaId, c.SocioId, c.NumeroCuenta, c.Saldo, c.Estado, p.PermiteTransferencias
+          FROM dbo.CuentasAhorro c
+          INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+          WHERE c.CuentaId = @cuentaId OR c.NumeroCuenta = @cuentaId
+        `);
+      if (origenResult.recordset.length === 0) throw new Error('Cuenta origen no encontrada');
+
+      const origen = origenResult.recordset[0];
+      if (origen.Estado !== 'ACTIVA') throw new Error('La cuenta origen no está activa');
+      if (!origen.PermiteTransferencias) throw new Error('La cuenta origen no tiene habilitadas las transferencias');
+      if (parseFloat(origen.Saldo) < numMonto) throw new Error('Saldo insuficiente en cuenta origen');
+
+      // 2. Obtener cuenta destino
+      const destinoResult = await new sql.Request(transaction)
+        .input('cuentaId', sql.NVarChar(50), String(cuentaDestinoId).replace('ca-', ''))
+        .query(`
+          SELECT c.CuentaId, c.SocioId, c.NumeroCuenta, c.Saldo, c.Estado, p.PermiteTransferencias
+          FROM dbo.CuentasAhorro c
+          INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+          WHERE c.CuentaId = @cuentaId OR c.NumeroCuenta = @cuentaId
+        `);
+      if (destinoResult.recordset.length === 0) throw new Error('Cuenta destino no encontrada');
+
+      const destino = destinoResult.recordset[0];
+      if (destino.Estado !== 'ACTIVA') throw new Error('La cuenta destino no está activa');
+
+      // 3. Débito cuenta origen
+      await new sql.Request(transaction)
+        .input('cuentaId', sql.Int, origen.CuentaId)
+        .input('nuevoSaldo', sql.Decimal(18, 2), parseFloat(origen.Saldo) - numMonto)
+        .query('UPDATE dbo.CuentasAhorro SET Saldo = @nuevoSaldo WHERE CuentaId = @cuentaId');
+
+      // 4. Crédito cuenta destino
+      await new sql.Request(transaction)
+        .input('cuentaId', sql.Int, destino.CuentaId)
+        .input('nuevoSaldo', sql.Decimal(18, 2), parseFloat(destino.Saldo) + numMonto)
+        .query('UPDATE dbo.CuentasAhorro SET Saldo = @nuevoSaldo WHERE CuentaId = @cuentaId');
+
+      // 5. Asientos contables (partida doble) — cuenta 210101 = Depósitos a la Vista
+      const asientoOrigen = await new sql.Request(transaction)
+        .input('socioId', sql.BigInt, origen.SocioId)
+        .input('cuentaContable', sql.NVarChar(20), '210101')
+        .input('concepto', sql.NVarChar(200), `DÉBITO TRANSFERENCIA: ${concepto}`)
+        .input('debe', sql.Decimal(18, 2), numMonto)
+        .input('haber', sql.Decimal(18, 2), 0)
+        .input('numeroCuenta', sql.NVarChar(20), origen.NumeroCuenta)
+        .input('usuarioId', sql.NVarChar(20), usuarioId || 'SISTEMA')
+        .query(`
+          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioID, FechaAsiento)
+          OUTPUT INSERTED.AsientoID
+          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId, SYSDATETIME())
+        `);
+
+      await new sql.Request(transaction)
+        .input('socioId', sql.BigInt, destino.SocioId)
+        .input('cuentaContable', sql.NVarChar(20), '210101')
+        .input('concepto', sql.NVarChar(200), `CRÉDITO TRANSFERENCIA: ${concepto}`)
+        .input('debe', sql.Decimal(18, 2), 0)
+        .input('haber', sql.Decimal(18, 2), numMonto)
+        .input('numeroCuenta', sql.NVarChar(20), destino.NumeroCuenta)
+        .input('usuarioId', sql.NVarChar(20), usuarioId || 'SISTEMA')
+        .query(`
+          INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioID, FechaAsiento)
+          VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId, SYSDATETIME())
+        `);
+
+      await transaction.commit();
+
+      return res.json({
+        ok: true,
+        asientoId: asientoOrigen.recordset[0]?.AsientoID,
+        monto: numMonto,
+        origenNumeroCuenta: origen.NumeroCuenta,
+        destinoNumeroCuenta: destino.NumeroCuenta,
+        nuevoSaldoOrigen: parseFloat(origen.Saldo) - numMonto,
+      });
+    } catch (innerErr) {
+      await transaction.rollback();
+      throw innerErr;
+    }
+  } catch (err) {
+    console.error('[transferir]', err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 // ─── 8. Iniciar servidor ──────────────────────────────────────────────────
 const PORT = parseInt(process.env.API_PORT || '5005', 10);
 app.listen(PORT, () => {
