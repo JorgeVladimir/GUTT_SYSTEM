@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { AppView, Transaction, User, UserRole, AccountType, InterestRate, GlobalConfig, ChartOfAccountEntry, Loan } from './types';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -108,6 +108,78 @@ export default function App() {
         }
       });
     });
+  };
+
+  // Timer de inactividad
+  const IDLE_TIMEOUT  = 30 * 60 * 1000; // 30 minutos
+  const WARN_COUNTDOWN = 30;             // 30 segundos de cuenta regresiva
+  const [idleWarning, setIdleWarning]   = useState(false);
+  const [countdown, setCountdown]       = useState(WARN_COUNTDOWN);
+  const idleTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearIdleTimer = useCallback(() => {
+    if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
+    if (countdownRef.current)    clearInterval(countdownRef.current);
+  }, []);
+
+  const resetIdleTimer = useCallback(() => {
+    if (!currentUser || idleWarning) return;
+    clearIdleTimer();
+    idleTimerRef.current = setTimeout(() => {
+      setIdleWarning(true);
+      setCountdown(WARN_COUNTDOWN);
+    }, IDLE_TIMEOUT);
+  }, [currentUser, idleWarning, clearIdleTimer]);
+
+  // Arrancar/detener el timer según sesión activa
+  useEffect(() => {
+    if (currentUser && view !== AppView.LOGIN && view !== AppView.CHANGE_PIN) {
+      resetIdleTimer();
+      const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+      events.forEach(e => window.addEventListener(e, resetIdleTimer, { passive: true }));
+      return () => {
+        clearIdleTimer();
+        events.forEach(e => window.removeEventListener(e, resetIdleTimer));
+      };
+    } else {
+      clearIdleTimer();
+      setIdleWarning(false);
+    }
+  }, [currentUser, view, resetIdleTimer, clearIdleTimer]);
+
+  // Cuenta regresiva cuando el warning está activo
+  useEffect(() => {
+    if (!idleWarning) return;
+    setCountdown(WARN_COUNTDOWN);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
+  }, [idleWarning]);
+
+  // Auto-logout cuando el contador llega a 0
+  useEffect(() => {
+    if (idleWarning && countdown === 0) {
+      clearIdleTimer();
+      setIdleWarning(false);
+      handleIdleLogout();
+    }
+  }, [countdown, idleWarning]);
+
+  const handleIdleLogout = () => {
+    setCurrentUser(null);
+    setView(AppView.LOGIN);
+    setNewPin('');
+    setConfirmPin('');
+    setIdleWarning(false);
+    clearIdleTimer();
   };
 
   // Estados para cambio de PIN
@@ -587,6 +659,55 @@ export default function App() {
         {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}
         {currentUser?.role === UserRole.MEMBER && <ChatAssistant user={currentUser} currentBalance={currentUser.accounts[0]?.balance} transactions={currentUser.transactions} />}
       </Layout>
+
+      {/* ── Modal de inactividad ─────────────────────────────────── */}
+      {idleWarning && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+          <div className="bg-[#0D1B0F] border border-amber-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center text-center space-y-5">
+              {/* Ícono + cuenta regresiva */}
+              <div className="relative w-24 h-24">
+                <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="44" fill="none" stroke="rgba(245,158,11,0.15)" strokeWidth="6" />
+                  <circle
+                    cx="48" cy="48" r="44"
+                    fill="none"
+                    stroke="#F59E0B"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 44}`}
+                    strokeDashoffset={`${2 * Math.PI * 44 * (1 - countdown / WARN_COUNTDOWN)}`}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                  <span className="text-3xl font-black text-amber-400 tabular-nums leading-none">{countdown}</span>
+                  <span className="text-[9px] font-black text-white/30 uppercase tracking-wider">seg</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-black text-white/90 uppercase tracking-tight">Sesión por expirar</h3>
+                <p className="text-sm font-bold text-white/50 mt-2 leading-relaxed">
+                  Por inactividad, su sesión se cerrará automáticamente<br />
+                  en <span className="text-amber-400 font-black">{countdown} segundo{countdown !== 1 ? 's' : ''}</span>.
+                </p>
+                <p className="text-xs font-bold text-white/30 mt-2">
+                  Haga clic en <span className="text-amber-300">Aceptar</span> para cerrar ahora,<br />
+                  o mueva el mouse para continuar.
+                </p>
+              </div>
+
+              <button
+                onClick={handleIdleLogout}
+                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/30"
+              >
+                Aceptar — Cerrar sesión ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {alertConfig && alertConfig.isOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
