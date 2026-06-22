@@ -350,11 +350,89 @@ app.get('/api/users/get_profile.php', async (req, res) => {
 app.post('/api/reports/generate.php', async (req, res) => {
   const { type } = req.body || {};
   if (!type) return res.status(400).json({ ok: false, error: 'type requerido' });
-  const customSql = process.env.INFORMIX_REPORT_QUERY || '';
-  if (!customSql) return res.json([]);
+
   try {
-    const rows = await queryInformix(customSql, [type]);
-    return res.json(Array.isArray(rows) ? rows : []);
+    const pool = await sql.connect(sqlConfig);
+
+    if (type === 'sp_r_bal_compro') {
+      // Balance de Comprobación — desde RegistroContable real
+      const result = await pool.request().query(`
+        SELECT CuentaContable AS code, CuentaContable AS name,
+          SUM(Debe) AS debe, SUM(Haber) AS haber,
+          SUM(Debe) - SUM(Haber) AS balance,
+          COUNT(*) AS movimientos
+        FROM dbo.RegistroContable
+        GROUP BY CuentaContable
+        ORDER BY CuentaContable
+      `);
+      return res.json(result.recordset.map(r => ({
+        code:    r.code,
+        name:    r.name,
+        debe:    parseFloat(r.debe  || 0),
+        haber:   parseFloat(r.haber || 0),
+        balance: parseFloat(r.balance || 0),
+        movimientos: r.movimientos
+      })));
+    }
+
+    if (type === 'sp_r_situa_gene') {
+      // Situación General — cuentas, saldos, créditos
+      const [socios, balances, creditos, dpf] = await Promise.all([
+        pool.request().query(`SELECT COUNT(*) AS total FROM dbo.RegistroSocios WHERE Estado='ACTIVO'`),
+        pool.request().query(`
+          SELECT SUM(CASE WHEN p.EsCertificado=0 THEN c.Saldo ELSE 0 END) AS ahorro,
+                 SUM(CASE WHEN p.EsCertificado=1 THEN c.Saldo ELSE 0 END) AS certificados
+          FROM dbo.CuentasAhorro c
+          INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+        `),
+        pool.request().query(`SELECT COUNT(*) AS total, SUM(Monto) AS cartera FROM dbo.Creditos WHERE Estado IN ('VIGENTE','APROBADO')`),
+        pool.request().query(`SELECT COUNT(*) AS total, SUM(MontoCapital) AS capital FROM dbo.DepositosPlazo WHERE Estado='ACTIVO'`),
+      ]);
+      return res.json([
+        { code: '1', name: 'Total Socios Activos',          balance: socios.recordset[0].total },
+        { code: '2', name: 'Saldo Ahorro Vista',             balance: parseFloat(balances.recordset[0].ahorro || 0) },
+        { code: '3', name: 'Certificados de Aportación',     balance: parseFloat(balances.recordset[0].certificados || 0) },
+        { code: '4', name: 'Cartera de Crédito Vigente',     balance: parseFloat(creditos.recordset[0].cartera || 0) },
+        { code: '5', name: 'Número de Créditos Activos',     balance: creditos.recordset[0].total },
+        { code: '6', name: 'Capital DPF Activo',             balance: parseFloat(dpf.recordset[0].capital || 0) },
+        { code: '7', name: 'Número de DPF Activos',          balance: dpf.recordset[0].total },
+        { code: '8', name: 'Total Captaciones (Ahorro+DPF)', balance: parseFloat(balances.recordset[0].ahorro || 0) + parseFloat(dpf.recordset[0].capital || 0) },
+      ]);
+    }
+
+    if (type === 'sp_sepsb11') {
+      // Estructura B11 — cartera por estado
+      const result = await pool.request().query(`
+        SELECT Estado AS code, Estado AS name, COUNT(*) AS cantidad, SUM(Monto) AS balance
+        FROM dbo.Creditos
+        GROUP BY Estado
+        ORDER BY Estado
+      `);
+      return res.json(result.recordset.map(r => ({
+        code: r.code, name: r.name,
+        balance: parseFloat(r.balance || 0),
+        movimientos: r.cantidad
+      })));
+    }
+
+    if (type === 'sp_uaf_matriz') {
+      // Matriz UAF — últimas transacciones grandes (≥ $5000)
+      const result = await pool.request().query(`
+        SELECT TOP 100 rc.AsientoId AS code, rc.Concepto AS name,
+          rc.Debe AS debe, rc.Haber AS haber,
+          (rc.Debe + rc.Haber) AS balance,
+          rc.NumeroCuenta, CONVERT(NVARCHAR(10), rc.Fecha, 23) AS fecha
+        FROM dbo.RegistroContable rc
+        WHERE (rc.Debe >= 5000 OR rc.Haber >= 5000)
+        ORDER BY rc.AsientoId DESC
+      `);
+      return res.json(result.recordset.map(r => ({
+        code: String(r.code), name: `${r.name} | Cta:${r.NumeroCuenta} | ${r.fecha}`,
+        balance: parseFloat(r.balance || 0)
+      })));
+    }
+
+    return res.json([]);
   } catch (err) {
     console.error('[reports]', err.message);
     return res.status(500).json({ ok: false, error: err.message });

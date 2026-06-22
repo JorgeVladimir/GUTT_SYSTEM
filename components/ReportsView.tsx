@@ -233,10 +233,31 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
       const results = await DataService.getFinancialReport(reportType, {});
       setData(results || []);
     } catch (e) {
-      alert("Error en el núcleo bancario.");
+      alert("Error al generar el reporte. Verifique la conexión con el servidor.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadCSV = () => {
+    if (data.length === 0) return;
+    const REPORT_LABELS: Record<string, string> = {
+      sp_r_bal_compro: 'Balance_Comprobacion',
+      sp_r_situa_gene: 'Situacion_General',
+      sp_sepsb11:      'Estructura_B11',
+      sp_uaf_matriz:   'Matriz_UAF',
+    };
+    const cols = Object.keys(data[0]);
+    const header = cols.join(';');
+    const rows = data.map(row => cols.map(c => String(row[c] ?? '').replace(/;/g, ',')).join(';'));
+    const csv = '﻿' + [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${REPORT_LABELS[reportType] || 'Reporte'}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filteredUsers = useMemo(() => {
@@ -805,56 +826,111 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
       {activeMasterTab === 'FINANCIAL' && hasFinancialAccess && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1 space-y-4">
-             <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2">Catálogo Contable</h3>
-                <div className="space-y-2">
-                  {[
-                    { id: 'sp_r_bal_compro', label: 'Balance Comprobación' },
-                    { id: 'sp_r_situa_gene', label: 'Situación General' },
-                    { id: 'sp_sepsb11', label: 'Estructura B11' },
-                    { id: 'sp_uaf_matriz', label: 'Matriz UAF' }
-                  ].map(r => (
-                    <button key={r.id} onClick={() => setReportType(r.id)} className={`w-full p-4 rounded-2xl text-[10px] font-black text-left uppercase transition-all ${reportType === r.id ? 'bg-emerald-50 text-[#14532D] border border-emerald-100' : 'text-slate-400 hover:bg-slate-50'}`}>
-                      {r.label}
-                    </button>
-                  ))}
+            <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 space-y-6">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2">Reportes SEPS</h3>
+              <div className="space-y-2">
+                {[
+                  { id: 'sp_r_bal_compro', label: 'Balance de Comprobación',  desc: 'Debe / Haber por cuenta' },
+                  { id: 'sp_r_situa_gene', label: 'Situación General',         desc: 'Socios, ahorros, créditos' },
+                  { id: 'sp_sepsb11',      label: 'Estructura B11',             desc: 'Cartera por estado' },
+                  { id: 'sp_uaf_matriz',   label: 'Matriz UAF',                 desc: 'Transacciones ≥ $5,000' },
+                ].map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => { setReportType(r.id); setData([]); }}
+                    className={`w-full p-4 rounded-2xl text-left transition-all ${reportType === r.id ? 'bg-emerald-50 text-[#14532D] border border-emerald-100' : 'text-slate-400 hover:bg-slate-50'}`}
+                  >
+                    <p className="text-[10px] font-black uppercase">{r.label}</p>
+                    <p className="text-[9px] font-medium opacity-60 mt-0.5">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={runReport}
+                disabled={loading}
+                className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all disabled:opacity-60"
+              >
+                {loading ? 'GENERANDO...' : 'GENERAR REPORTE'}
+              </button>
+              {data.length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={downloadCSV}
+                    className="flex-1 py-3 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase transition-all"
+                  >
+                    <Download size={13} /> CSV
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex-1 py-3 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-black text-[10px] uppercase transition-all"
+                  >
+                    <Printer size={13} /> PDF
+                  </button>
                 </div>
-                <button onClick={runReport} disabled={loading} className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all">
-                  {loading ? 'GENERANDO...' : 'GENERAR REPORTE'}
-                </button>
-             </div>
+              )}
+            </div>
           </div>
 
           <div className="lg:col-span-3">
-             <div className="bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[500px]">
-                {data.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 border-b">
-                        <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          <th className="px-10 py-6 text-left">Código</th>
-                          <th className="px-10 py-6 text-left">Denominación</th>
-                          <th className="px-10 py-6 text-right">Saldo</th>
+            <div className="bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[500px]">
+              {data.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                        {{ sp_r_bal_compro: 'Balance de Comprobación', sp_r_situa_gene: 'Situación General', sp_sepsb11: 'Estructura B11 — Cartera', sp_uaf_matriz: 'Matriz UAF' }[reportType]}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{data.length} registros · {new Date().toLocaleDateString('es-EC')}</p>
+                    </div>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="px-6 py-4 text-left">Código</th>
+                        <th className="px-6 py-4 text-left">Denominación</th>
+                        {reportType === 'sp_r_bal_compro' && <>
+                          <th className="px-6 py-4 text-right">Debe</th>
+                          <th className="px-6 py-4 text-right">Haber</th>
+                        </>}
+                        <th className="px-6 py-4 text-right">{reportType === 'sp_r_situa_gene' ? 'Valor' : 'Saldo'}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {data.map((row: any, i: number) => (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-black text-[#14532D] text-[11px]">{row.code ?? i + 1}</td>
+                          <td className="px-6 py-4 font-bold text-slate-700 text-xs">{row.name}</td>
+                          {reportType === 'sp_r_bal_compro' && <>
+                            <td className="px-6 py-4 text-right font-bold text-emerald-700 text-[11px]">${(row.debe || 0).toFixed(2)}</td>
+                            <td className="px-6 py-4 text-right font-bold text-red-600 text-[11px]">${(row.haber || 0).toFixed(2)}</td>
+                          </>}
+                          <td className="px-6 py-4 text-right font-black text-slate-900 text-[11px]">
+                            {typeof row.balance === 'number' && row.balance % 1 !== 0
+                              ? `$${row.balance.toFixed(2)}`
+                              : row.balance}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {data.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-10 py-5 font-black text-[#14532D]">{row.code || i+100}</td>
-                            <td className="px-10 py-5 font-bold text-slate-700 uppercase">{row.name || 'Registro del Core'}</td>
-                            <td className="px-10 py-5 text-right font-black">${(row.balance || 0).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-20 text-slate-200">
-                    <FileBarChart size={80} className="mb-4 opacity-20" />
-                    <p className="font-black uppercase tracking-widest text-xs">Aún no se han generado datos</p>
-                  </div>
-                )}
-             </div>
+                      ))}
+                    </tbody>
+                    {reportType === 'sp_r_bal_compro' && data.length > 0 && (
+                      <tfoot>
+                        <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black">
+                          <td className="px-6 py-4 text-[#14532D] text-[11px]" colSpan={2}>TOTALES</td>
+                          <td className="px-6 py-4 text-right text-emerald-700 text-[11px]">${data.reduce((s: number, r: any) => s + (r.debe || 0), 0).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-right text-red-600 text-[11px]">${data.reduce((s: number, r: any) => s + (r.haber || 0), 0).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-right text-slate-900 text-[11px]">${data.reduce((s: number, r: any) => s + (r.balance || 0), 0).toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-20 text-slate-200">
+                  <FileBarChart size={80} className="mb-4 opacity-20" />
+                  <p className="font-black uppercase tracking-widest text-xs">Seleccione un reporte y presione GENERAR</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
