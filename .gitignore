@@ -23,3 +23,24 @@ api/.env
 *.njsproj
 *.sln
 *.sw?
+
+# Exportaciones de conversacion IA
+chat_export.md
+claude_code_memory.md
+historial_*.md
+
+# Archivos subidos por usuarios (runtime)
+uploads/
+!uploads/.gitkeep
+
+# Workspace de desarrollo (mantener solo verify-browser.cjs)
+scratch/screenshots/
+scratch/check-*.js
+scratch/inspect-*.js
+scratch/test-*.js
+scratch/update-*.js
+scratch/verify-browser.js
+
+# Reportes generados en runtime
+Reportes sistema/*.pdf
+Reportes sistema/*.xlsx
