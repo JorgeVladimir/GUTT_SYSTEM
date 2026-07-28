@@ -13,6 +13,7 @@ import { BIPanel } from './components/BIPanel';
 import { CreditsView } from './components/CreditsView';
 import { CreditOfficerApproval } from './components/CreditOfficerApproval';
 import { PlazoFijoView } from './components/PlazoFijoView';
+import { SavingsView } from './components/SavingsView';
 import { ReportsView } from './components/ReportsView';
 import { ProfileView } from './components/ProfileView';
 import { ReportsSociosCreditos } from './components/ReportsSociosCreditos';
@@ -58,6 +59,7 @@ export default function App() {
   const [biTab, setBiTab] = useState<'BUILDER' | 'PROFITABILITY' | 'BUREAU'>('PROFITABILITY');
   const [creditOfficerTab, setCreditOfficerTab] = useState<'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA'>('APPROVALS');
   const [plazoFijoTab, setPlazoFijoTab] = useState<'GESTION' | 'NUEVA' | 'VENCIMIENTOS' | 'TASAS' | 'CONTABILIDAD'>('GESTION');
+  const [savingsTab, setSavingsTab] = useState<'RESUMEN' | 'GESTION' | 'MOVIMIENTOS' | 'MIS_CUENTAS'>('RESUMEN');
   const [reportsSocioTab, setReportsSocioTab] = useState<'GENERAL' | 'SOCIO_SEARCH' | 'PROFITABILITY' | 'ORIGINS'>('GENERAL');
   const [interestRates, setInterestRates] = useState<InterestRate[]>(INITIAL_RATES);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
@@ -174,6 +176,7 @@ export default function App() {
   }, [countdown, idleWarning]);
 
   const handleIdleLogout = () => {
+    DataService.logout();
     setCurrentUser(null);
     setView(AppView.LOGIN);
     setNewPin('');
@@ -186,12 +189,17 @@ export default function App() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
+  // NOTA DE SEGURIDAD: estos registros ya NO llevan un pin adivinable. Antes tenían pin: '1234'
+  // hardcodeado y handleLogin() los usaba como respaldo de autenticación local en useRemoteApi=true,
+  // lo que permitía iniciar sesión como admin/superuser/etc. con esa contraseña fija sin importar
+  // la contraseña real en base de datos. Ahora solo sirven para poblar la UI (nombre/rol de estos
+  // roles institucionales) cuando useRemoteApi=false (modo local/demo sin backend).
   const getDefaultUsers = (): User[] => [
-    { id: 'admin', name: 'Administrador General', pin: '1234', role: UserRole.ADMIN, accounts: [], transactions: [], loans: [] },
-    { id: 'superuser', name: 'Super Usuario del Sistema', pin: '1234', role: UserRole.SUPER_USER, accounts: [], transactions: [], loans: [] },
-    { id: 'cont', name: 'Contador Institucional', pin: '1234', role: UserRole.ACCOUNTANT, accounts: [], transactions: [], loans: [] },
-    { id: 'caja', name: 'Cajero Matriz', pin: '1234', role: UserRole.TELLER, accounts: [], transactions: [], loans: [] },
-    { id: 'asesor', name: 'Asesor de Crédito', pin: '1234', role: UserRole.CREDIT_OFFICER, accounts: [], transactions: [], loans: [] }
+    { id: 'admin', name: 'Administrador General', pin: '', role: UserRole.ADMIN, accounts: [], transactions: [], loans: [] },
+    { id: 'superuser', name: 'Super Usuario del Sistema', pin: '', role: UserRole.SUPER_USER, accounts: [], transactions: [], loans: [] },
+    { id: 'cont', name: 'Contador Institucional', pin: '', role: UserRole.ACCOUNTANT, accounts: [], transactions: [], loans: [] },
+    { id: 'caja', name: 'Cajero Matriz', pin: '', role: UserRole.TELLER, accounts: [], transactions: [], loans: [] },
+    { id: 'asesor', name: 'Asesor de Crédito', pin: '', role: UserRole.CREDIT_OFFICER, accounts: [], transactions: [], loans: [] }
   ];
 
   const chartOfAccounts = useMemo(() => {
@@ -286,6 +294,10 @@ export default function App() {
     const cleanPin = pin.trim();
 
     if (useRemoteApi) {
+      // Con backend real, la autenticación es exclusivamente contra el servidor. NO cae a un
+      // respaldo local ante error de red o credenciales inválidas: ese respaldo era el bypass
+      // de seguridad (permitía entrar con las cuentas por defecto sin importar la contraseña
+      // real en base de datos). Si el login remoto falla, se falla, punto.
       try {
         const loginResult = await DataService.login(cleanId, cleanPin);
         if (loginResult) {
@@ -296,12 +308,14 @@ export default function App() {
           return;
         }
       } catch (error) {
-        console.error('Login remoto fallido, se usa respaldo local:', error);
+        console.error('Login remoto fallido:', error);
       }
+      setLoginError('Identificación o PIN incorrectos.');
+      return;
     }
 
     const found = users.find(u => u.id.toLowerCase() === cleanId && u.pin === cleanPin);
-    
+
     if (found) {
       setCurrentUser(found);
       navigateByRole(found);
@@ -536,7 +550,7 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => { setCurrentUser(null); setView(AppView.LOGIN); setNewPin(''); setConfirmPin(''); };
+  const handleLogout = () => { DataService.logout(); setCurrentUser(null); setView(AppView.LOGIN); setNewPin(''); setConfirmPin(''); };
 
   // Map active subtabs for sidebar submenu sync
   const activeSubView = useMemo(() => {
@@ -546,10 +560,11 @@ export default function App() {
       case AppView.BI_PANEL: return biTab;
       case AppView.CREDIT_OFFICER_HUB: return creditOfficerTab;
       case AppView.PLAZO_FIJO: return plazoFijoTab;
+      case AppView.SAVINGS: return savingsTab;
       case AppView.REPORTS_SOCIOS_CREDITOS: return reportsSocioTab;
       default: return undefined;
     }
-  }, [view, tellerTab, adminTab, biTab, creditOfficerTab, reportsSocioTab]);
+  }, [view, tellerTab, adminTab, biTab, creditOfficerTab, plazoFijoTab, savingsTab, reportsSocioTab]);
 
   const handleSubViewChange = (sub: string) => {
     switch (view) {
@@ -558,6 +573,7 @@ export default function App() {
       case AppView.BI_PANEL: setBiTab(sub as any); break;
       case AppView.CREDIT_OFFICER_HUB: setCreditOfficerTab(sub as any); break;
       case AppView.PLAZO_FIJO: setPlazoFijoTab(sub as any); break;
+      case AppView.SAVINGS: setSavingsTab(sub as any); break;
       case AppView.REPORTS_SOCIOS_CREDITOS: setReportsSocioTab(sub as any); break;
     }
   };
@@ -654,6 +670,7 @@ export default function App() {
         {view === AppView.CHART_OF_ACCOUNTS && <AccountantView chart={chartOfAccounts} />}
         {view === AppView.CREDIT_OFFICER_HUB && <CreditOfficerApproval users={users} currentUser={currentUser || undefined} onUpdateUser={handleUpdateUser} onApprove={handleApproveLoan} onReject={handleRejectLoan} activeTab={creditOfficerTab} onActiveTabChange={setCreditOfficerTab} />}
         {view === AppView.PLAZO_FIJO && <PlazoFijoView currentUser={currentUser || undefined} activeTab={plazoFijoTab} onActiveTabChange={setPlazoFijoTab} />}
+        {view === AppView.SAVINGS && <SavingsView currentUser={currentUser || undefined} activeTab={savingsTab} onActiveTabChange={setSavingsTab} />}
         {view === AppView.REPORTS && <ReportsView users={users} onUpdateUser={handleUpdateUser} currentUser={currentUser || undefined} />}
         {view === AppView.REPORTS_SOCIOS_CREDITOS && <ReportsSociosCreditos users={users} currentUser={currentUser || undefined} activeTab={reportsSocioTab} onActiveTabChange={setReportsSocioTab} />}
         {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}
@@ -663,7 +680,7 @@ export default function App() {
       {/* ── Modal de inactividad ─────────────────────────────────── */}
       {idleWarning && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-          <div className="bg-[#0D1B0F] border border-amber-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex flex-col items-center text-center space-y-5">
               {/* Ícono + cuenta regresiva */}
               <div className="relative w-24 h-24">
@@ -681,19 +698,19 @@ export default function App() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center flex-col">
-                  <span className="text-3xl font-black text-amber-400 tabular-nums leading-none">{countdown}</span>
-                  <span className="text-[9px] font-black text-white/30 uppercase tracking-wider">seg</span>
+                  <span className="text-3xl font-black text-amber-500 tabular-nums leading-none">{countdown}</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">seg</span>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-white/90 uppercase tracking-tight">Sesión por expirar</h3>
-                <p className="text-sm font-bold text-white/50 mt-2 leading-relaxed">
+                <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Sesión por expirar</h3>
+                <p className="text-sm font-bold text-slate-500 mt-2 leading-relaxed">
                   Por inactividad, su sesión se cerrará automáticamente<br />
-                  en <span className="text-amber-400 font-black">{countdown} segundo{countdown !== 1 ? 's' : ''}</span>.
+                  en <span className="text-amber-600 font-black">{countdown} segundo{countdown !== 1 ? 's' : ''}</span>.
                 </p>
-                <p className="text-xs font-bold text-white/30 mt-2">
-                  Haga clic en <span className="text-amber-300">Aceptar</span> para cerrar ahora,<br />
+                <p className="text-xs font-bold text-slate-400 mt-2">
+                  Haga clic en <span className="text-amber-600 font-black">Aceptar</span> para cerrar ahora,<br />
                   o mueva el mouse para continuar.
                 </p>
               </div>

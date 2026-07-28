@@ -7,15 +7,30 @@ import { User, InterestRate, GlobalConfig, Transaction, Loan } from '../types';
  */
 export class DataService {
   private static API_URL = import.meta.env.VITE_API_URL || '/api';
+  private static TOKEN_KEY = 'cap_auth_token';
+
+  // Token de sesión (JWT) emitido por /api/auth/login.php. Se adjunta automáticamente a toda
+  // llamada hecha vía `request()`; los fetch() directos fuera de este servicio deben adjuntarlo
+  // a mano leyendo DataService.getToken().
+  static getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  static setToken(token: string | null): void {
+    if (token) localStorage.setItem(this.TOKEN_KEY, token);
+    else localStorage.removeItem(this.TOKEN_KEY);
+  }
 
   private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const baseUrl = this.API_URL.replace(/\/$/, '');
       const cleanEndpoint = endpoint.replace(/^\//, '');
+      const token = this.getToken();
       const response = await fetch(`${baseUrl}/${cleanEndpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...options?.headers,
         },
       });
@@ -29,10 +44,16 @@ export class DataService {
 
   static async login(id: string, pin: string): Promise<User | null> {
     // Llama a login.php que consulta bcausua o bcasoci
-    return this.request<User>('auth/login.php', {
+    const result = await this.request<User & { token?: string }>('auth/login.php', {
       method: 'POST',
       body: JSON.stringify({ id, pin })
     });
+    this.setToken((result as any)?.token || null);
+    return result;
+  }
+
+  static logout(): void {
+    this.setToken(null);
   }
 
   static async updatePassword(id: string, password: string): Promise<{ ok: boolean, message?: string }> {

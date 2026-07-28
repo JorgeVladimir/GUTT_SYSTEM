@@ -26,7 +26,8 @@ import {
   Bell,
   ChevronRight,
   Clock,
-  Landmark
+  Landmark,
+  PiggyBank
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -73,6 +74,7 @@ const VIEW_TITLES: Record<string, string> = {
   CREDIT_OFFICER_HUB:  'Aprobación de Créditos',
   PROFILE:             'Mi Perfil',
   PLAZO_FIJO:          'Depósitos a Plazo Fijo',
+  SAVINGS:             'Ahorro a la Vista',
 };
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -154,6 +156,17 @@ export const Layout: React.FC<LayoutProps> = ({
           { id: 'TASAS',        label: 'CONFIG. TASAS',    icon: <Settings2 size={13} />  },
           { id: 'CONTABILIDAD', label: 'CONTABILIDAD',     icon: <FileText size={13} />   },
         ];
+      case AppView.SAVINGS:
+        if (role === UserRole.MEMBER) {
+          return [
+            { id: 'MIS_CUENTAS', label: 'MI CUENTA',       icon: <Wallet size={13} />     },
+          ];
+        }
+        return [
+          { id: 'RESUMEN',      label: 'RESUMEN',           icon: <BarChart3 size={13} />  },
+          { id: 'GESTION',      label: 'GESTIÓN DE CUENTAS', icon: <PiggyBank size={13} />  },
+          { id: 'MOVIMIENTOS',  label: 'MOVIMIENTOS',       icon: <FileText size={13} />   },
+        ];
       default:
         return [];
     }
@@ -176,44 +189,44 @@ export const Layout: React.FC<LayoutProps> = ({
   const dateStr = currentTime.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
-    <div className="flex h-screen bg-[#0F1410] overflow-hidden">
+    <div className="flex h-screen bg-[#f1f5f9] overflow-hidden">
       {/* Mobile overlay */}
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* ── SIDEBAR DARK PREMIUM ──────────────────────────────────── */}
+      {/* ── SIDEBAR CLARO ─────────────────────────────────────────── */}
       <aside
         onMouseEnter={() => !isPinned && setIsHovered(true)}
         onMouseLeave={() => !isPinned && setIsHovered(false)}
         className={`
           fixed inset-y-0 left-0 z-30 transition-all duration-300 transform flex flex-col
-          bg-gradient-to-b from-[#0D1B0F] via-[#0F2012] to-[#0A1A0C]
-          border-r border-white/[0.06] shadow-2xl
+          bg-gradient-to-b from-white via-emerald-50/30 to-white
+          border-r border-slate-100 shadow-sm
           lg:relative lg:translate-x-0
           ${isPinned
             ? 'w-64 relative translate-x-0'
             : isHovered
-              ? 'w-64 absolute translate-x-0 shadow-[0_0_60px_rgba(20,83,45,0.4)] z-50'
+              ? 'w-64 absolute translate-x-0 shadow-[0_0_60px_rgba(20,83,45,0.12)] z-50'
               : 'w-[72px] absolute'}
           ${isSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo header */}
-        <div className="h-16 flex items-center justify-between px-4 shrink-0 border-b border-white/[0.06]">
+        <div className="h-16 flex items-center justify-between px-4 shrink-0 border-b border-slate-100">
           <div className={`flex items-center gap-3 transition-all duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none w-0'}`}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/50 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/20 shrink-0">
               <span className="font-black text-white text-lg italic">G</span>
             </div>
             <div className="overflow-hidden whitespace-nowrap">
-              <p className="text-[13px] font-black text-white leading-none tracking-tight">Gutt System</p>
-              <p className="text-[9px] font-bold text-emerald-400/70 uppercase tracking-[0.15em] mt-0.5">Portal Financiero SEPS</p>
+              <p className="text-[13px] font-black text-slate-800 leading-none tracking-tight">Gutt System</p>
+              <p className="text-[9px] font-bold text-emerald-700/70 uppercase tracking-[0.15em] mt-0.5">Portal Financiero SEPS</p>
             </div>
           </div>
 
           {!isExpanded && (
             <div className="flex justify-center w-full">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/50">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/20">
                 <span className="font-black text-white text-lg italic">G</span>
               </div>
             </div>
@@ -222,7 +235,7 @@ export const Layout: React.FC<LayoutProps> = ({
           {isExpanded && (
             <button
               onClick={() => { const n = !isPinned; setIsPinned(n); if (!n) setIsHovered(false); localStorage.setItem('sidebar_pinned', String(n)); }}
-              className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/10 transition-all shrink-0 lg:block hidden"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all shrink-0 lg:block hidden"
               title={isPinned ? 'Desanclar' : 'Anclar'}
             >
               {isPinned ? <Pin size={14} className="rotate-45" /> : <PinOff size={14} />}
@@ -232,12 +245,12 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Date/time strip — only when expanded */}
         {isExpanded && (
-          <div className="px-4 py-2.5 border-b border-white/[0.04] flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-white/40">
+          <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-slate-400">
               <Clock size={11} />
               <span className="text-[10px] font-bold uppercase tracking-wider">{dateStr}</span>
             </div>
-            <span className="text-[11px] font-black text-[#FACC15]/80 tabular-nums">{timeStr}</span>
+            <span className="text-[11px] font-black text-[#B8860B] tabular-nums">{timeStr}</span>
           </div>
         )}
 
@@ -256,16 +269,16 @@ export const Layout: React.FC<LayoutProps> = ({
                     relative w-full flex items-center py-2.5 rounded-xl transition-all duration-200 group
                     ${isExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'}
                     ${isActive
-                      ? 'bg-emerald-500/15 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.2)]'
-                      : 'text-white/50 hover:text-white/90 hover:bg-white/[0.06]'}
+                      ? 'bg-emerald-50 text-[#14532D] shadow-[0_0_0_1px_rgba(20,83,45,0.15)]'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}
                   `}
                 >
                   {/* Active left accent */}
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-emerald-400 rounded-r-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#14532D] rounded-r-full" />
                   )}
 
-                  <div className={`shrink-0 transition-colors ${isActive ? 'text-emerald-400' : ''}`}>
+                  <div className={`shrink-0 transition-colors ${isActive ? 'text-[#14532D]' : ''}`}>
                     {item.icon}
                   </div>
 
@@ -274,21 +287,21 @@ export const Layout: React.FC<LayoutProps> = ({
                   </span>
 
                   {isActive && isExpanded && (
-                    <ChevronRight size={12} className="ml-auto shrink-0 text-emerald-400/60" />
+                    <ChevronRight size={12} className="ml-auto shrink-0 text-[#14532D]/60" />
                   )}
 
                   {/* Tooltip */}
                   {!isExpanded && (
-                    <div className="absolute left-full ml-3 px-3 py-2 bg-[#1A2E1C] border border-white/10 text-white text-[11px] font-bold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-50 whitespace-nowrap shadow-2xl">
+                    <div className="absolute left-full ml-3 px-3 py-2 bg-white border border-slate-200 text-slate-800 text-[11px] font-bold rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all z-50 whitespace-nowrap shadow-lg">
                       {item.label}
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-[#1A2E1C] border-l border-b border-white/10 rotate-45" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-white border-l border-b border-slate-200 rotate-45" />
                     </div>
                   )}
                 </button>
 
                 {/* Submenu */}
                 {showSub && (
-                  <div className="mt-1 mb-2 ml-4 pl-3 border-l border-emerald-500/20 space-y-0.5">
+                  <div className="mt-1 mb-2 ml-4 pl-3 border-l border-emerald-200 space-y-0.5">
                     {subMenuItems.map(sub => {
                       const subActive = activeSubView === sub.id;
                       return (
@@ -297,13 +310,13 @@ export const Layout: React.FC<LayoutProps> = ({
                           onClick={() => onSubViewChange(sub.id)}
                           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all text-left ${
                             subActive
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'text-white/35 hover:text-white/70 hover:bg-white/[0.04]'
+                              ? 'bg-emerald-100 text-[#14532D]'
+                              : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <span className={subActive ? 'text-emerald-400' : 'text-white/30'}>{sub.icon}</span>
+                          <span className={subActive ? 'text-[#14532D]' : 'text-slate-300'}>{sub.icon}</span>
                           <span className="truncate">{sub.label}</span>
-                          {subActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] shrink-0" />}
+                          {subActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#14532D] shrink-0" />}
                         </button>
                       );
                     })}
@@ -315,15 +328,15 @@ export const Layout: React.FC<LayoutProps> = ({
         </nav>
 
         {/* User profile footer */}
-        <div className="shrink-0 border-t border-white/[0.06] p-3 space-y-2">
+        <div className="shrink-0 border-t border-slate-100 p-3 space-y-2">
           {isExpanded ? (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.06]">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${gradientRole} flex items-center justify-center shrink-0 shadow-lg`}>
                 <span className="text-white font-black text-xs">{initials || <UserIcon size={14} />}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold text-white/80 truncate leading-none">{userName}</p>
-                <p className="text-[9px] font-bold text-[#FACC15]/70 uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
+                <p className="text-[11px] font-bold text-slate-800 truncate leading-none">{userName}</p>
+                <p className="text-[9px] font-bold text-[#B8860B] uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
               </div>
             </div>
           ) : (
@@ -336,7 +349,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
           <button
             onClick={onLogout}
-            className={`w-full flex items-center text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all py-2.5
+            className={`w-full flex items-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all py-2.5
               ${isExpanded ? 'gap-3 px-3 justify-start' : 'justify-center'}`}
             title={!isExpanded ? 'Cerrar Sesión' : undefined}
           >
@@ -350,35 +363,35 @@ export const Layout: React.FC<LayoutProps> = ({
       <main className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${!isPinned ? 'lg:pl-[72px]' : ''}`}>
 
         {/* Top header bar */}
-        <header className="h-14 bg-white/[0.03] border-b border-white/[0.06] backdrop-blur-sm flex items-center justify-between px-5 shrink-0">
+        <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-5 shrink-0">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-white/40 hover:text-white/80 hover:bg-white/10 rounded-lg transition-all lg:hidden">
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all lg:hidden">
               <Menu size={20} />
             </button>
             <div className="flex items-center gap-2">
               {viewTitle && (
                 <>
-                  <span className="text-white/25 text-xs">Gutt System</span>
-                  <ChevronRight size={12} className="text-white/15" />
-                  <span className="text-[13px] font-bold text-white/70">{viewTitle}</span>
+                  <span className="text-slate-300 text-xs">Gutt System</span>
+                  <ChevronRight size={12} className="text-slate-300" />
+                  <span className="text-[13px] font-bold text-slate-600">{viewTitle}</span>
                 </>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full">
+            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-[#14532D] px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} />
               <span className="text-[10px] font-black uppercase tracking-widest">SEPS Activo</span>
             </div>
-            <button className="relative p-2 text-white/30 hover:text-white/70 hover:bg-white/10 rounded-xl transition-all">
+            <button className="relative p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
               <Bell size={16} />
             </button>
           </div>
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto bg-[#111A12]">
+        <div className="flex-1 overflow-y-auto bg-[#f1f5f9]">
           {children}
         </div>
       </main>

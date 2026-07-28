@@ -11,8 +11,11 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
+import { createInterface } from 'readline';
 import sql from 'mssql';
 import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require   = createRequire(import.meta.url);
@@ -81,47 +84,91 @@ function buildConnString() {
   );
 }
 
-// ─── 4. PowerShell 32-bit bridge → Informix ──────────────────────────────
-const PS32      = 'C:\\Windows\\SysWOW64\\WindowsPowerShell\\v1.0\\powershell.exe';
-const PS_BRIDGE = join(__dirname, 'api', 'informix-bridge.ps1');
+// ─── 4. PowerShell 32-bit bridge → Informix (proceso persistente) ────────
+// El bridge antiguo (informix-bridge.ps1) abría un proceso PowerShell + una conexión
+// ODBC nueva por cada consulta (costo de spawn + connect en cada llamada, ~1-2s).
+// informix-bridge-daemon.ps1 se lanza UNA vez, mantiene la conexión ODBC abierta y
+// atiende consultas por un protocolo NDJSON (una línea de request -> una línea de
+// response) sobre stdin/stdout. queryInformix() ya no genera un proceso por llamada.
+const PS32            = 'C:\\Windows\\SysWOW64\\WindowsPowerShell\\v1.0\\powershell.exe';
+const PS_BRIDGE_DAEMON = join(__dirname, 'api', 'informix-bridge-daemon.ps1');
+const INFORMIX_QUERY_TIMEOUT_MS = 25000;
+
+let informixDaemon  = null;
+let informixReqId   = 0;
+const informixPending = new Map(); // id -> { resolve, reject, timer }
+
+function rejectAllInformixPending(err) {
+  for (const pending of informixPending.values()) {
+    clearTimeout(pending.timer);
+    pending.reject(err);
+  }
+  informixPending.clear();
+}
+
+function startInformixDaemon() {
+  const proc = spawn(PS32, [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+    '-File', PS_BRIDGE_DAEMON,
+  ], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+  createInterface({ input: proc.stdout }).on('line', line => {
+    line = line.trim();
+    if (!line) return;
+    let msg;
+    try { msg = JSON.parse(line); } catch { return; }
+    const pending = informixPending.get(msg.id);
+    if (!pending) return;
+    informixPending.delete(msg.id);
+    clearTimeout(pending.timer);
+    if (msg.ok) {
+      const rows = msg.rows;
+      // PowerShell colapsa arrays de un solo elemento a un objeto plano al pasar por ConvertTo-Json
+      pending.resolve(rows == null ? [] : (Array.isArray(rows) ? rows : [rows]));
+    } else {
+      pending.reject(new Error(msg.error || 'Error desconocido en bridge Informix'));
+    }
+  });
+
+  let stderrBuf = '';
+  proc.stderr.on('data', d => { stderrBuf += d.toString('utf8'); });
+
+  proc.on('exit', code => {
+    console.error(`[informix bridge] proceso terminado (code ${code}), se reiniciará en la próxima consulta.${stderrBuf ? ' stderr: ' + stderrBuf.replace(/\s+/g, ' ').trim().substring(0, 300) : ''}`);
+    rejectAllInformixPending(new Error('Bridge Informix se cerró inesperadamente'));
+    if (informixDaemon === proc) informixDaemon = null;
+  });
+
+  proc.stdin.write(buildConnString() + '\n', 'utf8');
+  informixDaemon = proc;
+  return proc;
+}
 
 function queryInformix(sql, params = []) {
+  if (!informixDaemon) startInformixDaemon();
+
   return new Promise((resolve, reject) => {
-    const payload = JSON.stringify({ connStr: buildConnString(), sql, params });
-
-    const proc = spawn(PS32, [
-      '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-      '-File', PS_BRIDGE,
-    ], { stdio: ['pipe', 'pipe', 'pipe'] });
-
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', d => { stdout += d.toString('utf8'); });
-    proc.stderr.on('data', d => { stderr += d.toString('utf8'); });
-    proc.stdin.write(payload, 'utf8');
-    proc.stdin.end();
-
+    const id = ++informixReqId;
     const timer = setTimeout(() => {
-      proc.kill();
+      informixPending.delete(id);
       reject(new Error('Informix query timeout (25s)'));
-    }, 25000);
+    }, INFORMIX_QUERY_TIMEOUT_MS);
 
-    proc.on('close', code => {
+    informixPending.set(id, { resolve, reject, timer });
+
+    try {
+      informixDaemon.stdin.write(JSON.stringify({ id, sql, params }) + '\n', 'utf8');
+    } catch (err) {
+      informixPending.delete(id);
       clearTimeout(timer);
-      if (code !== 0) {
-        const msg = stderr.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 400);
-        return reject(new Error(msg || `PowerShell exit ${code}`));
-      }
-      try {
-        const json = stdout.trim();
-        resolve(json && json !== 'null' ? JSON.parse(json) : []);
-      } catch {
-        reject(new Error(`JSON inválido del bridge: ${stdout.substring(0, 200)}`));
-      }
-    });
-    proc.on('error', reject);
+      reject(err);
+    }
   });
 }
+
+process.on('exit', () => {
+  if (informixDaemon) informixDaemon.kill();
+});
 
 // ─── 5. Mapeo de roles desde bcaperf ─────────────────────────────────────
 function mapRole(raw) {
@@ -134,6 +181,209 @@ function mapRole(raw) {
   if (/CAJA|VENTANILLA|OPERAC|RECEPCION/.test(r))  return 'TELLER';
   if (/CARTERA|CR[EÉ]DITO|ASESOR/.test(r))         return 'CREDIT_OFFICER';
   return 'MEMBER';
+}
+
+// ─── 4.6 Autenticación (JWT) ──────────────────────────────────────────────
+// Antes ningún endpoint verificaba que el usuarioId/actorId/tellerId enviado en el body
+// realmente correspondía a quien había iniciado sesión (no había sesión/token en absoluto):
+// cualquiera podía llamar la API directamente afirmando ser cualquier usuario. `requireAuth`
+// exige un JWT válido (emitido por /api/auth/login.php); `requireSelf` rechaza la petición si
+// el usuario que el body dice ser no coincide con el usuario autenticado en el token.
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ Falta JWT_SECRET en api/.env. Defínelo (ej. con `node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"`) antes de iniciar el servidor.');
+  process.exit(1);
+}
+const JWT_EXPIRES_IN = '10h'; // duración típica de un turno de trabajo
+
+function requireAuth(req, res, next) {
+  const header = req.headers['authorization'] || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+  if (!token) return res.status(401).json({ ok: false, error: 'No autenticado: falta token de sesión' });
+  try {
+    req.actor = jwt.verify(token, JWT_SECRET); // { usuarioId, rol, iat, exp }
+    next();
+  } catch {
+    return res.status(401).json({ ok: false, error: 'Sesión inválida o expirada, inicie sesión nuevamente' });
+  }
+}
+
+function requireSelf(bodyField) {
+  return (req, res, next) => {
+    const claimed = ((req.body || {})[bodyField] || '').toString().trim().toLowerCase();
+    if (claimed && claimed !== req.actor.usuarioId.toLowerCase()) {
+      return res.status(403).json({ ok: false, error: 'El usuario autenticado no coincide con el usuario declarado en la petición' });
+    }
+    next();
+  };
+}
+
+// ─── 4.5 Auditoría estructurada por proceso (dbo.AuditoriaProcesos, ver db/sqlserver/23_auditoria_procesos.sql) ──
+// Complementa (no reemplaza) dbo.AuditoriaUsuarios: captura entidad/campo/valor anterior-nuevo por
+// proceso de negocio (CREDITOS, CAJA, AHORROS, PLAZO_FIJO, CONTABILIDAD, SOCIOS, SEGURIDAD, REPORTES_SEPS).
+// `execTarget` es una sql.Transaction o el pool: se pasa a `new sql.Request(execTarget)` igual que el
+// resto de inserts del endpoint, para que la auditoría viva en la misma transacción atómica.
+async function registrarAuditoriaProceso(execTarget, {
+  proceso, accion, entidadTipo, entidadId = null, usuarioId,
+  campoAfectado = null, valorAnterior = null, valorNuevo = null, detalle = null, ip = null,
+}) {
+  const request = new sql.Request(execTarget);
+  await request
+    .input('Proceso', sql.NVarChar(50), proceso)
+    .input('Accion', sql.NVarChar(50), accion)
+    .input('EntidadTipo', sql.NVarChar(50), entidadTipo)
+    .input('EntidadId', sql.NVarChar(50), entidadId !== null ? String(entidadId) : null)
+    .input('UsuarioId', sql.NVarChar(20), usuarioId || 'sistema')
+    .input('CampoAfectado', sql.NVarChar(100), campoAfectado)
+    .input('ValorAnterior', sql.NVarChar(sql.MAX), valorAnterior !== null ? String(valorAnterior) : null)
+    .input('ValorNuevo', sql.NVarChar(sql.MAX), valorNuevo !== null ? String(valorNuevo) : null)
+    .input('Detalle', sql.NVarChar(500), detalle)
+    .input('IPOrigen', sql.NVarChar(45), ip)
+    .query(`
+      INSERT INTO dbo.AuditoriaProcesos (Proceso, Accion, EntidadTipo, EntidadId, UsuarioId, CampoAfectado, ValorAnterior, ValorNuevo, Detalle, IPOrigen)
+      VALUES (@Proceso, @Accion, @EntidadTipo, @EntidadId, @UsuarioId, @CampoAfectado, @ValorAnterior, @ValorNuevo, @Detalle, @IPOrigen)
+    `);
+}
+
+// ─── 5.5 Búsqueda en vivo de clientes legacy (bcaclie) cuando no existen aún en SQL Server ──
+async function buscarClienteInformix(q) {
+  if (!q) return [];
+  try {
+    const rows = await queryInformix(
+      `SELECT
+         clie_cod_clie,
+         TRIM(clie_cod_tide) AS clie_cod_tide,
+         TRIM(clie_ide_clie) AS clie_ide_clie,
+         TRIM(clie_ape_clie) AS clie_ape_clie,
+         TRIM(clie_nom_clie) AS clie_nom_clie,
+         clie_fec_nac,
+         TRIM(clie_dir_domi) AS clie_dir_domi,
+         TRIM(clie_ema_clie) AS clie_ema_clie,
+         clie_est_clie
+       FROM bcaclie
+       WHERE TRIM(clie_ide_clie) = ? OR TRIM(clie_ape_clie) LIKE ? OR TRIM(clie_nom_clie) LIKE ?`,
+      [q, `%${q}%`, `%${q}%`]
+    );
+    return rows.map(r => ({
+      id: r.clie_ide_clie,
+      socioId: null,
+      name: `${r.clie_nom_clie || ''} ${r.clie_ape_clie || ''}`.trim(),
+      firstName: r.clie_nom_clie || '',
+      middleName: '',
+      firstLastName: r.clie_ape_clie || '',
+      secondLastName: '',
+      pin: null,
+      role: 'MEMBER',
+      email: r.clie_ema_clie || '',
+      phone: '',
+      address: r.clie_dir_domi || '',
+      birthDate: r.clie_fec_nac || '',
+      memberNumber: r.clie_cod_clie,
+      personType: r.clie_cod_tide,
+      origen: 'INFORMIX',
+      accounts: [],
+      transactions: [],
+      loans: []
+    }));
+  } catch (err) {
+    console.error('[buscar cliente informix]', err.message);
+    return [];
+  }
+}
+
+// ─── 5.6 Búsqueda en vivo de créditos legacy (bcacred) cuando el socio no tiene créditos aún en SQL Server ──
+async function buscarCreditosInformix(cedulaOTitular) {
+  if (!cedulaOTitular) return [];
+  try {
+    const rows = await queryInformix(
+      `SELECT
+         c.cred_num_cred,
+         c.cred_cod_clie,
+         TRIM(c.cred_ide_titu) AS cred_ide_titu,
+         TRIM(c.cred_nom_titu) AS cred_nom_titu,
+         c.cred_cap_cred,
+         c.cred_tas_cred,
+         c.cred_fec_inic,
+         c.cred_fec_venc,
+         c.cred_num_cuot,
+         c.cred_cod_ecre,
+         c.cred_cod_tcre,
+         TRIM(t.tcre_des_tcre) AS tipo_desc,
+         c.cred_por_mora,
+         c.cred_con_mora
+       FROM bcacred c
+       LEFT JOIN bcatcre t ON c.cred_cod_tcre = t.tcre_cod_tcre
+       WHERE TRIM(c.cred_ide_titu) = ? OR TRIM(c.cred_nom_titu) LIKE ?`,
+      [cedulaOTitular, `%${cedulaOTitular}%`]
+    );
+    return rows.map(r => ({
+      id: r.cred_num_cred,
+      memberId: r.cred_ide_titu,
+      amount: r.cred_cap_cred !== null ? parseFloat(r.cred_cap_cred) : null,
+      balance: null, // Informix legacy no expone saldo vigente en bcacred, solo capital original
+      rate: r.cred_tas_cred !== null ? parseFloat(r.cred_tas_cred) : null,
+      installmentsCount: r.cred_num_cuot !== null ? parseInt(r.cred_num_cuot, 10) : null,
+      type: r.tipo_desc || (r.cred_cod_tcre === '0' || r.cred_cod_tcre === 0 ? 'INDIVIDUAL' : r.cred_cod_tcre === '1' || r.cred_cod_tcre === 1 ? 'SOLIDARIO' : null),
+      status: r.cred_cod_ecre, // catálogo no confirmado en Informix, se expone el código crudo
+      FechaSolicitud: r.cred_fec_inic || '',
+      dueDate: r.cred_fec_venc || '',
+      comments: '',
+      installments: [], // no hay plan de cuotas detallado disponible en Informix legacy
+      planDisponible: false,
+      moraPorc: r.cred_por_mora !== null ? parseFloat(r.cred_por_mora) : null,
+      moraDias: r.cred_con_mora !== null ? parseInt(r.cred_con_mora, 10) : null,
+      origen: 'INFORMIX'
+    }));
+  } catch (err) {
+    console.error('[buscar creditos informix]', err.message);
+    return [];
+  }
+}
+
+// ─── 5.7 Búsqueda en vivo de depósitos a plazo fijo legacy (bcadpfi) cuando no existen aún en SQL Server ──
+const DPF_ESTADOS_INFORMIX = { 1: 'ACTIVO', 2: 'VENCIDO', 3: 'CANCELADO' };
+
+async function buscarDPFInformix(cedulaOTitular) {
+  if (!cedulaOTitular) return [];
+  try {
+    const rows = await queryInformix(
+      `SELECT
+         d.dpfi_num_dpfi,
+         d.dpfi_cod_clie,
+         TRIM(cl.clie_ide_clie) AS ced,
+         TRIM(cl.clie_nom_clie) AS nom,
+         TRIM(cl.clie_ape_clie) AS ape,
+         d.dpfi_val_dpfi,
+         d.dpfi_tas_dpfi,
+         d.dpfi_plz_dpfi,
+         d.dpfi_fec_inic,
+         d.dpfi_fec_deve,
+         d.dpfi_cod_edpf,
+         TRIM(d.dpfi_nom_bene) AS bene,
+         TRIM(d.dpfi_det_dpfi) AS det
+       FROM bcadpfi d
+       LEFT JOIN bcaclie cl ON d.dpfi_cod_clie = cl.clie_cod_clie
+       WHERE TRIM(cl.clie_ide_clie) = ? OR TRIM(cl.clie_nom_clie) LIKE ? OR TRIM(cl.clie_ape_clie) LIKE ?`,
+      [cedulaOTitular, `%${cedulaOTitular}%`, `%${cedulaOTitular}%`]
+    );
+    return rows.map(r => ({
+      DepositoID: r.dpfi_num_dpfi,
+      Identificacion: r.ced || '',
+      NombreSocio: `${r.nom || ''} ${r.ape || ''}`.trim(),
+      MontoCapital: r.dpfi_val_dpfi !== null ? parseFloat(r.dpfi_val_dpfi) : null,
+      TasaNominalAnual: r.dpfi_tas_dpfi !== null ? parseFloat(r.dpfi_tas_dpfi) : null,
+      PlazosDias: r.dpfi_plz_dpfi !== null ? parseInt(r.dpfi_plz_dpfi, 10) : null,
+      Estado: DPF_ESTADOS_INFORMIX[parseInt(r.dpfi_cod_edpf, 10)] || `LEGACY_${r.dpfi_cod_edpf}`,
+      FechaApertura: r.dpfi_fec_inic || '',
+      FechaVencimiento: r.dpfi_fec_deve || '',
+      beneficiario: r.bene || '',
+      detalle: r.det || '',
+      origen: 'INFORMIX'
+    }));
+  } catch (err) {
+    console.error('[buscar dpf informix]', err.message);
+    return [];
+  }
 }
 
 // ─── 6. Inferir tipo de cuenta desde bcatcdv ─────────────────────────────
@@ -238,25 +488,71 @@ app.post('/api/auth/login.php', async (req, res) => {
       .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin FROM dbo.Usuarios WHERE UsuarioId = @id');
 
     if (result.recordset.length === 0) {
+      await registrarAuditoriaProceso(pool, {
+        proceso: 'SEGURIDAD', accion: 'LOGIN_FALLIDO', entidadTipo: 'Usuario',
+        entidadId: cleanId, usuarioId: cleanId,
+        detalle: 'Intento de login con usuario inexistente.',
+        ip: req.ip || req.headers['x-forwarded-for'] || null,
+      });
       return res.status(401).json({ ok: false, error: 'Credenciales inválidas' });
     }
-    
+
     const user = result.recordset[0];
     if (!user.Activo) {
+      await registrarAuditoriaProceso(pool, {
+        proceso: 'SEGURIDAD', accion: 'LOGIN_FALLIDO', entidadTipo: 'Usuario',
+        entidadId: user.UsuarioId, usuarioId: user.UsuarioId,
+        detalle: 'Intento de login en usuario inactivo.',
+        ip: req.ip || req.headers['x-forwarded-for'] || null,
+      });
       return res.status(401).json({ ok: false, error: 'Usuario inactivo' });
     }
-    
-    // Verificar contraseña (usar PasswordHash si existe, de lo contrario usar Pin)
+
+    // Verificar contraseña. PasswordHash puede estar en dos formatos:
+    //  - hash bcrypt (arranca con "$2"): comparación segura con bcrypt.compare.
+    //  - texto plano legado (contraseñas nunca migradas): comparación directa, y si coincide
+    //    se re-hashea de inmediato con bcrypt (migración perezosa, sin forzar reset a nadie).
     const storedPassword = user.PasswordHash || user.Pin;
-    if (storedPassword !== cleanPin) {
+    const isBcryptHash = typeof storedPassword === 'string' && storedPassword.startsWith('$2');
+    const passwordMatches = isBcryptHash
+      ? bcrypt.compareSync(cleanPin, storedPassword)
+      : storedPassword === cleanPin;
+
+    if (!passwordMatches) {
+      await registrarAuditoriaProceso(pool, {
+        proceso: 'SEGURIDAD', accion: 'LOGIN_FALLIDO', entidadTipo: 'Usuario',
+        entidadId: user.UsuarioId, usuarioId: user.UsuarioId,
+        detalle: 'Intento de login con contraseña incorrecta.',
+        ip: req.ip || req.headers['x-forwarded-for'] || null,
+      });
       return res.status(401).json({ ok: false, error: 'Credenciales inválidas' });
     }
-    
+
+    if (!isBcryptHash) {
+      const newHash = bcrypt.hashSync(cleanPin, 10);
+      await pool.request()
+        .input('id', sql.NVarChar(20), user.UsuarioId)
+        .input('hash', sql.NVarChar(100), newHash)
+        .query('UPDATE dbo.Usuarios SET PasswordHash = @hash WHERE UsuarioId = @id');
+    }
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD',
+      accion: 'LOGIN_EXITOSO',
+      entidadTipo: 'Usuario',
+      entidadId: user.UsuarioId,
+      usuarioId: user.UsuarioId,
+      detalle: `Login exitoso. Rol: ${user.Rol}.`,
+      ip: req.ip || req.headers['x-forwarded-for'] || null,
+    });
+
+    const token = jwt.sign({ usuarioId: user.UsuarioId, rol: user.Rol }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
     return res.json({
       id:            user.UsuarioId,
       name:          user.NombreCompleto,
-      pin:           storedPassword,
       role:          user.Rol,
+      token,
       impresora:     user.ImpresoraPredeterminada || '',
       accounts:      [],
       transactions:  [],
@@ -270,14 +566,14 @@ app.post('/api/auth/login.php', async (req, res) => {
 });
 
 // ── POST /api/auth/update_password ──────────────────────────────────────────
-app.post('/api/auth/update_password', async (req, res) => {
+app.post('/api/auth/update_password', requireAuth, requireSelf('id'), async (req, res) => {
   const { id, password } = req.body || {};
   if (!id || !password) return res.status(400).json({ ok: false, error: 'id y contraseña son requeridos' });
   try {
     const pool = await sql.connect(sqlConfig);
     await pool.request()
       .input('id', sql.NVarChar(20), id.trim().toLowerCase())
-      .input('password', sql.NVarChar(100), password.trim())
+      .input('password', sql.NVarChar(100), bcrypt.hashSync(password.trim(), 10))
       .query('UPDATE dbo.Usuarios SET PasswordHash = @password, RequiereCambioPin = 0, FechaActualizacion = SYSDATETIME() WHERE UsuarioId = @id');
     
     // Inserción en tabla de auditoría
@@ -286,6 +582,15 @@ app.post('/api/auth/update_password', async (req, res) => {
       .input('Concepto', sql.NVarChar(100), 'Actualización de Contraseña')
       .input('Detalle', sql.NVarChar(500), 'El usuario actualizó su contraseña de acceso.')
       .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@UsuarioId, @Concepto, @Detalle)');
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD',
+      accion: 'CAMBIO_PASSWORD',
+      entidadTipo: 'Usuario',
+      entidadId: id.trim().toLowerCase(),
+      usuarioId: id.trim().toLowerCase(),
+      detalle: 'El usuario actualizó su contraseña de acceso.',
+    });
 
     return res.json({ ok: true, message: 'Contraseña actualizada con éxito y registrada en auditoría' });
   } catch (err) {
@@ -598,6 +903,16 @@ app.post('/api/socios/registrar', async (req, res) => {
         `);
     }
 
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SOCIOS',
+      accion: 'CREAR',
+      entidadTipo: 'RegistroSocio',
+      entidadId: socioId,
+      usuarioId: usuarioRegistro || 'auto-registro',
+      detalle: `Alta de socio ${identificacion} (${primerNombre} ${primerApellido}), NumeroSocio ${numeroSocio}.`,
+      ip: req.ip,
+    });
+
     await pool.close();
 
     // Enviar correo de verificación (asíncronamente)
@@ -819,12 +1134,56 @@ app.get('/api/socios/rates', async (req, res) => {
   }
 });
 
+// ─── Generación server-side del Plan de Pagos (Sistema Francés / Cuota Fija) ──
+// Replica EXACTAMENTE la fórmula usada en el frontend (components/CreditsView.tsx,
+// función `simulation` ~líneas 62-87) y la que ya se calculaba inline para el
+// análisis de sensibilidad en /api/socios/loans/approve (~líneas 1090-1110).
+// Se centraliza aquí para no duplicar la fórmula y garantizar que los números
+// que ve el socio al simular coincidan siempre con lo que queda persistido.
+function generarPlanAmortizacion(monto, tasaAnual, plazoMeses) {
+  const p = parseFloat(monto);
+  const tasaVal = parseFloat(tasaAnual);
+  const n = parseInt(plazoMeses, 10);
+
+  if (!p || !n || n <= 0) return [];
+
+  const r = (tasaVal / 100) / 12;
+  const monthlyPayment = r === 0
+    ? p / n
+    : p * (r / (1 - Math.pow(1 + r, -n)));
+
+  let balance = p;
+  const installments = [];
+
+  for (let i = 1; i <= n; i++) {
+    const interest = balance * r;
+    const capital = monthlyPayment - interest;
+    balance -= capital;
+    installments.push({
+      number: i,
+      date: `Mes ${i}`,
+      capital: Math.max(0, parseFloat(capital.toFixed(2))),
+      interest: Math.max(0, parseFloat(interest.toFixed(2))),
+      total: parseFloat(monthlyPayment.toFixed(2)),
+      status: 'PENDIENTE'
+    });
+  }
+
+  return installments;
+}
+
 // ── POST /api/socios/loans ───────────────────────────────────────────────────
 app.post('/api/socios/loans', async (req, res) => {
-  const { id, memberId, amount, balance, rate, installmentsCount, type, status, startDate, dueDate, installments, garantiaInfo, origen } = req.body || {};
+  const { id, memberId, amount, balance, rate, installmentsCount, type, status, startDate, dueDate, installments: installmentsInput, garantiaInfo, origen } = req.body || {};
   if (!memberId || !amount || !rate || !installmentsCount) {
     return res.status(400).json({ ok: false, error: 'Datos de crédito incompletos' });
   }
+
+  // Si el cliente no envió el plan de pagos simulado (o vino vacío), lo generamos
+  // server-side con la misma fórmula del frontend, para no persistir PlanPagos = NULL/"[]".
+  const installments = (Array.isArray(installmentsInput) && installmentsInput.length > 0)
+    ? installmentsInput
+    : generarPlanAmortizacion(amount, rate, installmentsCount);
 
   let pool;
   try {
@@ -982,7 +1341,7 @@ app.post('/api/socios/loans/update', async (req, res) => {
   }
 });
 
-app.post('/api/socios/loans/approve', async (req, res) => {
+app.post('/api/socios/loans/approve', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { id, ids, reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount,
           icePorcentaje, iceEstado, iceCuotaMensual, iceIngresoNeto, iceDeudaExterna } = req.body || {};
   const targetIds = Array.isArray(ids) ? ids : (id ? [id] : []);
@@ -1098,6 +1457,16 @@ app.post('/api/socios/loans/approve', async (req, res) => {
           .input('concepto', sql.NVarChar(100), 'Aprobación de Crédito')
           .input('detalle', sql.NVarChar(500), auditDetail)
           .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
+
+        await registrarAuditoriaProceso(transaction, {
+          proceso: 'CREDITOS',
+          accion: 'APROBAR',
+          entidadTipo: 'SolicitudCredito',
+          entidadId: loanId,
+          usuarioId: approverId,
+          valorNuevo: finalAmount,
+          detalle: auditDetail,
+        });
       }
 
       await transaction.commit();
@@ -1113,7 +1482,7 @@ app.post('/api/socios/loans/approve', async (req, res) => {
 });
 
 // ── POST /api/socios/loans/disburse ───────────────────────────────────────────
-app.post('/api/socios/loans/disburse', async (req, res) => {
+app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { id, ids, usuarioId } = req.body || {};
   const targetIds = Array.isArray(ids) ? ids : (id ? [id] : []);
   if (targetIds.length === 0) {
@@ -1232,7 +1601,19 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
 
         // 6. Generar e Insertar Tabla de Amortización Relacional y Rubros
         const planPagosText = loan.PlanPagos;
-        const planSimulado = planPagosText ? JSON.parse(planPagosText) : [];
+        let planSimulado = [];
+        try {
+          planSimulado = planPagosText ? JSON.parse(planPagosText) : [];
+        } catch (parseErr) {
+          planSimulado = [];
+        }
+        if (!Array.isArray(planSimulado) || planSimulado.length === 0) {
+          // PlanPagos venía NULL o "[]" (bug histórico: la solicitud nunca guardó el
+          // plan simulado). Lo regeneramos aquí con la misma fórmula server-side para
+          // no desembolsar un crédito VIGENTE sin tabla de amortización.
+          console.warn(`[disburse] PlanPagos vacío/NULL para ${loanId}; regenerando server-side con Monto=${loanAmount}, Tasa=${rateVal}, Plazo=${plazoVal}`);
+          planSimulado = generarPlanAmortizacion(loanAmount, rateVal, plazoVal);
+        }
         const newPlan = [];
         let runningBalance = loanAmount;
 
@@ -1377,6 +1758,16 @@ app.post('/api/socios/loans/disburse', async (req, res) => {
           .input('concepto', sql.NVarChar(100), 'Desembolso de Crédito')
           .input('detalle', sql.NVarChar(500), auditDetail)
           .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
+
+        await registrarAuditoriaProceso(transaction, {
+          proceso: 'CREDITOS',
+          accion: 'DESEMBOLSAR',
+          entidadTipo: 'SolicitudCredito',
+          entidadId: loanId,
+          usuarioId: approverId,
+          valorNuevo: loanAmount,
+          detalle: auditDetail,
+        });
 
         await transaction.commit();
         successes.push({ loanId, balance: newBalance });
@@ -1543,7 +1934,7 @@ app.get('/api/socios/:id/scoring', async (req, res) => {
 });
 
 // ── POST /api/socios/loans/reject ────────────────────────────────────────────
-app.post('/api/socios/loans/reject', async (req, res) => {
+app.post('/api/socios/loans/reject', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { id, reason, usuarioId } = req.body || {};
   if (!id || !reason) return res.status(400).json({ ok: false, error: 'id y dictamen técnico son requeridos' });
 
@@ -1589,6 +1980,15 @@ app.post('/api/socios/loans/reject', async (req, res) => {
       .input('concepto', sql.NVarChar(100), 'Rechazo de Crédito')
       .input('detalle', sql.NVarChar(500), auditDetail)
       .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'CREDITOS',
+      accion: 'RECHAZAR',
+      entidadTipo: 'SolicitudCredito',
+      entidadId: id,
+      usuarioId: approverId,
+      detalle: auditDetail,
+    });
 
     return res.json({ ok: true, message: 'Solicitud de crédito rechazada con éxito' });
   } catch (err) {
@@ -1768,6 +2168,15 @@ app.post('/api/socios/loans/pay-dividend', async (req, res) => {
         .input('detalle', sql.NVarChar(500), auditDetail)
         .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
 
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CREDITOS',
+        accion: 'PAGO_DIVIDENDO',
+        entidadTipo: 'SolicitudCredito',
+        entidadId: loanId,
+        usuarioId: 'caja',
+        detalle: auditDetail,
+      });
+
       await transaction.commit();
 
       return res.json({
@@ -1810,6 +2219,16 @@ app.post('/api/socios/update-profile', async (req, res) => {
         WHERE Identificacion = @id
       `);
 
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SOCIOS',
+      accion: 'MODIFICAR',
+      entidadTipo: 'RegistroSocio',
+      entidadId: identificacion.trim(),
+      usuarioId: identificacion.trim(),
+      detalle: 'Actualización de perfil (email/teléfono/dirección/lugar de trabajo/estado civil).',
+      ip: req.ip,
+    });
+
     return res.json({ ok: true, message: 'Perfil del socio actualizado correctamente' });
   } catch (err) {
     console.error('[update profile]', err.message);
@@ -1818,7 +2237,7 @@ app.post('/api/socios/update-profile', async (req, res) => {
 });
 
 // ── POST /api/socios/update-report-profile ────────────────────────────────────
-app.post('/api/socios/update-report-profile', async (req, res) => {
+app.post('/api/socios/update-report-profile', requireAuth, async (req, res) => {
   const {
     identificacion,
     direccionDomicilio,
@@ -1875,6 +2294,18 @@ app.post('/api/socios/update-report-profile', async (req, res) => {
           PatrimonioIngresos = @patrimonioIngresos
         WHERE Identificacion = @id
       `);
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SOCIOS',
+      accion: 'MODIFICAR',
+      entidadTipo: 'RegistroSocio',
+      entidadId: identificacion.trim(),
+      usuarioId: req.actor.usuarioId,
+      campoAfectado: 'PEPS',
+      valorNuevo: peps ? 'SI' : 'NO',
+      detalle: `Actualización de ficha SEPS ampliada (PEPS, patrimonio/ingresos, vivienda, discapacidad, autoidentificación) del socio ${identificacion.trim()}.`,
+      ip: req.ip,
+    });
 
     return res.json({ ok: true, message: 'Perfil del socio actualizado correctamente en la ficha de reporte' });
   } catch (err) {
@@ -2101,7 +2532,7 @@ app.get('/api/socios/buscar', async (req, res) => {
         .input('exactQ', sql.NVarChar(50), q)
         .query(`
           SELECT 
-            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio, rs.PIN,
+            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio,
             rs.DireccionDomicilio, rs.LugarTrabajo, rs.Etnia, rs.Genero, rs.NivelInstruccion, rs.Profesion, rs.ReferenciasPersonales, rs.CargasFamiliares,
             rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
             rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
@@ -2120,7 +2551,7 @@ app.get('/api/socios/buscar', async (req, res) => {
       searchResult = await pool.request()
         .query(`
           SELECT 
-            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio, rs.PIN,
+            rs.SOCIOID, rs.TipoPersona, rs.TipoIdentificacion, rs.Identificacion, rs.PrimerNombre, rs.SegundoNombre, rs.PrimerApellido, rs.SegundoApellido, rs.Apellidos, rs.Email, rs.Telefono, rs.FechaNacimiento, rs.EstadoCivil, rs.NumeroSocio,
             rs.DireccionDomicilio, rs.LugarTrabajo, rs.Etnia, rs.Genero, rs.NivelInstruccion, rs.Profesion, rs.ReferenciasPersonales, rs.CargasFamiliares,
             rs.Telefonos, rs.Autoidentificacion, rs.TipoVivienda, rs.ValorVivienda, rs.Discapacidad, rs.ConsentimientoDatos, rs.PEPS, rs.PatrimonioIngresos,
             rs.CedulaConyuge, rs.NombreConyuge, rs.TelefonoConyuge,
@@ -2137,7 +2568,15 @@ app.get('/api/socios/buscar', async (req, res) => {
     }
       
     if (searchResult.recordset.length === 0) {
-      return res.json({ ok: true, data: [] });
+      // No existe todavía en la base nueva: buscar en vivo en Informix (legacy) sin migrar nada.
+      const informixData = await buscarClienteInformix(q);
+      // El socio también puede tener créditos legacy en bcacred: fallback en vivo por cédula.
+      for (const socio of informixData) {
+        if (!socio.loans || socio.loans.length === 0) {
+          socio.loans = await buscarCreditosInformix(socio.id);
+        }
+      }
+      return res.json({ ok: true, data: informixData });
     }
 
     const socios = [];
@@ -2187,10 +2626,15 @@ app.get('/api/socios/buscar', async (req, res) => {
           ORDER BY FechaSolicitud DESC
         `);
 
-      const loans = loansResult.recordset.map(loan => ({
+      let loans = loansResult.recordset.map(loan => ({
         ...loan,
         installments: loan.installments ? JSON.parse(loan.installments) : []
       }));
+
+      // El socio existe en SQL Server pero puede no tener créditos migrados aún: fallback en vivo a Informix.
+      if (loans.length === 0) {
+        loans = await buscarCreditosInformix(r.Identificacion);
+      }
 
       socios.push({
         id: r.Identificacion,
@@ -2200,7 +2644,6 @@ app.get('/api/socios/buscar', async (req, res) => {
         middleName: r.SegundoNombre || '',
         firstLastName: r.PrimerApellido || '',
         secondLastName: r.SegundoApellido || '',
-        pin: r.PIN,
         role: 'MEMBER',
         email: r.Email || '',
         phone: r.Telefono || '',
@@ -2233,7 +2676,8 @@ app.get('/api/socios/buscar', async (req, res) => {
         rutaCaraPosterior: r.RutaCaraPosterior || '',
         accounts: accountsResult.recordset,
         transactions: txsResult.recordset,
-        loans: loans
+        loans: loans,
+        origen: 'NUEVO'
       });
     }
 
@@ -2245,7 +2689,7 @@ app.get('/api/socios/buscar', async (req, res) => {
 });
 
 // ── POST /api/socios/transaccion ─────────────────────────────────────────────
-app.post('/api/socios/transaccion', async (req, res) => {
+app.post('/api/socios/transaccion', requireAuth, requireSelf('tellerId'), async (req, res) => {
   const { accountId, opType, amount, description, tellerId, cashDetail } = req.body || {};
   if (!accountId || !opType || !amount || amount <= 0) {
     return res.status(400).json({ ok: false, error: 'Datos de transacción inválidos' });
@@ -2433,6 +2877,17 @@ app.post('/api/socios/transaccion', async (req, res) => {
         }
       }
 
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CAJA',
+        accion: opType,
+        entidadTipo: 'CuentaAhorro',
+        entidadId: account.CuentaId,
+        usuarioId: tellerId || 'caja',
+        valorAnterior: account.Saldo,
+        valorNuevo: newBalance,
+        detalle: `${description || ''} (cuenta ${account.NumeroCuenta}, asiento ${asientoId ?? 'N/A'})`.trim(),
+      });
+
       await transaction.commit();
 
       const newTxId = asientoId ? `tx-${asientoId}` : `tx-${Date.now()}`;
@@ -2463,14 +2918,11 @@ app.post('/api/socios/transaccion', async (req, res) => {
 });
 
 // ── POST /api/socios/transaccion/anular ──────────────────────────────────────────
-app.post('/api/socios/transaccion/anular', async (req, res) => {
-  const { id, role } = req.body || {};
+app.post('/api/socios/transaccion/anular', requireAuth, requireSelf('actorId'), async (req, res) => {
+  const { id, actorId } = req.body || {};
   if (!id) return res.status(400).json({ ok: false, error: 'ID de transacción requerido' });
-  
-  if (role !== 'ADMIN') {
-    return res.status(403).json({ ok: false, error: 'PERMISOS INSUFICIENTES: Solo un usuario Administrador puede anular transacciones.' });
-  }
-  
+  if (!actorId) return res.status(400).json({ ok: false, error: 'Usuario que ejecuta la anulación requerido' });
+
   const rawAsientoId = id.replace('tx-', '').replace('TX-', '');
   const asientoId = parseInt(rawAsientoId, 10);
   if (isNaN(asientoId)) {
@@ -2480,6 +2932,18 @@ app.post('/api/socios/transaccion/anular', async (req, res) => {
   let pool;
   try {
     pool = await sql.connect(sqlConfig);
+
+    // El rol se resuelve desde la base (no se confía en un campo enviado por el cliente,
+    // que era trivialmente falsificable: cualquiera podía mandar { role: 'ADMIN' }).
+    const actorRes = await pool.request()
+      .input('actorId', sql.NVarChar(20), actorId.trim().toLowerCase())
+      .query('SELECT Rol FROM dbo.Usuarios WHERE UsuarioId = @actorId');
+    const actorRole = actorRes.recordset.length > 0 ? actorRes.recordset[0].Rol : null;
+
+    if (actorRole !== 'ADMIN') {
+      return res.status(403).json({ ok: false, error: 'PERMISOS INSUFICIENTES: Solo un usuario Administrador puede anular transacciones.' });
+    }
+
     const transaction = pool.transaction();
     await transaction.begin();
 
@@ -2593,6 +3057,19 @@ app.post('/api/socios/transaccion/anular', async (req, res) => {
       await markRequest
         .input('asientoId', sql.Int, asientoId)
         .query("UPDATE dbo.RegistroContable SET Concepto = 'ANULADO: ' + Concepto WHERE AsientoId = @asientoId OR (Concepto = (SELECT Concepto FROM dbo.RegistroContable WHERE AsientoId = @asientoId) AND NumeroCuenta = (SELECT NumeroCuenta FROM dbo.RegistroContable WHERE AsientoId = @asientoId) AND ABS(DATEDIFF(second, Fecha, (SELECT Fecha FROM dbo.RegistroContable WHERE AsientoId = @asientoId))) < 10)");
+
+      // NOTA: el body de este endpoint solo trae {id, role}, no el usuario que ejecuta la anulación
+      // (pendiente: el frontend debería enviar el userId real de quien anula, no solo el rol).
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CAJA',
+        accion: 'ANULAR',
+        entidadTipo: 'AsientoContable',
+        entidadId: asientoId,
+        usuarioId: actorId,
+        valorAnterior: account.Saldo,
+        valorNuevo: newBalance,
+        detalle: `Anulación de tx-${asientoId} (${original.Concepto})`,
+      });
 
       await transaction.commit();
 
@@ -2742,7 +3219,7 @@ app.post('/api/admin/productos', async (req, res) => {
 });
 
 // ── POST /api/socios/loans/anular ──────────────────────────────────────────
-app.post('/api/socios/loans/anular', async (req, res) => {
+app.post('/api/socios/loans/anular', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { id, usuarioId } = req.body || {};
   if (!id) return res.status(400).json({ ok: false, error: 'El ID de la solicitud es requerido' });
 
@@ -2907,6 +3384,16 @@ app.post('/api/socios/loans/anular', async (req, res) => {
         .input('detalle', sql.NVarChar(500), auditDetail)
         .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
 
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CREDITOS',
+        accion: 'ANULAR',
+        entidadTipo: 'SolicitudCredito',
+        entidadId: id,
+        usuarioId: userId,
+        valorAnterior: loanAmount,
+        detalle: auditDetail,
+      });
+
       await transaction.commit();
       return res.json({ ok: true, message: 'Crédito anulado y desembolso reversado con éxito', balance: newBalance });
     } catch (innerErr) {
@@ -2920,7 +3407,7 @@ app.post('/api/socios/loans/anular', async (req, res) => {
 });
 
 // ── POST /api/socios/loans/anular-pago ─────────────────────────────────────
-app.post('/api/socios/loans/anular-pago', async (req, res) => {
+app.post('/api/socios/loans/anular-pago', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { loanId, installmentNumber, usuarioId } = req.body || {};
   if (!loanId || !installmentNumber) {
     return res.status(400).json({ ok: false, error: 'loanId e installmentNumber son requeridos' });
@@ -3115,6 +3602,15 @@ app.post('/api/socios/loans/anular-pago', async (req, res) => {
         .input('detalle', sql.NVarChar(500), auditDetail)
         .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
 
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CREDITOS',
+        accion: 'ANULAR_DIVIDENDO',
+        entidadTipo: 'SolicitudCredito',
+        entidadId: loanId,
+        usuarioId: userId,
+        detalle: auditDetail,
+      });
+
       await transaction.commit();
       return res.json({ ok: true, message: 'Pago de dividendo anulado con éxito', loanBalance: newLoanBalance, savingsBalance: newSavingsBalance });
     } catch (innerErr) {
@@ -3128,7 +3624,7 @@ app.post('/api/socios/loans/anular-pago', async (req, res) => {
 });
 
 // ── POST /api/socios/loans/update-status ──────────────────────────────────
-app.post('/api/socios/loans/update-status', async (req, res) => {
+app.post('/api/socios/loans/update-status', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { loanId, status, reason, usuarioId } = req.body || {};
   if (!loanId || !status) {
     return res.status(400).json({ ok: false, error: 'loanId y status son requeridos' });
@@ -3190,6 +3686,18 @@ app.post('/api/socios/loans/update-status', async (req, res) => {
       .input('concepto', sql.NVarChar(100), 'Cambio Estado Cartera')
       .input('detalle', sql.NVarChar(500), auditDetail)
       .query('INSERT INTO dbo.AuditoriaUsuarios (UsuarioId, Concepto, Detalle) VALUES (@usuarioId, @concepto, @detalle)');
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'CREDITOS',
+      accion: 'CAMBIO_ESTADO',
+      entidadTipo: 'SolicitudCredito',
+      entidadId: loanId,
+      usuarioId: userId,
+      campoAfectado: 'Estado',
+      valorAnterior: loan.Estado,
+      valorNuevo: upperStatus,
+      detalle: auditDetail,
+    });
 
     return res.json({ ok: true, message: `Estado del crédito actualizado a ${upperStatus} con éxito` });
   } catch (err) {
@@ -3642,6 +4150,14 @@ app.get('/api/dpf', async (req, res) => {
       ORDER BY d.FechaCreacion DESC
     `);
     await pool.close();
+
+    // Si la búsqueda por cédula/nombre no encontró nada en SQL Server, hacer fallback en vivo a Informix
+    // (bcadpfi), sin migrar nada — solo cuando hay un término de búsqueda concreto.
+    if (r.recordset.length === 0 && busqueda) {
+      const informixDPF = await buscarDPFInformix(busqueda);
+      return res.json({ ok: true, data: informixDPF });
+    }
+
     return res.json({ ok: true, data: r.recordset });
   } catch (err) {
     if (pool) try { await pool.close(); } catch (_) {}
@@ -3917,6 +4433,107 @@ app.post('/api/dpf/:id/renovar', async (req, res) => {
   }
 });
 
+// ── GET /api/ahorros/resumen ──────────────────────────────────────────────────
+// KPIs agregados de cuentas de Ahorro a la Vista (excluye Certificados de Aportación).
+app.get('/api/ahorros/resumen', async (req, res) => {
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+    const cuentasR = await pool.request().query(`
+      SELECT
+        COUNT(*) AS totalCuentas,
+        SUM(CASE WHEN c.Estado='ACTIVA' THEN 1 ELSE 0 END) AS cuentasActivas,
+        SUM(CASE WHEN c.Estado<>'ACTIVA' THEN 1 ELSE 0 END) AS cuentasInactivas,
+        ISNULL(SUM(CASE WHEN c.Estado='ACTIVA' THEN c.Saldo ELSE 0 END),0) AS totalCaptado,
+        COUNT(DISTINCT c.SocioId) AS sociosConCuenta
+      FROM dbo.CuentasAhorro c
+      INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+      WHERE p.EsCertificado = 0
+    `);
+    const movHoyR = await pool.request().query(`
+      SELECT
+        ISNULL(SUM(CASE WHEN rc.Haber > 0 THEN rc.Haber ELSE 0 END), 0) AS depositosHoy,
+        ISNULL(SUM(CASE WHEN rc.Debe  > 0 THEN rc.Debe  ELSE 0 END), 0) AS retirosHoy,
+        COUNT(*) AS movimientosHoy
+      FROM dbo.RegistroContable rc
+      INNER JOIN dbo.CuentasAhorro c ON c.NumeroCuenta = rc.NumeroCuenta
+      INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+      WHERE p.EsCertificado = 0
+        AND rc.CuentaContable != '110105'
+        AND CAST(rc.Fecha AS DATE) = CAST(SYSDATETIME() AS DATE)
+    `);
+    await pool.close();
+    return res.json({ ok: true, data: { ...cuentasR.recordset[0], ...movHoyR.recordset[0] } });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[ahorros-resumen]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/ahorros/:cuentaId/movimientos ────────────────────────────────────
+// Historial de movimientos (Libro Diario) de una cuenta de ahorro puntual.
+// Solo lectura — no muta saldo ni contabilidad. Filtra la pata de "Caja Ventanilla"
+// (110105) para mostrar una fila por transacción, igual que /api/socios/buscar.
+app.get('/api/ahorros/:cuentaId/movimientos', async (req, res) => {
+  const cleanId = ((req.params.cuentaId || '') + '').replace('ca-', '');
+  const cuentaId = parseInt(cleanId, 10);
+  if (isNaN(cuentaId)) {
+    return res.status(400).json({ ok: false, error: 'ID de cuenta inválido' });
+  }
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+
+  let pool;
+  try {
+    pool = await sql.connect(sqlConfig);
+
+    const accRes = await pool.request()
+      .input('cuentaId', sql.Int, cuentaId)
+      .query(`
+        SELECT
+          'ca-' + CAST(c.CuentaId AS NVARCHAR(10)) AS id, c.CuentaId, c.SocioId, c.NumeroCuenta,
+          CAST(c.Saldo AS FLOAT) AS Saldo, c.Estado, c.FechaApertura,
+          p.Nombre AS NombreProducto, p.EsCertificado, p.PermiteDepositos, p.PermiteRetiros,
+          rs.Identificacion, rs.NumeroSocio,
+          (rs.PrimerNombre + ' ' + ISNULL(rs.SegundoNombre + ' ', '') + rs.Apellidos) AS NombreSocio
+        FROM dbo.CuentasAhorro c
+        INNER JOIN dbo.parametrosproductos p ON c.CodigoProducto = p.CodigoProducto
+        INNER JOIN dbo.RegistroSocios rs ON rs.SOCIOID = c.SocioId
+        WHERE c.CuentaId = @cuentaId
+      `);
+
+    if (accRes.recordset.length === 0) {
+      await pool.close();
+      return res.status(404).json({ ok: false, error: 'Cuenta no encontrada' });
+    }
+    const account = accRes.recordset[0];
+
+    const movRes = await pool.request()
+      .input('numeroCuenta', sql.NVarChar(20), account.NumeroCuenta)
+      .input('limit', sql.Int, limit)
+      .query(`
+        SELECT TOP (@limit)
+          'tx-' + CAST(AsientoId AS NVARCHAR(10)) AS id,
+          AsientoId,
+          FORMAT(Fecha, 'yyyy-MM-dd HH:mm') AS fecha,
+          Concepto AS descripcion,
+          CAST(CASE WHEN Haber > 0 THEN Haber ELSE -Debe END AS FLOAT) AS monto,
+          CASE WHEN Haber > 0 THEN 'CREDIT' ELSE 'DEBIT' END AS tipo,
+          UsuarioId AS usuarioId
+        FROM dbo.RegistroContable
+        WHERE NumeroCuenta = @numeroCuenta AND CuentaContable != '110105'
+        ORDER BY Fecha DESC, AsientoId DESC
+      `);
+
+    await pool.close();
+    return res.json({ ok: true, data: { account, movimientos: movRes.recordset } });
+  } catch (err) {
+    if (pool) try { await pool.close(); } catch (_) {}
+    console.error('[ahorros-movimientos]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ── POST /api/socios/transferir ───────────────────────────────────────────────
 app.post('/api/socios/transferir', async (req, res) => {
   const { cuentaOrigenId, cuentaDestinoId, monto, descripcion, usuarioId } = req.body || {};
@@ -4077,6 +4694,46 @@ app.get('/api/contabilidad/balance-comprobacion', async (req, res) => {
     return res.json({ ok: true, cuentas: result.recordset, totalDebe, totalHaber });
   } catch (err) {
     console.error('[balance-comprobacion]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/contabilidad/balance-legacy ──────────────────────────────────────
+// Vista de SOLO CONSULTA de saldos agregados mensuales por cuenta contable, leídos
+// en vivo desde Informix legacy (tabla comp_sal_cta). NO existe libro diario/asientos
+// transaccional en Informix (confirmado por introspección) — este endpoint expone
+// únicamente el balance de comprobación histórico agregado, tal cual vive en el
+// sistema legacy. NO es un fallback de /api/contabilidad/libro-diario ni de
+// /api/contabilidad/balance-comprobacion: dbo.RegistroContable en SQL Server sigue
+// siendo la única fuente de verdad para contabilidad nueva/transaccional. Sin
+// migración batch, sin escritura en Informix.
+app.get('/api/contabilidad/balance-legacy', async (req, res) => {
+  const cuenta  = (req.query.cuenta  || '').trim();
+  const periodo = (req.query.periodo || '').trim(); // reservado para cuando se confirme columna de período; comp_sal_cta no trae fecha explícita en esta VM
+
+  try {
+    let query = `SELECT cod_ctas, nom_ccon, cod_tcue, sal_peri, sal_mes_debe, sal_mes_cred, cod_ofic FROM comp_sal_cta`;
+    const params = [];
+    if (cuenta) {
+      query += ` WHERE cod_ctas = ?`;
+      params.push(cuenta);
+    }
+    const rows = await queryInformix(query, params);
+    const cuentas = rows.map(r => ({
+      cuenta: r.cod_ctas,
+      nombreConcepto: (r.nom_ccon || '').trim(),
+      tipoCuenta: (r.cod_tcue || '').trim(),
+      saldoPeriodoAnterior: r.sal_peri !== null ? parseFloat(r.sal_peri) : 0,
+      saldoMesDebe: r.sal_mes_debe !== null ? parseFloat(r.sal_mes_debe) : 0,
+      saldoMesHaber: r.sal_mes_cred !== null ? parseFloat(r.sal_mes_cred) : 0,
+      oficina: r.cod_ofic,
+      origen: 'INFORMIX'
+    }));
+    const totalDebe  = cuentas.reduce((s, c) => s + c.saldoMesDebe, 0);
+    const totalHaber = cuentas.reduce((s, c) => s + c.saldoMesHaber, 0);
+    return res.json({ ok: true, cuentas, totalDebe, totalHaber, origen: 'INFORMIX', nota: 'Saldos agregados legacy de solo consulta. No reemplaza dbo.RegistroContable.' });
+  } catch (err) {
+    console.error('[balance-legacy]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });

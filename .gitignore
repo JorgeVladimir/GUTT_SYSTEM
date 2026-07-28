@@ -44,3 +44,9 @@ scratch/verify-browser.js
 # Reportes generados en runtime
 Reportes sistema/*.pdf
 Reportes sistema/*.xlsx
+
+# JSON crudo de introspección Informix (ya condensado en db/informix/*.md)
+db/informix/_raw/
+
+# Memoria interna de subagentes de Claude Code (no es código del proyecto)
+.claude/agent-memory/

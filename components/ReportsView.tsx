@@ -52,6 +52,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
   const [data, setData] = useState<any[]>([]);
   const [selectedS01User, setSelectedS01User] = useState<User | null>(isMember ? (currentUser || null) : null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [liveSearchResults, setLiveSearchResults] = useState<User[]>([]);
+  const [searchingLive, setSearchingLive] = useState(false);
 
   const targetUser = isMember ? currentUser : selectedS01User;
 
@@ -168,7 +170,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
     try {
       const response = await fetch('/api/socios/update-report-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+        },
         body: JSON.stringify({
           identificacion: targetUser.id,
           direccionDomicilio: editForm.direccionDomicilio,
@@ -260,11 +265,37 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
     URL.revokeObjectURL(url);
   };
 
-  const filteredUsers = useMemo(() => {
+  const localFilteredUsers = useMemo(() => {
     if (!searchQuery || isMember) return [];
     const q = searchQuery.toLowerCase();
     return users.filter(u => u.name.toLowerCase().includes(q) || u.id.includes(q)).slice(0, 5);
   }, [users, searchQuery, isMember]);
+
+  // Búsqueda en vivo (SQL Server + fallback Informix legacy) cuando el filtro local no encuentra nada.
+  useEffect(() => {
+    if (isMember || !searchQuery || searchQuery.trim().length < 3 || localFilteredUsers.length > 0) {
+      setLiveSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    setSearchingLive(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/socios/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+        const d = await res.json();
+        if (!cancelled && d.ok && Array.isArray(d.data)) {
+          setLiveSearchResults(d.data);
+        }
+      } catch {
+        if (!cancelled) setLiveSearchResults([]);
+      } finally {
+        if (!cancelled) setSearchingLive(false);
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [searchQuery, localFilteredUsers.length, isMember]);
+
+  const filteredUsers = localFilteredUsers.length > 0 ? localFilteredUsers : liveSearchResults;
 
 
 
@@ -313,13 +344,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  placeholder="Buscar por Nombre o ID..." 
                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl outline-none font-black text-[#14532D] focus:border-[#14532D] shadow-inner" 
                />
+               {searchingLive && filteredUsers.length === 0 && (
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-20">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buscando en Informix...</p>
+                 </div>
+               )}
                {filteredUsers.length > 0 && (
                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-20">
                     {filteredUsers.map(u => (
                       <button key={u.id} onClick={() => setSelectedS01User(u)} className="w-full p-6 text-left hover:bg-slate-50 flex items-center justify-between group transition-all">
                          <div>
                            <p className="font-black text-slate-800 uppercase text-xs">{u.name}</p>
-                           <p className="text-[10px] font-bold text-slate-400">{u.id}</p>
+                           <p className="text-[10px] font-bold text-slate-400">{u.id}{(u as any).origen === 'INFORMIX' ? ' · Legacy (Informix)' : ''}</p>
                          </div>
                          <ChevronRight size={18} className="text-slate-200 group-hover:text-[#14532D] group-hover:translate-x-1 transition-all" />
                       </button>

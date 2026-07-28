@@ -263,10 +263,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
     try {
       const response = await fetch('/api/socios/transaccion/anular', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+        },
         body: JSON.stringify({
           id: tx.id,
-          role: currentUserRole
+          actorId: currentUser?.id
         })
       });
       const data = await response.json();
@@ -1438,7 +1441,10 @@ export const TellerView: React.FC<TellerViewProps> = ({
       setIsSaving(true);
       fetch('/api/socios/transaccion', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+        },
         body: JSON.stringify({
           accountId: selectedAccountId,
           opType,

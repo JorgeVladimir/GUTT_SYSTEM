@@ -10,6 +10,11 @@
 [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# El driver IBM Informix ODBC necesita INFORMIXDIR para ubicar sus librerías GLS (traducción de idioma)
+if (-not $env:INFORMIXDIR) {
+    $env:INFORMIXDIR = 'C:\Informix'
+}
+
 $raw = [Console]::In.ReadToEnd()
 
 try {
