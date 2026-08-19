@@ -935,7 +935,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       {data.map((row: any, i: number) => (
                         <tr key={i} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4 font-black text-[#14532D] text-[11px]">{row.code ?? i + 1}</td>
-                          <td className="px-6 py-4 font-bold text-slate-700 text-xs">{row.name}</td>
+                          <td className="px-6 py-4 font-bold text-slate-700 text-xs">
+                            {row.name}
+                            {reportType === 'sp_r_bal_compro' && row.tipoCuenta && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">{row.tipoCuenta}</span>
+                            )}
+                            {reportType === 'sp_r_bal_compro' && row.sinCatalogar && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-700">Sin catalogar</span>
+                            )}
+                          </td>
                           {reportType === 'sp_r_bal_compro' && <>
                             <td className="px-6 py-4 text-right font-bold text-emerald-700 text-[11px]">${(row.debe || 0).toFixed(2)}</td>
                             <td className="px-6 py-4 text-right font-bold text-red-600 text-[11px]">${(row.haber || 0).toFixed(2)}</td>
@@ -959,6 +967,25 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       </tfoot>
                     )}
                   </table>
+                  {reportType === 'sp_r_bal_compro' && data.length > 0 && (() => {
+                    const totalDebe  = data.reduce((s: number, r: any) => s + (r.debe  || 0), 0);
+                    const totalHaber = data.reduce((s: number, r: any) => s + (r.haber || 0), 0);
+                    const descuadre  = Math.round((totalDebe - totalHaber) * 100) / 100;
+                    const cuadrado   = Math.abs(descuadre) < 0.01;
+                    const sinCatalogarCount = data.filter((r: any) => r.sinCatalogar).length;
+                    return (
+                      <div className="px-8 py-5 border-t border-slate-100 flex flex-wrap items-center gap-4">
+                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${cuadrado ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                          {cuadrado ? '✓ Partida Doble Cuadrada' : `⚠ Descuadre: $${descuadre.toFixed(2)}`}
+                        </span>
+                        {sinCatalogarCount > 0 && (
+                          <span className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-700">
+                            ⚠ {sinCatalogarCount} cuenta(s) fuera del Catálogo Único SEPS
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center p-20 text-slate-200">

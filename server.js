@@ -988,19 +988,29 @@ app.post('/api/reports/generate.php', async (req, res) => {
     const pool = await sql.connect(sqlConfig);
 
     if (type === 'sp_r_bal_compro') {
-      // Balance de Comprobación — desde RegistroContable real
+      // Balance de Comprobación — desde RegistroContable real, enriquecido con el Catálogo
+      // Único de Cuentas SEPS (dbo.PlanCuentas, ver db/sqlserver/26-27) para mostrar nombre y
+      // tipo de cuenta reales en vez del código crudo. LEFT JOIN a propósito: una cuenta usada
+      // en el libro diario que no existe en el catálogo es un hallazgo real (sinCatalogar=1),
+      // no algo que deba desaparecer silenciosamente de la fila.
       const result = await pool.request().query(`
-        SELECT CuentaContable AS code, CuentaContable AS name,
-          SUM(Debe) AS debe, SUM(Haber) AS haber,
-          SUM(Debe) - SUM(Haber) AS balance,
-          COUNT(*) AS movimientos
-        FROM dbo.RegistroContable
-        GROUP BY CuentaContable
-        ORDER BY CuentaContable
+        SELECT rc.CuentaContable AS code,
+               COALESCE(pc.Nombre, rc.CuentaContable) AS name,
+               pc.TipoCuenta AS tipoCuenta,
+               CASE WHEN pc.CuentaContableId IS NULL THEN 1 ELSE 0 END AS sinCatalogar,
+               SUM(rc.Debe) AS debe, SUM(rc.Haber) AS haber,
+               SUM(rc.Debe) - SUM(rc.Haber) AS balance,
+               COUNT(*) AS movimientos
+        FROM dbo.RegistroContable rc
+        LEFT JOIN dbo.PlanCuentas pc ON pc.Codigo = rc.CuentaContable
+        GROUP BY rc.CuentaContable, pc.Nombre, pc.TipoCuenta, pc.CuentaContableId
+        ORDER BY rc.CuentaContable
       `);
       return res.json(result.recordset.map(r => ({
         code:    r.code,
         name:    r.name,
+        tipoCuenta: r.tipoCuenta || null,
+        sinCatalogar: !!r.sinCatalogar,
         debe:    parseFloat(r.debe  || 0),
         haber:   parseFloat(r.haber || 0),
         balance: parseFloat(r.balance || 0),
@@ -2027,7 +2037,7 @@ app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), as
         // Asiento 1: Debe en Cartera de Créditos Vigentes (1.2.01) por el capital completo solicitado (Activo)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '1.2.01')
+          .input('cuentaContable', sql.NVarChar(20), '143110')
           .input('concepto', sql.NVarChar(200), concept)
           .input('debe', sql.Decimal(18, 2), loanAmount)
           .input('haber', sql.Decimal(18, 2), 0.00)
@@ -2049,7 +2059,7 @@ app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), as
         // Asiento 3: Haber en Cuenta de Ingreso por Comisión (5.2.01) (Ingreso)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '5.2.01')
+          .input('cuentaContable', sql.NVarChar(20), '529010')
           .input('concepto', sql.NVarChar(200), `COMISIÓN DESEMBOLSO CRÉDITO ${loanId}`)
           .input('debe', sql.Decimal(18, 2), 0.00)
           .input('haber', sql.Decimal(18, 2), comision)
@@ -2060,7 +2070,7 @@ app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), as
         // Asiento 4: Haber en Fondo Irrepartible de Reserva (3.2.01) (Patrimonio)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '3.2.01')
+          .input('cuentaContable', sql.NVarChar(20), '330105')
           .input('concepto', sql.NVarChar(200), `FONDO IRREPARTIBLE CRÉDITO ${loanId}`)
           .input('debe', sql.Decimal(18, 2), 0.00)
           .input('haber', sql.Decimal(18, 2), fondo)
@@ -2071,7 +2081,7 @@ app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), as
         // Asiento 5: Haber en Retenciones por Pagar Ley SOLCA (2.5.04) (Pasivo)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '2.5.04')
+          .input('cuentaContable', sql.NVarChar(20), '25049005')
           .input('concepto', sql.NVarChar(200), `RETENCIÓN SOLCA CRÉDITO ${loanId}`)
           .input('debe', sql.Decimal(18, 2), 0.00)
           .input('haber', sql.Decimal(18, 2), solca)
@@ -2469,7 +2479,7 @@ app.post('/api/socios/loans/pay-dividend', async (req, res) => {
       // Asiento 2: Haber en Cartera de Crédito Vigente (disminuye activo) por el capital
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '1.2.01')
+        .input('cuentaContable', sql.NVarChar(20), '143110')
         .input('concepto', sql.NVarChar(200), payConcept)
         .input('debe', sql.Decimal(18, 2), 0.00)
         .input('haber', sql.Decimal(18, 2), targetInst.capital)
@@ -2480,7 +2490,7 @@ app.post('/api/socios/loans/pay-dividend', async (req, res) => {
       // Asiento 3: Haber en Ingresos por Intereses (aumenta ingresos) por el interés (neto cobrado)
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '5.1.01') // Ingresos por Intereses
+        .input('cuentaContable', sql.NVarChar(20), '510410') // Intereses cartera de créditos de consumo
         .input('concepto', sql.NVarChar(200), payConcept)
         .input('debe', sql.Decimal(18, 2), 0.00)
         .input('haber', sql.Decimal(18, 2), targetInst.interest)
@@ -3659,7 +3669,7 @@ app.post('/api/socios/loans/anular', requireAuth, requireSelf('usuarioId'), asyn
       // Revert seat 1: Haber in Cartera de Créditos Vigentes (1.2.01) for Monto (capital)
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '1.2.01')
+        .input('cuentaContable', sql.NVarChar(20), '143110')
         .input('concepto', sql.NVarChar(200), concept)
         .input('debe', sql.Decimal(18, 2), 0.00)
         .input('haber', sql.Decimal(18, 2), loanAmount)
@@ -3682,7 +3692,7 @@ app.post('/api/socios/loans/anular', requireAuth, requireSelf('usuarioId'), asyn
       if (descuentos.comision > 0) {
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '5.2.01')
+          .input('cuentaContable', sql.NVarChar(20), '529010')
           .input('concepto', sql.NVarChar(200), `REVERSO COMISIÓN CRÉDITO ${id}`)
           .input('debe', sql.Decimal(18, 2), descuentos.comision)
           .input('haber', sql.Decimal(18, 2), 0.00)
@@ -3695,7 +3705,7 @@ app.post('/api/socios/loans/anular', requireAuth, requireSelf('usuarioId'), asyn
       if (descuentos.fondo > 0) {
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '3.2.01')
+          .input('cuentaContable', sql.NVarChar(20), '330105')
           .input('concepto', sql.NVarChar(200), `REVERSO FONDO IRREPARTIBLE CRÉDITO ${id}`)
           .input('debe', sql.Decimal(18, 2), descuentos.fondo)
           .input('haber', sql.Decimal(18, 2), 0.00)
@@ -3903,7 +3913,7 @@ app.post('/api/socios/loans/anular-pago', requireAuth, requireSelf('usuarioId'),
       // Revert Asiento 2: Debe en Cartera de Crédito Vigente (aumenta activo) por el capital
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '1.2.01')
+        .input('cuentaContable', sql.NVarChar(20), '143110')
         .input('concepto', sql.NVarChar(200), revConcept)
         .input('debe', sql.Decimal(18, 2), targetInst.capital)
         .input('haber', sql.Decimal(18, 2), 0.00)
@@ -3914,7 +3924,7 @@ app.post('/api/socios/loans/anular-pago', requireAuth, requireSelf('usuarioId'),
       // Revert Asiento 3: Debe en Ingresos por Intereses (disminuye ingresos) por el interés
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '5.1.01')
+        .input('cuentaContable', sql.NVarChar(20), '510410')
         .input('concepto', sql.NVarChar(200), revConcept)
         .input('debe', sql.Decimal(18, 2), targetInst.interest)
         .input('haber', sql.Decimal(18, 2), 0.00)

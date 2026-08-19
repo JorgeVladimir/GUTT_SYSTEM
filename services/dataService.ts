@@ -21,6 +21,16 @@ export class DataService {
     else localStorage.removeItem(this.TOKEN_KEY);
   }
 
+  // Cabecera Authorization lista para adjuntar a fetch() directos que no pasan por
+  // `request()` (varios componentes llaman fetch('/api/...') a mano). Necesaria porque
+  // server.gutt_system.js exige requireAuth en endpoints (socios/buscar, admin/productos,
+  // socios/transferir, etc.) que en el server.js viejo estaban abiertos -- sin este header
+  // esas llamadas devuelven 401 contra el backend nuevo aunque funcionaran contra el viejo.
+  static authHeaders(): Record<string, string> {
+    const token = this.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   private static async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const baseUrl = this.API_URL.replace(/\/$/, '');
