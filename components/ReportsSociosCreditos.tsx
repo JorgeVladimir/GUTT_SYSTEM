@@ -542,7 +542,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                     style={{ width: `${originStats.patatePercent}%` }} 
                     className="bg-[#14532D] text-white flex items-center justify-center text-[10px] font-black uppercase transition-all"
                   >
-                    {originStats.patatePercent.toFixed(0)}% Patate
+                    {originStats.patatePercent.toFixed(0)}% Presencial
                   </div>
                 )}
                 {originStats.movilPercent > 0 && (

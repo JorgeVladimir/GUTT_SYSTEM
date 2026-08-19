@@ -159,7 +159,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
             <BarChart3 size={32} />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Business Intelligence Patate</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Business Intelligence GUTT SYSTEM</h2>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Generador de Reportes y Análisis de Riesgo</p>
           </div>
         </div>

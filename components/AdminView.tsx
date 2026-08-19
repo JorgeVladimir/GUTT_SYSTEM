@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { User, AccountType, InterestRate, GlobalConfig, UserRole, Loan, PersonalReference, Dependent } from '../types';
-import { SEPS_CATALOGS } from '../constants';
+import { SEPS_CATALOGS, NAV_BY_ROLE } from '../constants';
+import { DataService } from '../services/dataService';
 import { 
   Users, 
   TrendingUp, 
@@ -52,6 +53,16 @@ import {
   Loader2
 } from 'lucide-react';
 
+// Catálogo de módulos asignables como permiso individual, derivado de los ids reales usados en
+// NAV_BY_ROLE (constants.tsx) para que un permiso otorgado aquí corresponda 1:1 a un ítem real
+// del menú lateral.
+const MODULES_CATALOG: { id: string; label: string }[] = Object.values(NAV_BY_ROLE)
+  .flat()
+  .reduce((acc: { id: string; label: string }[], item: any) => {
+    if (!acc.some(m => m.id === item.id)) acc.push({ id: item.id, label: item.label });
+    return acc;
+  }, []);
+
 interface AdminViewProps {
   users: User[];
   rates: InterestRate[];
@@ -59,8 +70,18 @@ interface AdminViewProps {
   onUpdateRates: (rates: InterestRate[]) => void;
   onUpdateConfig: (config: GlobalConfig) => void;
   onRestoreDatabase: (data: { users: User[], rates: InterestRate[], config?: GlobalConfig }) => void;
-  activeTab?: 'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD';
-  onActiveTabChange?: (tab: 'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD') => void;
+  activeTab?: 'SUMMARY' | 'MEMBERS' | 'USUARIOS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD';
+  onActiveTabChange?: (tab: 'SUMMARY' | 'MEMBERS' | 'USUARIOS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD') => void;
+}
+
+interface UsuarioSistema {
+  id: string;
+  nombre: string;
+  rol: string;
+  activo: boolean;
+  requiereCambioPin: boolean;
+  fechaCreacion: string;
+  permisosModulos: string[] | null;
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({ 
@@ -73,12 +94,80 @@ export const AdminView: React.FC<AdminViewProps> = ({
   activeTab: propActiveTab,
   onActiveTabChange
 }) => {
-  const [internalActiveTab, setInternalActiveTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD'>('SUMMARY');
+  const [internalActiveTab, setInternalActiveTab] = useState<'SUMMARY' | 'MEMBERS' | 'USUARIOS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD'>('SUMMARY');
   const activeTab = propActiveTab !== undefined ? propActiveTab : internalActiveTab;
   const setActiveTab = onActiveTabChange !== undefined ? onActiveTabChange : setInternalActiveTab;
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editorSubTab, setEditorSubTab] = useState<'IDENTIDAD' | 'LOCALIZACIÓN' | 'ACTIVIDAD' | 'OTROS'>('IDENTIDAD');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Estados para pestaña de Usuarios del Sistema (permisos por módulo, reseteo de contraseña)
+  const [usuariosSistema, setUsuariosSistema] = useState<UsuarioSistema[]>([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+  const [permisosEditId, setPermisosEditId] = useState<string | null>(null);
+  const [permisosDraft, setPermisosDraft] = useState<string[]>([]);
+  const [savingPermisos, setSavingPermisos] = useState(false);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ id: string; password: string } | null>(null);
+
+  const loadUsuariosSistema = async () => {
+    setLoadingUsuarios(true);
+    try {
+      const data = await DataService.getUsuariosSistema();
+      if (data.ok) setUsuariosSistema(data.usuarios);
+    } catch (err) {
+      console.error('Error al cargar usuarios del sistema:', err);
+    } finally {
+      setLoadingUsuarios(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'USUARIOS') loadUsuariosSistema();
+  }, [activeTab]);
+
+  const openPermisosEditor = (u: UsuarioSistema) => {
+    setPermisosEditId(u.id);
+    setPermisosDraft(u.permisosModulos ? [...u.permisosModulos] : MODULES_CATALOG.map(m => m.id));
+  };
+
+  const toggleModulo = (moduleId: string) => {
+    setPermisosDraft(prev => prev.includes(moduleId) ? prev.filter(m => m !== moduleId) : [...prev, moduleId]);
+  };
+
+  const savePermisos = async (u: UsuarioSistema) => {
+    setSavingPermisos(true);
+    try {
+      const fullAccess = permisosDraft.length === MODULES_CATALOG.length;
+      const res = await DataService.updateUsuarioPermisos(u.id, fullAccess ? null : permisosDraft);
+      if (res.ok) {
+        setUsuariosSistema(prev => prev.map(x => x.id === u.id ? { ...x, permisosModulos: fullAccess ? null : permisosDraft } : x));
+        setPermisosEditId(null);
+      } else {
+        alert('Error al guardar permisos: ' + (res.message || ''));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al guardar permisos.');
+    } finally {
+      setSavingPermisos(false);
+    }
+  };
+
+  const handleAdminResetPassword = async (u: UsuarioSistema) => {
+    if (!confirm(`¿Resetear la contraseña de "${u.nombre}" (${u.id})? Se generará una contraseña temporal.`)) return;
+    try {
+      const res = await DataService.adminResetPassword(u.id);
+      if (res.ok && res.temporalPassword) {
+        setResetPasswordResult({ id: u.id, password: res.temporalPassword });
+        setUsuariosSistema(prev => prev.map(x => x.id === u.id ? { ...x, requiereCambioPin: true } : x));
+      } else {
+        alert('Error al resetear contraseña: ' + (res.message || ''));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al resetear contraseña.');
+    }
+  };
 
   // Estados para pestaña de Productos (SEPS)
   const [productos, setProductos] = useState<any[]>([]);
@@ -186,7 +275,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         if (json.users && json.rates) {
           onRestoreDatabase(json);
           alert("Base de Datos restaurada correctamente.");
-        } else alert("Formato de archivo no válido para el Core Patate.");
+        } else alert("Formato de archivo no válido para el sistema.");
       } catch (err) { alert("Error crítico al procesar el archivo de respaldo."); }
     };
     reader.readAsText(file);
@@ -262,7 +351,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         <div className="bg-white rounded-[4rem] border border-slate-100 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-12 duration-700">
           <div className="p-10 border-b flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/50">
              <div>
-               <h3 className="text-2xl font-black text-slate-900 tracking-tighter">Directorio de Socios Patate</h3>
+               <h3 className="text-2xl font-black text-slate-900 tracking-tighter">Directorio de Socios</h3>
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gestión de Cuentas y Fichas SEPS</p>
              </div>
              <div className="relative w-full md:w-80">
@@ -299,6 +388,103 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'USUARIOS' && (
+        <div className="bg-white rounded-[4rem] border border-slate-100 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-12 duration-700">
+          <div className="p-10 border-b flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/50">
+             <div>
+               <h3 className="text-2xl font-black text-slate-900 tracking-tighter">Usuarios del Sistema</h3>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accesos internos, roles y permisos por módulo</p>
+             </div>
+             <button onClick={loadUsuariosSistema} className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:border-[#14532D] hover:text-[#14532D] transition-all flex items-center gap-2">
+               <RotateCcw size={14} /> Actualizar
+             </button>
+          </div>
+
+          {resetPasswordResult && (
+            <div className="m-10 p-6 bg-amber-50 border border-amber-200 rounded-3xl flex items-start gap-4">
+              <ShieldAlert size={24} className="text-amber-600 shrink-0 mt-1" />
+              <div className="flex-1">
+                <p className="text-xs font-black text-amber-800 uppercase tracking-wider">Contraseña temporal generada para "{resetPasswordResult.id}"</p>
+                <p className="text-2xl font-black text-amber-900 mt-2 font-mono tracking-widest">{resetPasswordResult.password}</p>
+                <p className="text-[10px] font-bold text-amber-700 mt-2">Entregue esta contraseña al usuario por un canal seguro. Se le pedirá cambiarla en su próximo ingreso.</p>
+              </div>
+              <button onClick={() => setResetPasswordResult(null)} className="p-2 text-amber-400 hover:text-amber-700"><X size={20} /></button>
+            </div>
+          )}
+
+          {loadingUsuarios ? (
+            <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-[#14532D]" size={32} /></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th className="px-10 py-7 text-left">Usuario</th>
+                    <th className="px-10 py-7 text-left">Nombre</th>
+                    <th className="px-10 py-7 text-left">Rol</th>
+                    <th className="px-10 py-7 text-left">Estado</th>
+                    <th className="px-10 py-7 text-left">Permisos</th>
+                    <th className="px-10 py-7 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {usuariosSistema.map(u => (
+                    <React.Fragment key={u.id}>
+                      <tr className="hover:bg-slate-50 transition-colors">
+                        <td className="px-10 py-6 font-black text-[#14532D] text-base">{u.id}</td>
+                        <td className="px-10 py-6 font-bold text-slate-700">{u.nombre}</td>
+                        <td className="px-10 py-6">
+                          <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">{u.rol}</span>
+                        </td>
+                        <td className="px-10 py-6">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${u.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                            {u.activo ? 'ACTIVO' : 'INACTIVO'}
+                          </span>
+                        </td>
+                        <td className="px-10 py-6 text-xs font-bold text-slate-500">
+                          {u.permisosModulos ? `${u.permisosModulos.length} de ${MODULES_CATALOG.length} módulos` : 'Acceso completo (por Rol)'}
+                        </td>
+                        <td className="px-10 py-6 text-right space-x-2 whitespace-nowrap">
+                          <button onClick={() => permisosEditId === u.id ? setPermisosEditId(null) : openPermisosEditor(u)} className="px-4 py-2 bg-slate-100 hover:bg-[#14532D] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all">
+                            {permisosEditId === u.id ? 'Cerrar' : 'Permisos'}
+                          </button>
+                          <button onClick={() => handleAdminResetPassword(u)} className="px-4 py-2 bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-700 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all">
+                            Resetear Clave
+                          </button>
+                        </td>
+                      </tr>
+                      {permisosEditId === u.id && (
+                        <tr>
+                          <td colSpan={6} className="px-10 pb-8 bg-slate-50/50">
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
+                              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Módulos habilitados para {u.id}</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {MODULES_CATALOG.map(mod => (
+                                  <label key={mod.id} className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={permisosDraft.includes(mod.id)} onChange={() => toggleModulo(mod.id)} className="w-4 h-4 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]" />
+                                    <span className="text-[10px] font-bold text-slate-600">{mod.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button onClick={() => setPermisosDraft(MODULES_CATALOG.map(m => m.id))} className="px-5 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[9px] uppercase tracking-wider">Marcar Todos</button>
+                                <button onClick={() => savePermisos(u)} disabled={savingPermisos} className="px-6 py-3 bg-[#14532D] text-white rounded-xl font-black text-[9px] uppercase tracking-wider disabled:opacity-60">
+                                  {savingPermisos ? 'Guardando...' : 'Guardar Permisos'}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

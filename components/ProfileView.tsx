@@ -228,7 +228,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
             </div>
             <div>
               <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{editingUser.name}</h2>
-              <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] mt-2">Socio Patate #<span className="text-white">{editingUser.memberNumber || 'S/N'}</span></p>
+              <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] mt-2">Socio #<span className="text-white">{editingUser.memberNumber || 'S/N'}</span></p>
             </div>
           </div>
           <div className="flex items-center gap-4 mt-6 md:mt-0">

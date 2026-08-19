@@ -346,7 +346,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                />
                {searchingLive && filteredUsers.length === 0 && (
                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-20">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buscando en Informix...</p>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buscando en espejo legacy...</p>
                  </div>
                )}
                {filteredUsers.length > 0 && (
@@ -355,7 +355,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       <button key={u.id} onClick={() => setSelectedS01User(u)} className="w-full p-6 text-left hover:bg-slate-50 flex items-center justify-between group transition-all">
                          <div>
                            <p className="font-black text-slate-800 uppercase text-xs">{u.name}</p>
-                           <p className="text-[10px] font-bold text-slate-400">{u.id}{(u as any).origen === 'INFORMIX' ? ' · Legacy (Informix)' : ''}</p>
+                           <p className="text-[10px] font-bold text-slate-400">{u.id}{(u as any).origen === 'LEGACY_PG' ? ' · Legacy (espejo Postgres)' : ''}</p>
                          </div>
                          <ChevronRight size={18} className="text-slate-200 group-hover:text-[#14532D] group-hover:translate-x-1 transition-all" />
                       </button>

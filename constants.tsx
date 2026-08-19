@@ -12,7 +12,11 @@ import {
   FileBarChart,
   BarChart3,
   User as UserIcon,
-  Landmark
+  Landmark,
+  PieChart,
+  CalendarClock,
+  CalendarRange,
+  Percent
 } from 'lucide-react';
 import { UserRole, GlobalConfig } from './types';
 
@@ -129,6 +133,10 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+    { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
+    { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -141,6 +149,10 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+    { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
+    { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -153,6 +165,10 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'BI_PANEL', label: 'Business Intelligence', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+    { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
+    { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -172,11 +188,28 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'PLAZO_FIJO', label: 'Depósitos a Plazo', icon: <Landmark size={20} /> },
     { id: 'BI_PANEL', label: 'Reportes ICG BI', icon: <BarChart3 size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+    { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
+    { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
   ],
   CREDIT_OFFICER: [
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
     { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+  ],
+  // A diferencia de CREDIT_OFFICER (asesor que origina solicitudes pero NO tiene autoridad de
+  // aprobación -- server.js bloquea explícitamente approverRole==='CREDIT_OFFICER' en
+  // /api/socios/loans/approve|disburse|reject), CARTERA sí puede aprobar/desembolsar/rechazar:
+  // el backend solo excluye a CREDIT_OFFICER, así que cualquier otro rol (incluido este) pasa.
+  CARTERA: [
+    { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
+    { id: 'REPORTS', label: 'Reporte de Cajas y Socios', icon: <FileBarChart size={20} /> },
+    { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
+    { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
+    { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
   ]
 };
 

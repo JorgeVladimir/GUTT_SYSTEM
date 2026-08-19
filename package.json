@@ -1,5 +1,5 @@
 {
-  "name": "caja-de-ahorro-patate",
+  "name": "gutt-system",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -29,6 +29,7 @@
     "mssql": "^12.5.5",
     "nodemailer": "^8.0.11",
     "odbc": "^2.4.9",
+    "pg": "^8.22.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-is": "^19.2.7",

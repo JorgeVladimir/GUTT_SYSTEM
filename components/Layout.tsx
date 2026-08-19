@@ -37,6 +37,7 @@ interface LayoutProps {
   onLogout: () => void;
   userName: string;
   role: UserRole;
+  permisosModulos?: string[] | null;
   tellerTab?: string;
   onTellerTabChange?: (tab: 'OPERATIONS' | 'REGISTER' | 'TX_SEARCH' | 'CONSULTAS' | 'CASH_CLOSE') => void;
   activeSubView?: string;
@@ -48,6 +49,7 @@ const ROLE_TRANSLATIONS: Record<string, string> = {
   ACCOUNTANT: 'Contador',
   TELLER: 'Cajero',
   CREDIT_OFFICER: 'Asesor de Crédito',
+  CARTERA: 'Oficial de Cartera',
   MEMBER: 'Socio',
   SUPER_USER: 'Super Usuario',
   MANAGER: 'Gerente'
@@ -60,6 +62,7 @@ const ROLE_COLORS: Record<string, string> = {
   ACCOUNTANT:     'from-[#14532D] to-[#15803D]',
   TELLER:         'from-[#14532D] to-[#16A34A]',
   CREDIT_OFFICER: 'from-[#8B1A1A] to-[#C9921A]',
+  CARTERA:        'from-[#1D4ED8] to-[#1E3A8A]',
   MEMBER:         'from-[#1E3A2F] to-[#2D5A3D]',
 };
 
@@ -68,6 +71,9 @@ const VIEW_TITLES: Record<string, string> = {
   BI_PANEL:            'Business Intelligence',
   REPORTS:             'Reportes',
   REPORTS_SOCIOS_CREDITOS: 'Socios & Créditos',
+  CARTERA_CREDITO:     'Cartera de Crédito',
+  CARTERA_PLAZO_FIJO:  'Cartera de Plazo Fijo',
+  UTILIDAD_RENTABILIDAD: 'Utilidad y Rentabilidad',
   DASHBOARD:           'Panel de Socios',
   TELLER_OPERATIONS:   'Caja y Ventanilla',
   CHART_OF_ACCOUNTS:   'Contabilidad Central',
@@ -84,6 +90,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onLogout,
   userName,
   role,
+  permisosModulos,
   tellerTab,
   onTellerTabChange,
   activeSubView: propActiveSubView,
@@ -106,7 +113,12 @@ export const Layout: React.FC<LayoutProps> = ({
   };
 
   const isExpanded = isPinned || isHovered;
-  const navItems   = NAV_BY_ROLE[role] || NAV_BY_ROLE.MEMBER;
+  const allNavItems = NAV_BY_ROLE[role] || NAV_BY_ROLE.MEMBER;
+  // permisosModulos null/vacío = acceso completo por Rol (comportamiento de siempre). ADMIN_HUB
+  // nunca se filtra para que un admin no pueda auto-bloquearse el panel donde se corrigen permisos.
+  const navItems = (!permisosModulos || permisosModulos.length === 0)
+    ? allNavItems
+    : allNavItems.filter((item: any) => item.id === 'ADMIN_HUB' || permisosModulos.includes(item.id));
 
   const getSubmenuItems = (): { id: string; label: string; icon: React.ReactNode }[] => {
     switch (activeView) {
@@ -129,6 +141,7 @@ export const Layout: React.FC<LayoutProps> = ({
         return [
           { id: 'SUMMARY',   label: 'RESUMEN GENERAL',        icon: <BarChart3 size={13} />   },
           { id: 'MEMBERS',   label: 'REGISTRO DE SOCIOS',     icon: <UserIcon size={13} />    },
+          { id: 'USUARIOS',  label: 'USUARIOS DEL SISTEMA',   icon: <ShieldCheck size={13} /> },
           { id: 'TASAS',     label: 'TASAS DE INTERÉS',       icon: <Percent size={13} />     },
           { id: 'PRODUCTOS', label: 'PRODUCTOS & CUENTAS',    icon: <Wallet size={13} />      },
           { id: 'SEGURIDAD', label: 'SEGURIDAD',              icon: <Database size={13} />    },
@@ -196,20 +209,28 @@ export const Layout: React.FC<LayoutProps> = ({
       )}
 
       {/* ── SIDEBAR CLARO ─────────────────────────────────────────── */}
+      {/* Nota (2026-08-01, fix de responsive mobile): la posición (fixed/relative/absolute) y el
+          ancho SOLO deben depender de isPinned/isHovered a partir del breakpoint lg -- por debajo
+          de lg el sidebar siempre es un drawer "fixed" fuera de pantalla (controlado únicamente por
+          isSidebarOpen), nunca un elemento "relative" que participe del layout en flex y empuje/corte
+          el contenido principal. Antes las clases de pinned/hover no estaban prefijadas con lg: y
+          "isPinned=true" (el default) hacía que en mobile el aside fuera "relative w-64" -- ocupando
+          256px reales del flex row y superponiéndose/cortando el contenido, tal como se vio en la
+          captura del celular. */}
       <aside
         onMouseEnter={() => !isPinned && setIsHovered(true)}
         onMouseLeave={() => !isPinned && setIsHovered(false)}
         className={`
-          fixed inset-y-0 left-0 z-30 transition-all duration-300 transform flex flex-col
+          fixed inset-y-0 left-0 z-30 w-64 transition-all duration-300 transform flex flex-col
           bg-gradient-to-b from-white via-emerald-50/30 to-white
           border-r border-slate-100 shadow-sm
-          lg:relative lg:translate-x-0
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
           ${isPinned
-            ? 'w-64 relative translate-x-0'
+            ? 'lg:static lg:w-64'
             : isHovered
-              ? 'w-64 absolute translate-x-0 shadow-[0_0_60px_rgba(20,83,45,0.12)] z-50'
-              : 'w-[72px] absolute'}
-          ${isSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
+              ? 'lg:fixed lg:w-64 lg:shadow-[0_0_60px_rgba(20,83,45,0.12)] lg:z-50'
+              : 'lg:fixed lg:w-[72px]'}
         `}
       >
         {/* Logo header */}
@@ -390,8 +411,10 @@ export const Layout: React.FC<LayoutProps> = ({
           </div>
         </header>
 
-        {/* Page content */}
-        <div className="flex-1 overflow-y-auto bg-[#f1f5f9]">
+        {/* Page content -- padding responsive (antes no tenía padding horizontal propio y
+            dependía de que cada vista lo agregara por su cuenta; en mobile el contenido
+            quedaba pegado al borde de la pantalla). */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#f1f5f9] p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

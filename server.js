@@ -13,9 +13,11 @@ import { dirname, join } from 'path';
 import { spawn } from 'child_process';
 import { createInterface } from 'readline';
 import sql from 'mssql';
+import pg from 'pg';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require   = createRequire(import.meta.url);
@@ -82,6 +84,50 @@ function buildConnString() {
     `UID=${process.env.INFORMIX_USER};` +
     `PWD=${process.env.INFORMIX_PASSWORD};`
   );
+}
+
+// ─── 3.5 Pool PostgreSQL → espejo legacy en Neon.tech (solo lectura) ──────
+// Fuente de datos correcta de Caja Patate para búsquedas de socios/créditos que aún no
+// migraron a SQL Server. Reemplaza al fallback que antes consultaba Informix EN VIVO vía
+// buildConnString()/queryInformix(): ese bridge usa INFORMIX_HOST/DATABASE de este mismo
+// .env, que apuntan a 192.168.1.199/afccajacrediapoyo -- la VM de pruebas de OTRA entidad
+// (Crediapoyo), no Caja Patate (confirmado con GET /api/health, 2026-08-02). El espejo
+// `legacy.*` en Neon (proyecto postgres-mirror) SÍ es la base correcta de Caja Patate:
+// verificado con paridad de conteos y sumas de control contra Informix real (N1/N2, 0
+// discrepancias abiertas en legacy.sync_discrepancia). Ver
+// postgres-mirror/ALCANCE.md y postgres-mirror/SINCRONIZACION.md.
+//
+// Los tipos DATE de Postgres se parsean por defecto a un objeto Date de JS; se fuerza aquí
+// a que lleguen como el string 'YYYY-MM-DD' tal cual (oid 1082), igual que el bridge ODBC
+// de Informix ya entregaba, para no cambiar el contrato de fecha que consume el frontend.
+pg.types.setTypeParser(1082, val => val);
+
+const legacyPgPool = process.env.LEGACY_PG_HOST
+  ? new pg.Pool({
+      host: process.env.LEGACY_PG_HOST,
+      port: parseInt(process.env.LEGACY_PG_PORT || '5432', 10),
+      database: process.env.LEGACY_PG_DATABASE,
+      user: process.env.LEGACY_PG_USER,
+      password: process.env.LEGACY_PG_PASSWORD,
+      ssl: (process.env.LEGACY_PG_SSLMODE || 'require') === 'disable' ? false : { rejectUnauthorized: false },
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    })
+  : null;
+
+if (!legacyPgPool) {
+  console.error('⚠️  LEGACY_PG_HOST no está definido en api/.env: el fallback de búsqueda de socios/créditos legacy (espejo Neon) quedará deshabilitado y devolverá listas vacías.');
+}
+
+legacyPgPool?.on('error', err => {
+  // Error en un cliente inactivo del pool (ej. conexión caída por idle de Neon); no debe tumbar el proceso.
+  console.error('[legacy pg pool] error en cliente inactivo:', err.message);
+});
+
+function queryLegacyPg(text, params = []) {
+  if (!legacyPgPool) return Promise.reject(new Error('Pool Postgres legacy no configurado (falta LEGACY_PG_HOST en api/.env)'));
+  return legacyPgPool.query(text, params);
 }
 
 // ─── 4. PowerShell 32-bit bridge → Informix (proceso persistente) ────────
@@ -218,6 +264,16 @@ function requireSelf(bodyField) {
   };
 }
 
+// Restringe un endpoint a usuarios con Rol ADMIN o SUPER_USER (gestión de usuarios del sistema,
+// asignación de permisos por módulo). Debe usarse siempre después de requireAuth.
+function requireAdmin(req, res, next) {
+  const rol = ((req.actor || {}).rol || '').toUpperCase();
+  if (rol !== 'ADMIN' && rol !== 'SUPER_USER') {
+    return res.status(403).json({ ok: false, error: 'Esta acción requiere rol de administrador' });
+  }
+  next();
+}
+
 // ─── 4.5 Auditoría estructurada por proceso (dbo.AuditoriaProcesos, ver db/sqlserver/23_auditoria_procesos.sql) ──
 // Complementa (no reemplaza) dbo.AuditoriaUsuarios: captura entidad/campo/valor anterior-nuevo por
 // proceso de negocio (CREDITOS, CAJA, AHORROS, PLAZO_FIJO, CONTABILIDAD, SOCIOS, SEGURIDAD, REPORTES_SEPS).
@@ -245,11 +301,24 @@ async function registrarAuditoriaProceso(execTarget, {
     `);
 }
 
-// ─── 5.5 Búsqueda en vivo de clientes legacy (bcaclie) cuando no existen aún en SQL Server ──
-async function buscarClienteInformix(q) {
-  if (!q) return [];
+// ─── 5.5 Búsqueda en el espejo Postgres legacy (legacy.bcaclie) de clientes que no ──
+// existen aún en SQL Server. Antes esto era buscarClienteInformix(), en vivo contra la VM
+// equivocada (ver nota en la sección 3.5). Mismo criterio de búsqueda y mismo contrato de
+// salida que la versión anterior (mismas claves del objeto que consume el frontend).
+//
+// Decisión de diseño: NO se seleccionan ni descifran clie_hue_dact/clie_ban_peps/
+// clie_cod_disc (las 3 columnas cifradas con pgcrypto). No es una omisión silenciosa: el
+// SELECT original contra Informix tampoco las incluía y el objeto que este fallback arma
+// para el frontend nunca tuvo esas 3 claves -- a diferencia del socio que sí viene de SQL
+// Server (dbo.RegistroSocios), que expone `discapacidad`/`peps` como columnas propias del
+// registro nuevo. Ampliar el contrato de este fallback para incluirlas sería un cambio de
+// alcance no pedido; si se necesita en el futuro, descifrar con
+// pgp_sym_decrypt(columna, $N) usando LEGACY_PG_ENCRYPTION_KEY (mismo valor que
+// db.legacy.encryption.key en postgres-mirror/config).
+async function buscarClienteLegacyPg(q) {
+  if (!q || !legacyPgPool) return [];
   try {
-    const rows = await queryInformix(
+    const { rows } = await queryLegacyPg(
       `SELECT
          clie_cod_clie,
          TRIM(clie_cod_tide) AS clie_cod_tide,
@@ -260,9 +329,9 @@ async function buscarClienteInformix(q) {
          TRIM(clie_dir_domi) AS clie_dir_domi,
          TRIM(clie_ema_clie) AS clie_ema_clie,
          clie_est_clie
-       FROM bcaclie
-       WHERE TRIM(clie_ide_clie) = ? OR TRIM(clie_ape_clie) LIKE ? OR TRIM(clie_nom_clie) LIKE ?`,
-      [q, `%${q}%`, `%${q}%`]
+       FROM legacy.bcaclie
+       WHERE TRIM(clie_ide_clie) = $1 OR TRIM(clie_ape_clie) ILIKE $2 OR TRIM(clie_nom_clie) ILIKE $2`,
+      [q, `%${q}%`]
     );
     return rows.map(r => ({
       id: r.clie_ide_clie,
@@ -280,73 +349,89 @@ async function buscarClienteInformix(q) {
       birthDate: r.clie_fec_nac || '',
       memberNumber: r.clie_cod_clie,
       personType: r.clie_cod_tide,
-      origen: 'INFORMIX',
+      origen: 'LEGACY_PG',
       accounts: [],
       transactions: [],
       loans: []
     }));
   } catch (err) {
-    console.error('[buscar cliente informix]', err.message);
+    console.error('[buscar cliente legacy pg]', err.message);
     return [];
   }
 }
 
-// ─── 5.6 Búsqueda en vivo de créditos legacy (bcacred) cuando el socio no tiene créditos aún en SQL Server ──
-async function buscarCreditosInformix(cedulaOTitular) {
-  if (!cedulaOTitular) return [];
+// ─── 5.6 Búsqueda en el espejo Postgres legacy (legacy.bcacred) de créditos que el socio ──
+// no tiene aún migrados a SQL Server. Antes era buscarCreditosInformix(), mismo origen del
+// bug que la 5.5.
+//
+// Gap conocido y documentado (no inventado): el alcance del espejo `postgres-mirror` son
+// 10 tablas (ver ALCANCE.md) y NO incluye `bcatcre` (catálogo de tipo de crédito), que el
+// query original usaba en un LEFT JOIN solo para obtener `tipo_desc` (texto legible del
+// tipo). Se omite ese JOIN aquí; `type` cae directo en el mismo fallback por código numérico
+// (`cred_cod_tcre` 0=INDIVIDUAL/1=SOLIDARIO) que el código original ya traía para cuando
+// `tipo_desc` venía null -- no se pierde información nueva, solo dejamos de tener el texto
+// descriptivo del catálogo en los casos con otros códigos.
+async function buscarCreditosLegacyPg(cedulaOTitular) {
+  if (!cedulaOTitular || !legacyPgPool) return [];
   try {
-    const rows = await queryInformix(
+    const { rows } = await queryLegacyPg(
       `SELECT
-         c.cred_num_cred,
-         c.cred_cod_clie,
-         TRIM(c.cred_ide_titu) AS cred_ide_titu,
-         TRIM(c.cred_nom_titu) AS cred_nom_titu,
-         c.cred_cap_cred,
-         c.cred_tas_cred,
-         c.cred_fec_inic,
-         c.cred_fec_venc,
-         c.cred_num_cuot,
-         c.cred_cod_ecre,
-         c.cred_cod_tcre,
-         TRIM(t.tcre_des_tcre) AS tipo_desc,
-         c.cred_por_mora,
-         c.cred_con_mora
-       FROM bcacred c
-       LEFT JOIN bcatcre t ON c.cred_cod_tcre = t.tcre_cod_tcre
-       WHERE TRIM(c.cred_ide_titu) = ? OR TRIM(c.cred_nom_titu) LIKE ?`,
+         cred_num_cred,
+         cred_cod_clie,
+         TRIM(cred_ide_titu) AS cred_ide_titu,
+         TRIM(cred_nom_titu) AS cred_nom_titu,
+         cred_cap_cred,
+         cred_tas_cred,
+         cred_fec_inic,
+         cred_fec_venc,
+         cred_num_cuot,
+         cred_cod_ecre,
+         cred_cod_tcre,
+         cred_por_mora,
+         cred_con_mora
+       FROM legacy.bcacred
+       WHERE TRIM(cred_ide_titu) = $1 OR TRIM(cred_nom_titu) ILIKE $2`,
       [cedulaOTitular, `%${cedulaOTitular}%`]
     );
     return rows.map(r => ({
       id: r.cred_num_cred,
       memberId: r.cred_ide_titu,
       amount: r.cred_cap_cred !== null ? parseFloat(r.cred_cap_cred) : null,
-      balance: null, // Informix legacy no expone saldo vigente en bcacred, solo capital original
+      balance: null, // el espejo legacy no expone saldo vigente en bcacred, solo capital original (igual que Informix)
       rate: r.cred_tas_cred !== null ? parseFloat(r.cred_tas_cred) : null,
       installmentsCount: r.cred_num_cuot !== null ? parseInt(r.cred_num_cuot, 10) : null,
-      type: r.tipo_desc || (r.cred_cod_tcre === '0' || r.cred_cod_tcre === 0 ? 'INDIVIDUAL' : r.cred_cod_tcre === '1' || r.cred_cod_tcre === 1 ? 'SOLIDARIO' : null),
-      status: r.cred_cod_ecre, // catálogo no confirmado en Informix, se expone el código crudo
+      type: r.cred_cod_tcre === 0 ? 'INDIVIDUAL' : r.cred_cod_tcre === 1 ? 'SOLIDARIO' : null,
+      status: r.cred_cod_ecre, // catálogo no confirmado, se expone el código crudo (igual que antes)
       FechaSolicitud: r.cred_fec_inic || '',
       dueDate: r.cred_fec_venc || '',
       comments: '',
-      installments: [], // no hay plan de cuotas detallado disponible en Informix legacy
+      installments: [], // no hay plan de cuotas detallado disponible en el espejo legacy
       planDisponible: false,
       moraPorc: r.cred_por_mora !== null ? parseFloat(r.cred_por_mora) : null,
       moraDias: r.cred_con_mora !== null ? parseInt(r.cred_con_mora, 10) : null,
-      origen: 'INFORMIX'
+      origen: 'LEGACY_PG'
     }));
   } catch (err) {
-    console.error('[buscar creditos informix]', err.message);
+    console.error('[buscar creditos legacy pg]', err.message);
     return [];
   }
 }
 
-// ─── 5.7 Búsqueda en vivo de depósitos a plazo fijo legacy (bcadpfi) cuando no existen aún en SQL Server ──
-const DPF_ESTADOS_INFORMIX = { 1: 'ACTIVO', 2: 'VENCIDO', 3: 'CANCELADO' };
-
-async function buscarDPFInformix(cedulaOTitular) {
-  if (!cedulaOTitular) return [];
+// ─── 5.7 Búsqueda en el espejo Postgres legacy (legacy.bcadpfi) de depósitos a plazo fijo ──
+// que aún no existen en SQL Server. Antes era buscarDPFInformix(), en vivo contra la VM
+// equivocada (mismo bug que 5.5/5.6, ver nota en la sección 3.5). Espejo cargado en
+// postgres-mirror/migraciones/005_legacy_plazo_fijo.up.sql (2026-08-02): bcadpfi (99 filas)
+// + su catálogo bcaedpf (8 filas), N1/N2 verificados contra Informix (804.704,87 = 804.704,87).
+//
+// Mejora sobre el original: el catálogo bcaedpf ahora está espejado completo (8 estados), así
+// que el Estado sale de un JOIN real en vez del mapa parcial hardcodeado que el bridge ODBC
+// traía (DPF_ESTADOS_INFORMIX solo cubría 1/2/3 de los 8 códigos reales del catálogo). Mismo
+// fallback `LEGACY_${codigo}` si el código no tiene descripción (no debería pasar: 0 huérfanos
+// dpfi_cod_edpf -> bcaedpf verificado, pero se mantiene por seguridad ante datos futuros).
+async function buscarDPFLegacyPg(cedulaOTitular) {
+  if (!cedulaOTitular || !legacyPgPool) return [];
   try {
-    const rows = await queryInformix(
+    const { rows } = await queryLegacyPg(
       `SELECT
          d.dpfi_num_dpfi,
          d.dpfi_cod_clie,
@@ -359,12 +444,14 @@ async function buscarDPFInformix(cedulaOTitular) {
          d.dpfi_fec_inic,
          d.dpfi_fec_deve,
          d.dpfi_cod_edpf,
+         TRIM(e.edpf_des_edpf) AS estado_desc,
          TRIM(d.dpfi_nom_bene) AS bene,
          TRIM(d.dpfi_det_dpfi) AS det
-       FROM bcadpfi d
-       LEFT JOIN bcaclie cl ON d.dpfi_cod_clie = cl.clie_cod_clie
-       WHERE TRIM(cl.clie_ide_clie) = ? OR TRIM(cl.clie_nom_clie) LIKE ? OR TRIM(cl.clie_ape_clie) LIKE ?`,
-      [cedulaOTitular, `%${cedulaOTitular}%`, `%${cedulaOTitular}%`]
+       FROM legacy.bcadpfi d
+       LEFT JOIN legacy.bcaclie cl ON d.dpfi_cod_clie = cl.clie_cod_clie
+       LEFT JOIN legacy.bcaedpf e ON e.edpf_cod_edpf = d.dpfi_cod_edpf
+       WHERE TRIM(cl.clie_ide_clie) = $1 OR TRIM(cl.clie_nom_clie) ILIKE $2 OR TRIM(cl.clie_ape_clie) ILIKE $2`,
+      [cedulaOTitular, `%${cedulaOTitular}%`]
     );
     return rows.map(r => ({
       DepositoID: r.dpfi_num_dpfi,
@@ -373,15 +460,15 @@ async function buscarDPFInformix(cedulaOTitular) {
       MontoCapital: r.dpfi_val_dpfi !== null ? parseFloat(r.dpfi_val_dpfi) : null,
       TasaNominalAnual: r.dpfi_tas_dpfi !== null ? parseFloat(r.dpfi_tas_dpfi) : null,
       PlazosDias: r.dpfi_plz_dpfi !== null ? parseInt(r.dpfi_plz_dpfi, 10) : null,
-      Estado: DPF_ESTADOS_INFORMIX[parseInt(r.dpfi_cod_edpf, 10)] || `LEGACY_${r.dpfi_cod_edpf}`,
+      Estado: r.estado_desc || `LEGACY_${r.dpfi_cod_edpf}`,
       FechaApertura: r.dpfi_fec_inic || '',
       FechaVencimiento: r.dpfi_fec_deve || '',
       beneficiario: r.bene || '',
       detalle: r.det || '',
-      origen: 'INFORMIX'
+      origen: 'LEGACY_PG'
     }));
   } catch (err) {
-    console.error('[buscar dpf informix]', err.message);
+    console.error('[buscar dpf legacy pg]', err.message);
     return [];
   }
 }
@@ -453,6 +540,68 @@ async function sendVerificationEmail(email, code, name) {
   }
 }
 
+// ─── 6.6 Enviar Correo de Recuperación de Contraseña ────────────────────────
+// Toda solicitud de "olvidé mi contraseña" (sea cual sea el usuario del sistema que la pide)
+// se envía a una única casilla de autorización -- no al correo del propio usuario -- porque
+// hoy no hay un flujo de verificación de identidad por usuario. El administrador de esa casilla
+// abre el enlace y define la nueva contraseña.
+const PASSWORD_RECOVERY_EMAIL = process.env.PASSWORD_RECOVERY_EMAIL || 'vladitituana20@gmail.com';
+const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || 'https://cony-desarrollo.tail0441f8.ts.net').replace(/\/$/, '');
+
+async function sendPasswordResetEmail(usuarioId, nombre, token) {
+  const resetLink = `${PUBLIC_APP_URL}/?resetToken=${encodeURIComponent(token)}`;
+
+  console.log('================================================================');
+  console.log(`🔑 [SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA]`);
+  console.log(`Usuario: ${usuarioId} (${nombre})`);
+  console.log(`Autorizar en: ${resetLink}`);
+  console.log('================================================================');
+
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host,
+        port: parseInt(port, 10),
+        secure: port == 465,
+        auth: { user, pass }
+      });
+
+      await transporter.sendMail({
+        from: `"${process.env.SMTP_FROM_NAME || 'Gutt System'}" <${process.env.SMTP_FROM_EMAIL || user}>`,
+        to: PASSWORD_RECOVERY_EMAIL,
+        subject: `Solicitud de recuperación de contraseña - Usuario ${usuarioId}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+            <h2 style="color: #14532D; text-align: center;">GUTT SYSTEM</h2>
+            <p>Se solicitó restablecer la contraseña del usuario:</p>
+            <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0;"><strong>Usuario:</strong> ${usuarioId}</p>
+              <p style="margin: 0;"><strong>Nombre:</strong> ${nombre}</p>
+            </div>
+            <p>Para autorizar y definir la nueva contraseña, ingrese al siguiente enlace (válido por 1 hora):</p>
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${resetLink}" style="background-color: #14532D; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold;">Restablecer Contraseña</a>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+              Si usted no solicitó este cambio, ignore este mensaje. Este es un correo automático, por favor no responda.
+            </p>
+          </div>
+        `
+      });
+      console.log(`✅ Correo de recuperación enviado a ${PASSWORD_RECOVERY_EMAIL}`);
+    } catch (err) {
+      console.error(`❌ Error al enviar correo de recuperación:`, err.message);
+    }
+  } else {
+    console.log(`ℹ️ SMTP no configurado. El enlace de recuperación se simuló en consola (ver arriba).`);
+  }
+}
+
 // ─── 7. Express app ───────────────────────────────────────────────────────
 const app = express();
 app.use(cors());
@@ -485,7 +634,7 @@ app.post('/api/auth/login.php', async (req, res) => {
     const pool = await sql.connect(sqlConfig);
     const result = await pool.request()
       .input('id', sql.NVarChar(20), cleanId)
-      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin FROM dbo.Usuarios WHERE UsuarioId = @id');
+      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin, PermisosModulos FROM dbo.Usuarios WHERE UsuarioId = @id');
 
     if (result.recordset.length === 0) {
       await registrarAuditoriaProceso(pool, {
@@ -558,6 +707,7 @@ app.post('/api/auth/login.php', async (req, res) => {
       transactions:  [],
       loans:         [],
       needsPinChange: user.RequiereCambioPin === 1 || user.RequiereCambioPin === true,
+      permisosModulos: user.PermisosModulos ? JSON.parse(user.PermisosModulos) : null,
     });
   } catch (err) {
     console.error('[login]', err.message);
@@ -599,6 +749,183 @@ app.post('/api/auth/update_password', requireAuth, requireSelf('id'), async (req
   }
 });
 
+// ── POST /api/auth/forgot-password ────────────────────────────────────────
+// Público (sin login: quien lo pide todavía no puede entrar). Genera un token de un solo uso
+// y lo envía por correo a PASSWORD_RECOVERY_EMAIL para que un administrador lo autorice.
+// Responde ok:true siempre exista o no el usuario, para no filtrar qué usuarios existen.
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const usuarioId = ((req.body || {}).usuarioId || '').toString().trim().toLowerCase();
+  if (!usuarioId) return res.status(400).json({ ok: false, error: 'usuarioId es requerido' });
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .input('id', sql.NVarChar(20), usuarioId)
+      .query('SELECT UsuarioId, NombreCompleto, Activo FROM dbo.Usuarios WHERE UsuarioId = @id');
+
+    if (result.recordset.length > 0 && result.recordset[0].Activo) {
+      const user = result.recordset[0];
+      const token = crypto.randomBytes(32).toString('hex');
+      const expira = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      await pool.request()
+        .input('id', sql.NVarChar(20), user.UsuarioId)
+        .input('token', sql.NVarChar(200), token)
+        .input('expira', sql.DateTime2, expira)
+        .query('UPDATE dbo.Usuarios SET ResetToken = @token, ResetTokenExpira = @expira WHERE UsuarioId = @id');
+
+      await registrarAuditoriaProceso(pool, {
+        proceso: 'SEGURIDAD', accion: 'SOLICITUD_RECUPERACION_PASSWORD', entidadTipo: 'Usuario',
+        entidadId: user.UsuarioId, usuarioId: user.UsuarioId,
+        detalle: 'Se solicitó recuperación de contraseña por correo.',
+        ip: req.ip || req.headers['x-forwarded-for'] || null,
+      });
+
+      await sendPasswordResetEmail(user.UsuarioId, user.NombreCompleto, token);
+    }
+
+    return res.json({ ok: true, message: 'Si el usuario existe, se envió una solicitud de autorización.' });
+  } catch (err) {
+    console.error('[forgot-password]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/auth/reset-password ─────────────────────────────────────────
+// Público: quien tiene el enlace del correo (el autorizador) define la nueva contraseña.
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  if (!token || !newPassword) return res.status(400).json({ ok: false, error: 'token y newPassword son requeridos' });
+  if (newPassword.trim().length < 4) return res.status(400).json({ ok: false, error: 'La contraseña debe tener al menos 4 caracteres' });
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .input('token', sql.NVarChar(200), token)
+      .query('SELECT UsuarioId, ResetTokenExpira FROM dbo.Usuarios WHERE ResetToken = @token');
+
+    if (result.recordset.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Enlace de recuperación inválido' });
+    }
+    const user = result.recordset[0];
+    if (!user.ResetTokenExpira || new Date(user.ResetTokenExpira) < new Date()) {
+      return res.status(400).json({ ok: false, error: 'El enlace de recuperación expiró, solicite uno nuevo' });
+    }
+
+    await pool.request()
+      .input('id', sql.NVarChar(20), user.UsuarioId)
+      .input('hash', sql.NVarChar(100), bcrypt.hashSync(newPassword.trim(), 10))
+      .query(`UPDATE dbo.Usuarios
+              SET PasswordHash = @hash, RequiereCambioPin = 0, ResetToken = NULL, ResetTokenExpira = NULL, FechaActualizacion = SYSDATETIME()
+              WHERE UsuarioId = @id`);
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD', accion: 'PASSWORD_RESTABLECIDA', entidadTipo: 'Usuario',
+      entidadId: user.UsuarioId, usuarioId: user.UsuarioId,
+      detalle: 'Contraseña restablecida vía enlace de recuperación por correo.',
+      ip: req.ip || req.headers['x-forwarded-for'] || null,
+    });
+
+    return res.json({ ok: true, message: 'Contraseña restablecida con éxito' });
+  } catch (err) {
+    console.error('[reset-password]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/admin/usuarios ────────────────────────────────────────────────
+// Directorio de usuarios INTERNOS del sistema (no socios) para el submenú de administración.
+app.get('/api/admin/usuarios', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request().query(`
+      SELECT UsuarioId, NombreCompleto, Rol, Activo, PermisosModulos, RequiereCambioPin, FechaCreacion
+      FROM dbo.Usuarios ORDER BY NombreCompleto`);
+
+    const usuarios = result.recordset.map(u => ({
+      id: u.UsuarioId,
+      nombre: u.NombreCompleto,
+      rol: u.Rol,
+      activo: !!u.Activo,
+      requiereCambioPin: !!u.RequiereCambioPin,
+      fechaCreacion: u.FechaCreacion,
+      permisosModulos: u.PermisosModulos ? JSON.parse(u.PermisosModulos) : null, // null = todos los del rol
+    }));
+
+    return res.json({ ok: true, usuarios });
+  } catch (err) {
+    console.error('[admin/usuarios]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── PUT /api/admin/usuarios/:id/permisos ───────────────────────────────────
+// Body: { modulos: string[] | null }. null/[] restaura el acceso completo por defecto del Rol.
+app.put('/api/admin/usuarios/:id/permisos', requireAuth, requireAdmin, async (req, res) => {
+  const id = (req.params.id || '').trim().toLowerCase();
+  const { modulos } = req.body || {};
+  if (modulos !== null && !Array.isArray(modulos)) {
+    return res.status(400).json({ ok: false, error: 'modulos debe ser un arreglo de ids de módulo o null' });
+  }
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const json = (modulos && modulos.length > 0) ? JSON.stringify(modulos) : null;
+
+    const result = await pool.request()
+      .input('id', sql.NVarChar(20), id)
+      .input('permisos', sql.NVarChar(sql.MAX), json)
+      .query('UPDATE dbo.Usuarios SET PermisosModulos = @permisos, FechaActualizacion = SYSDATETIME() WHERE UsuarioId = @id');
+
+    if (result.rowsAffected[0] === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD', accion: 'PERMISOS_MODULOS_ACTUALIZADOS', entidadTipo: 'Usuario',
+      entidadId: id, usuarioId: req.actor.usuarioId,
+      detalle: `Permisos de módulo actualizados: ${json || 'ACCESO COMPLETO POR ROL'}`,
+      ip: req.ip || req.headers['x-forwarded-for'] || null,
+    });
+
+    return res.json({ ok: true, message: 'Permisos actualizados' });
+  } catch (err) {
+    console.error('[admin/usuarios/permisos]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/admin/usuarios/:id/reset-password ────────────────────────────
+// Camino directo (sin correo): el administrador define/genera una contraseña temporal de una vez.
+app.post('/api/admin/usuarios/:id/reset-password', requireAuth, requireAdmin, async (req, res) => {
+  const id = (req.params.id || '').trim().toLowerCase();
+  let { newPassword } = req.body || {};
+  const generated = !newPassword;
+  if (generated) newPassword = crypto.randomBytes(6).toString('hex'); // 12 chars, entregar al usuario fuera de banda
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const result = await pool.request()
+      .input('id', sql.NVarChar(20), id)
+      .input('hash', sql.NVarChar(100), bcrypt.hashSync(newPassword.trim(), 10))
+      .query(`UPDATE dbo.Usuarios
+              SET PasswordHash = @hash, RequiereCambioPin = 1, ResetToken = NULL, ResetTokenExpira = NULL, FechaActualizacion = SYSDATETIME()
+              WHERE UsuarioId = @id`);
+
+    if (result.rowsAffected[0] === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD', accion: 'PASSWORD_RESETEADA_POR_ADMIN', entidadTipo: 'Usuario',
+      entidadId: id, usuarioId: req.actor.usuarioId,
+      detalle: 'Contraseña reseteada directamente por un administrador.',
+      ip: req.ip || req.headers['x-forwarded-for'] || null,
+    });
+
+    return res.json({ ok: true, message: 'Contraseña reseteada', temporalPassword: generated ? newPassword : undefined });
+  } catch (err) {
+    console.error('[admin/usuarios/reset-password]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ── POST /api/users/update_printer ──────────────────────────────────────────
 app.post('/api/users/update_printer', async (req, res) => {
   const { id, printer } = req.body || {};
@@ -625,12 +952,12 @@ app.get('/api/users/get_profile.php', async (req, res) => {
     const pool = await sql.connect(sqlConfig);
     const result = await pool.request()
       .input('id', sql.NVarChar(20), id)
-      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin FROM dbo.Usuarios WHERE UsuarioId = @id');
+      .query('SELECT UsuarioId, NombreCompleto, Pin, PasswordHash, Rol, Activo, ImpresoraPredeterminada, RequiereCambioPin, PermisosModulos FROM dbo.Usuarios WHERE UsuarioId = @id');
 
     if (result.recordset.length === 0) {
       return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
     }
-    
+
     const user = result.recordset[0];
     const profile = {
       id:            user.UsuarioId,
@@ -638,6 +965,7 @@ app.get('/api/users/get_profile.php', async (req, res) => {
       pin:           user.PasswordHash || user.Pin,
       role:          user.Rol,
       impresora:     user.ImpresoraPredeterminada || '',
+      permisosModulos: user.PermisosModulos ? JSON.parse(user.PermisosModulos) : null,
       accounts:      [],
       transactions:  [],
       loans:         [],
@@ -2568,15 +2896,15 @@ app.get('/api/socios/buscar', async (req, res) => {
     }
       
     if (searchResult.recordset.length === 0) {
-      // No existe todavía en la base nueva: buscar en vivo en Informix (legacy) sin migrar nada.
-      const informixData = await buscarClienteInformix(q);
-      // El socio también puede tener créditos legacy en bcacred: fallback en vivo por cédula.
-      for (const socio of informixData) {
+      // No existe todavía en la base nueva: buscar en el espejo Postgres legacy (Neon) sin migrar nada.
+      const legacyData = await buscarClienteLegacyPg(q);
+      // El socio también puede tener créditos legacy en bcacred: fallback por cédula.
+      for (const socio of legacyData) {
         if (!socio.loans || socio.loans.length === 0) {
-          socio.loans = await buscarCreditosInformix(socio.id);
+          socio.loans = await buscarCreditosLegacyPg(socio.id);
         }
       }
-      return res.json({ ok: true, data: informixData });
+      return res.json({ ok: true, data: legacyData });
     }
 
     const socios = [];
@@ -2631,9 +2959,9 @@ app.get('/api/socios/buscar', async (req, res) => {
         installments: loan.installments ? JSON.parse(loan.installments) : []
       }));
 
-      // El socio existe en SQL Server pero puede no tener créditos migrados aún: fallback en vivo a Informix.
+      // El socio existe en SQL Server pero puede no tener créditos migrados aún: fallback al espejo legacy.
       if (loans.length === 0) {
-        loans = await buscarCreditosInformix(r.Identificacion);
+        loans = await buscarCreditosLegacyPg(r.Identificacion);
       }
 
       socios.push({
@@ -4012,6 +4340,299 @@ app.get('/api/reportes/situacion-general', async (req, res) => {
   }
 });
 
+// ── GET /api/reportes/cartera-credito ─────────────────────────────────────
+// Cartera de crédito (vigente/vencido/demandado/castigado) a fecha de corte, en vivo contra
+// Informix (afccajapatate). No reimplementa la consulta: delega a la herramienta Java ya
+// construida y validada en el proyecto hermano C:\GUTT_CONEXION_CAJA_PATATE\jdbc-informix
+// (CarteraJsonRunner, que resuelve config/db.properties y sql/cartera_credito_template.sql como
+// rutas relativas a ese directorio — por eso `cwd` es obligatorio). Puede tardar 15-40s: es una
+// consulta real sobre el core bancario legacy a través del túnel Tailscale, no un mock; por eso el
+// timeout generoso (60s) y por lo que el frontend debe mostrar un estado de carga, no asumir
+// respuesta rápida.
+const CARTERA_CREDITO_JAVA_CWD = 'C:\\GUTT_CONEXION_CAJA_PATATE\\jdbc-informix';
+const CARTERA_CREDITO_CLASSPATH = [
+  join(CARTERA_CREDITO_JAVA_CWD, 'target', 'classes'),
+  'C:\\AFCJORGE\\razorsql\\razorsql\\drivers\\informix\\ifxjdbc.jar',
+].join(';');
+const CARTERA_CREDITO_TIMEOUT_MS = 60000;
+// Solo roles con responsabilidad sobre cartera/finanzas institucionales ven este reporte
+// (TELLER y MEMBER quedan fuera: es información financiera agregada de toda la cooperativa).
+const CARTERA_CREDITO_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']);
+
+app.get('/api/reportes/cartera-credito', requireAuth, (req, res) => {
+  const actorRol = (req.actor.rol || '').toString().toUpperCase().trim();
+  if (!CARTERA_CREDITO_ROLES.has(actorRol)) {
+    return res.status(403).json({ ok: false, error: 'No autorizado para ver la cartera de crédito' });
+  }
+
+  const fechaParam = typeof req.query.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.fecha)
+    ? req.query.fecha
+    // Fecha de corte por defecto: hoy en zona horaria de Ecuador (el server puede correr en UTC).
+    : new Date().toLocaleDateString('en-CA', { timeZone: 'America/Guayaquil' });
+
+  let settled = false;
+  const proc = spawn('java', ['-cp', CARTERA_CREDITO_CLASSPATH, 'com.cajapatate.informix.CarteraJsonRunner', fechaParam], {
+    cwd: CARTERA_CREDITO_JAVA_CWD,
+    windowsHide: true,
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    proc.kill();
+    console.error(`[cartera-credito] proceso Java excedió ${CARTERA_CREDITO_TIMEOUT_MS}ms, se terminó.`);
+    if (!res.headersSent) res.status(504).json({ ok: false, error: 'La consulta de cartera de crédito tardó demasiado (Informix/VPN). Intente nuevamente.' });
+  }, CARTERA_CREDITO_TIMEOUT_MS);
+
+  proc.stdout.on('data', d => { stdout += d.toString('utf8'); });
+  proc.stderr.on('data', d => { stderr += d.toString('utf8'); });
+
+  proc.on('error', err => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    console.error('[cartera-credito] no se pudo iniciar el proceso Java:', err.message);
+    if (!res.headersSent) res.status(500).json({ ok: false, error: 'No se pudo iniciar la consulta de cartera de crédito (¿java no está en PATH?)' });
+  });
+
+  proc.on('close', code => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (code !== 0) {
+      console.error(`[cartera-credito] CarteraJsonRunner terminó con código ${code}. stderr: ${stderr.replace(/\s+/g, ' ').trim().substring(0, 500)}`);
+      return res.status(502).json({ ok: false, error: 'Error al consultar la cartera de crédito en Informix' });
+    }
+    try {
+      const data = JSON.parse(stdout);
+      return res.json({ ok: true, data, fecha: fechaParam });
+    } catch (e) {
+      console.error('[cartera-credito] respuesta no es JSON válido:', e.message, stdout.substring(0, 300));
+      return res.status(502).json({ ok: false, error: 'Respuesta inválida del motor de cartera de crédito' });
+    }
+  });
+});
+
+// ── GET /api/reportes/cartera-mensual ──────────────────────────────────────
+// Reporte de Cartera Mensual (recuperación del mes): compara lo que se esperaba recuperar
+// en un mes dado (cuotas de bcadivc que vencieron ese mes) contra lo que se recuperó
+// realmente (abonos de bcaabdv capturados ese mes), con una tasa de recuperación mensual.
+// DISTINTO de /api/reportes/cartera-credito (que es una foto a fecha de corte de
+// vigente/vencido/demandado/castigado, no un análisis de recuperación por mes). Delega en
+// el subproceso Java CarteraMensualJsonRunner (proyecto hermano jdbc-informix) -- mismo
+// patrón que el resto de reportes de cartera. Ver sql/cartera_mensual_resumen.sql en ese
+// proyecto para la metodología completa (por qué "esperado" y "recuperado" son dos
+// poblaciones distintas por diseño, y por qué se usa divc_cap_proy/divc_int_proy en vez de
+// divc_cap_divc/divc_int_plaz).
+const CARTERA_MENSUAL_JAVA_CWD = 'C:\\GUTT_CONEXION_CAJA_PATATE\\jdbc-informix';
+const CARTERA_MENSUAL_CLASSPATH = [
+  join(CARTERA_MENSUAL_JAVA_CWD, 'target', 'classes'),
+  'C:\\AFCJORGE\\razorsql\\razorsql\\drivers\\informix\\ifxjdbc.jar',
+].join(';');
+const CARTERA_MENSUAL_TIMEOUT_MS = 60000;
+// Mismo criterio que Cartera de Crédito: información financiera agregada de toda la
+// cooperativa sobre recuperación de cartera.
+const CARTERA_MENSUAL_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']);
+
+app.get('/api/reportes/cartera-mensual', requireAuth, (req, res) => {
+  const actorRol = (req.actor.rol || '').toString().toUpperCase().trim();
+  if (!CARTERA_MENSUAL_ROLES.has(actorRol)) {
+    return res.status(403).json({ ok: false, error: 'No autorizado para ver la cartera mensual' });
+  }
+
+  const hoy = new Date();
+  const mesAnteriorRef = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  const anioParam = /^\d{4}$/.test(String(req.query.anio || '')) ? String(req.query.anio) : String(mesAnteriorRef.getFullYear());
+  const mesParam = /^([1-9]|1[0-2])$/.test(String(req.query.mes || '')) ? String(req.query.mes) : String(mesAnteriorRef.getMonth() + 1);
+
+  let settled = false;
+  const proc = spawn('java', ['-cp', CARTERA_MENSUAL_CLASSPATH, 'com.cajapatate.informix.CarteraMensualJsonRunner', anioParam, mesParam], {
+    cwd: CARTERA_MENSUAL_JAVA_CWD,
+    windowsHide: true,
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    proc.kill();
+    console.error(`[cartera-mensual] proceso Java excedió ${CARTERA_MENSUAL_TIMEOUT_MS}ms, se terminó.`);
+    if (!res.headersSent) res.status(504).json({ ok: false, error: 'La consulta de cartera mensual tardó demasiado (Informix/VPN). Intente nuevamente.' });
+  }, CARTERA_MENSUAL_TIMEOUT_MS);
+
+  proc.stdout.on('data', d => { stdout += d.toString('utf8'); });
+  proc.stderr.on('data', d => { stderr += d.toString('utf8'); });
+
+  proc.on('error', err => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    console.error('[cartera-mensual] no se pudo iniciar el proceso Java:', err.message);
+    if (!res.headersSent) res.status(500).json({ ok: false, error: 'No se pudo iniciar la consulta de cartera mensual (¿java no está en PATH?)' });
+  });
+
+  proc.on('close', code => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (code !== 0) {
+      console.error(`[cartera-mensual] CarteraMensualJsonRunner terminó con código ${code}. stderr: ${stderr.replace(/\s+/g, ' ').trim().substring(0, 500)}`);
+      return res.status(502).json({ ok: false, error: 'Error al consultar la cartera mensual en Informix' });
+    }
+    try {
+      const data = JSON.parse(stdout);
+      return res.json({ ok: true, data });
+    } catch (e) {
+      console.error('[cartera-mensual] respuesta no es JSON válida:', e.message, stdout.substring(0, 300));
+      return res.status(502).json({ ok: false, error: 'Respuesta inválida del motor de cartera mensual' });
+    }
+  });
+});
+
+// ── GET /api/reportes/cartera-plazo-fijo ───────────────────────────────────
+// Cartera de Depósitos a Plazo Fijo (bcadpfi) en vivo contra Informix (afccajapatate),
+// mismo patrón que /api/reportes/cartera-credito: delega en un subproceso Java del
+// proyecto hermano jdbc-informix (PlazoFijoJsonRunner). No requiere fecha de corte:
+// bcadpfi ya refleja el estado vigente de cada póliza. Ver MANUALES/10_PLAZO_FIJO.md.
+const PLAZO_FIJO_JAVA_CWD = 'C:\\GUTT_CONEXION_CAJA_PATATE\\jdbc-informix';
+const PLAZO_FIJO_CLASSPATH = [
+  join(PLAZO_FIJO_JAVA_CWD, 'target', 'classes'),
+  'C:\\AFCJORGE\\razorsql\\razorsql\\drivers\\informix\\ifxjdbc.jar',
+].join(';');
+const PLAZO_FIJO_TIMEOUT_MS = 60000;
+// Mismo criterio que Cartera de Crédito: información financiera agregada de toda la
+// cooperativa, no de un socio individual. CREDIT_OFFICER queda fuera aquí (es cartera
+// de captaciones, no de créditos).
+const PLAZO_FIJO_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT']);
+
+app.get('/api/reportes/cartera-plazo-fijo', requireAuth, (req, res) => {
+  const actorRol = (req.actor.rol || '').toString().toUpperCase().trim();
+  if (!PLAZO_FIJO_ROLES.has(actorRol)) {
+    return res.status(403).json({ ok: false, error: 'No autorizado para ver la cartera de plazo fijo' });
+  }
+
+  let settled = false;
+  const proc = spawn('java', ['-cp', PLAZO_FIJO_CLASSPATH, 'com.cajapatate.informix.PlazoFijoJsonRunner'], {
+    cwd: PLAZO_FIJO_JAVA_CWD,
+    windowsHide: true,
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    proc.kill();
+    console.error(`[cartera-plazo-fijo] proceso Java excedió ${PLAZO_FIJO_TIMEOUT_MS}ms, se terminó.`);
+    if (!res.headersSent) res.status(504).json({ ok: false, error: 'La consulta de cartera de plazo fijo tardó demasiado (Informix/VPN). Intente nuevamente.' });
+  }, PLAZO_FIJO_TIMEOUT_MS);
+
+  proc.stdout.on('data', d => { stdout += d.toString('utf8'); });
+  proc.stderr.on('data', d => { stderr += d.toString('utf8'); });
+
+  proc.on('error', err => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    console.error('[cartera-plazo-fijo] no se pudo iniciar el proceso Java:', err.message);
+    if (!res.headersSent) res.status(500).json({ ok: false, error: 'No se pudo iniciar la consulta de cartera de plazo fijo (¿java no está en PATH?)' });
+  });
+
+  proc.on('close', code => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (code !== 0) {
+      console.error(`[cartera-plazo-fijo] PlazoFijoJsonRunner terminó con código ${code}. stderr: ${stderr.replace(/\s+/g, ' ').trim().substring(0, 500)}`);
+      return res.status(502).json({ ok: false, error: 'Error al consultar la cartera de plazo fijo en Informix' });
+    }
+    try {
+      const data = JSON.parse(stdout);
+      return res.json({ ok: true, data });
+    } catch (e) {
+      console.error('[cartera-plazo-fijo] respuesta no es JSON válido:', e.message, stdout.substring(0, 300));
+      return res.status(502).json({ ok: false, error: 'Respuesta inválida del motor de cartera de plazo fijo' });
+    }
+  });
+});
+
+// ── GET /api/reportes/utilidad-rentabilidad ─────────────────────────────────
+// Utilidad neta y rentabilidad (ROA/ROE aproximados) calculados en vivo contra el
+// Catálogo Único de Cuentas (CUC-SEPS) real de Informix (afccajapatate), delegando en
+// el subproceso Java UtilidadRentabilidadJsonRunner (proyecto jdbc-informix). Verifica
+// partida doble, cruza contra bcasact y reporta hallazgos de calidad de datos de forma
+// explícita (nunca los oculta). Ver MANUALES/11_UTILIDAD_RENTABILIDAD.md.
+const UTILIDAD_JAVA_CWD = 'C:\\GUTT_CONEXION_CAJA_PATATE\\jdbc-informix';
+const UTILIDAD_CLASSPATH = [
+  join(UTILIDAD_JAVA_CWD, 'target', 'classes'),
+  'C:\\AFCJORGE\\razorsql\\razorsql\\drivers\\informix\\ifxjdbc.jar',
+].join(';');
+const UTILIDAD_TIMEOUT_MS = 60000;
+// Información contable/financiera sensible (utilidad neta, ROA/ROE de toda la
+// cooperativa): solo roles con responsabilidad gerencial o contable.
+const UTILIDAD_ROLES = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT']);
+
+app.get('/api/reportes/utilidad-rentabilidad', requireAuth, (req, res) => {
+  const actorRol = (req.actor.rol || '').toString().toUpperCase().trim();
+  if (!UTILIDAD_ROLES.has(actorRol)) {
+    return res.status(403).json({ ok: false, error: 'No autorizado para ver utilidad y rentabilidad' });
+  }
+
+  const ejercicioParam = /^\d{1,3}$/.test(String(req.query.ejercicio || '')) ? String(req.query.ejercicio) : '12';
+  const anioParam = /^\d{4}$/.test(String(req.query.anio || '')) ? String(req.query.anio) : '2026';
+
+  let settled = false;
+  const proc = spawn('java', ['-cp', UTILIDAD_CLASSPATH, 'com.cajapatate.informix.UtilidadRentabilidadJsonRunner', ejercicioParam, anioParam], {
+    cwd: UTILIDAD_JAVA_CWD,
+    windowsHide: true,
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    proc.kill();
+    console.error(`[utilidad-rentabilidad] proceso Java excedió ${UTILIDAD_TIMEOUT_MS}ms, se terminó.`);
+    if (!res.headersSent) res.status(504).json({ ok: false, error: 'El cálculo de utilidad y rentabilidad tardó demasiado (Informix/VPN). Intente nuevamente.' });
+  }, UTILIDAD_TIMEOUT_MS);
+
+  proc.stdout.on('data', d => { stdout += d.toString('utf8'); });
+  proc.stderr.on('data', d => { stderr += d.toString('utf8'); });
+
+  proc.on('error', err => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    console.error('[utilidad-rentabilidad] no se pudo iniciar el proceso Java:', err.message);
+    if (!res.headersSent) res.status(500).json({ ok: false, error: 'No se pudo iniciar el cálculo de utilidad y rentabilidad (¿java no está en PATH?)' });
+  });
+
+  proc.on('close', code => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    if (code !== 0) {
+      console.error(`[utilidad-rentabilidad] UtilidadRentabilidadJsonRunner terminó con código ${code}. stderr: ${stderr.replace(/\s+/g, ' ').trim().substring(0, 500)}`);
+      return res.status(502).json({ ok: false, error: 'Error al calcular utilidad y rentabilidad en Informix' });
+    }
+    try {
+      const data = JSON.parse(stdout);
+      return res.json({ ok: true, data });
+    } catch (e) {
+      console.error('[utilidad-rentabilidad] respuesta no es JSON válida:', e.message, stdout.substring(0, 300));
+      return res.status(502).json({ ok: false, error: 'Respuesta inválida del motor de utilidad y rentabilidad' });
+    }
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MÓDULO 7: DEPÓSITOS A PLAZO FIJO (DPF) — NORMATIVA SEPS
 // Plan de Cuentas: 2103 Depósitos a Plazo | 4103 Int.Causados | 2503 Int.x Pagar
@@ -4151,11 +4772,13 @@ app.get('/api/dpf', async (req, res) => {
     `);
     await pool.close();
 
-    // Si la búsqueda por cédula/nombre no encontró nada en SQL Server, hacer fallback en vivo a Informix
-    // (bcadpfi), sin migrar nada — solo cuando hay un término de búsqueda concreto.
+    // Si la búsqueda por cédula/nombre no encontró nada en SQL Server, hacer fallback al
+    // espejo legacy Postgres (legacy.bcadpfi), sin migrar nada — solo cuando hay un término
+    // de búsqueda concreto. Antes leía Informix en vivo desde la VM equivocada (Crediapoyo,
+    // ver sección 3.5) vía buscarDPFInformix(); ahora usa buscarDPFLegacyPg().
     if (r.recordset.length === 0 && busqueda) {
-      const informixDPF = await buscarDPFInformix(busqueda);
-      return res.json({ ok: true, data: informixDPF });
+      const legacyDPF = await buscarDPFLegacyPg(busqueda);
+      return res.json({ ok: true, data: legacyDPF });
     }
 
     return res.json({ ok: true, data: r.recordset });
@@ -4699,26 +5322,39 @@ app.get('/api/contabilidad/balance-comprobacion', async (req, res) => {
 });
 
 // ── GET /api/contabilidad/balance-legacy ──────────────────────────────────────
-// Vista de SOLO CONSULTA de saldos agregados mensuales por cuenta contable, leídos
-// en vivo desde Informix legacy (tabla comp_sal_cta). NO existe libro diario/asientos
-// transaccional en Informix (confirmado por introspección) — este endpoint expone
-// únicamente el balance de comprobación histórico agregado, tal cual vive en el
-// sistema legacy. NO es un fallback de /api/contabilidad/libro-diario ni de
+// Vista de SOLO CONSULTA de saldos agregados por cuenta contable. Antes leía en vivo
+// vía queryInformix()/comp_sal_cta -- mismo bug de raíz que 5.5/5.6/5.7 (ver sección
+// 3.5): el bridge ODBC de este .env apunta a INFORMIX_HOST=192.168.1.199 /
+// INFORMIX_DATABASE=afccajacrediapoyo, la VM de Crediapoyo, no Caja Patate. Ahora lee
+// de legacy.comp_sal_cta en el espejo Postgres (Neon), igual que buscarClienteLegacyPg/
+// buscarCreditosLegacyPg/buscarDPFLegacyPg. La tabla no estaba en el espejo (faltaba en
+// las migraciones 001-019) -- se agregó en postgres-mirror/migraciones/020_legacy_comp_sal_cta,
+// cargada y verificada 145/145 filas contra Informix real el 2026-08-04.
+//
+// comp_sal_cta es una FOTO del balance vigente (sin dimensión de período/fecha propia,
+// confirmado por introspección en vivo de syscolumns -- ver comentario de la migración
+// 020): NO existe libro diario/asientos transaccional en Informix para este dominio.
+// Este endpoint expone el balance de comprobación tal cual vive en el sistema legacy.
+// NO es un fallback de /api/contabilidad/libro-diario ni de
 // /api/contabilidad/balance-comprobacion: dbo.RegistroContable en SQL Server sigue
-// siendo la única fuente de verdad para contabilidad nueva/transaccional. Sin
-// migración batch, sin escritura en Informix.
+// siendo la única fuente de verdad para contabilidad nueva/transaccional.
 app.get('/api/contabilidad/balance-legacy', async (req, res) => {
   const cuenta  = (req.query.cuenta  || '').trim();
-  const periodo = (req.query.periodo || '').trim(); // reservado para cuando se confirme columna de período; comp_sal_cta no trae fecha explícita en esta VM
+  const periodo = (req.query.periodo || '').trim(); // reservado: comp_sal_cta no tiene columna de período/fecha (confirmado en vivo, ver migración 020) -- no se aplica todavía
+
+  if (!legacyPgPool) {
+    return res.status(503).json({ ok: false, error: 'Pool Postgres legacy no configurado (falta LEGACY_PG_HOST en api/.env)' });
+  }
 
   try {
-    let query = `SELECT cod_ctas, nom_ccon, cod_tcue, sal_peri, sal_mes_debe, sal_mes_cred, cod_ofic FROM comp_sal_cta`;
+    let query = `SELECT cod_ctas, nom_ccon, cod_tcue, sal_peri, sal_mes_debe, sal_mes_cred, cod_ofic FROM legacy.comp_sal_cta`;
     const params = [];
     if (cuenta) {
-      query += ` WHERE cod_ctas = ?`;
+      query += ` WHERE cod_ctas = $1`;
       params.push(cuenta);
     }
-    const rows = await queryInformix(query, params);
+    query += ` ORDER BY cod_ctas`;
+    const { rows } = await queryLegacyPg(query, params);
     const cuentas = rows.map(r => ({
       cuenta: r.cod_ctas,
       nombreConcepto: (r.nom_ccon || '').trim(),
@@ -4727,18 +5363,30 @@ app.get('/api/contabilidad/balance-legacy', async (req, res) => {
       saldoMesDebe: r.sal_mes_debe !== null ? parseFloat(r.sal_mes_debe) : 0,
       saldoMesHaber: r.sal_mes_cred !== null ? parseFloat(r.sal_mes_cred) : 0,
       oficina: r.cod_ofic,
-      origen: 'INFORMIX'
+      origen: 'LEGACY_PG'
     }));
     const totalDebe  = cuentas.reduce((s, c) => s + c.saldoMesDebe, 0);
     const totalHaber = cuentas.reduce((s, c) => s + c.saldoMesHaber, 0);
-    return res.json({ ok: true, cuentas, totalDebe, totalHaber, origen: 'INFORMIX', nota: 'Saldos agregados legacy de solo consulta. No reemplaza dbo.RegistroContable.' });
+    return res.json({ ok: true, cuentas, totalDebe, totalHaber, origen: 'LEGACY_PG', nota: 'Saldos agregados legacy de solo consulta (espejo Postgres). No reemplaza dbo.RegistroContable.' });
   } catch (err) {
     console.error('[balance-legacy]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
-// ─── 8. Iniciar servidor ──────────────────────────────────────────────────
+// ─── 8. Servir el build de producción del frontend (npm run build) ────────
+// En desarrollo el frontend corre aparte con Vite (ver script "dev:full");
+// esto solo aplica cuando existe dist/ (build de producción), para poder
+// exponer todo en un único puerto (necesario para compartir por Funnel).
+const distDir = join(__dirname, 'dist');
+if (existsSync(distDir)) {
+  app.use(express.static(distDir));
+  app.get(/^(?!\/api|\/uploads).*/, (req, res) => {
+    res.sendFile(join(distDir, 'index.html'));
+  });
+}
+
+// ─── 9. Iniciar servidor ──────────────────────────────────────────────────
 const PORT = parseInt(process.env.API_PORT || '5005', 10);
 app.listen(PORT, () => {
   console.log('');

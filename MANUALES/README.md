@@ -21,5 +21,8 @@ ver `db/sqlserver/23_auditoria_procesos.sql`).
 | [06_CAJA_TELLER.md](06_CAJA_TELLER.md) | Caja / Ventanilla (Teller) | Pendiente |
 | [07_REPORTES_SEPS.md](07_REPORTES_SEPS.md) | Reportes regulatorios SEPS | Pendiente |
 | [08_ADMIN_SEGURIDAD.md](08_ADMIN_SEGURIDAD.md) | Administración / Seguridad / Usuarios | Pendiente |
+| [09_CARTERA_CREDITO.md](09_CARTERA_CREDITO.md) | Cartera de Crédito (reporte ejecutivo vigente/vencido/demandado/castigado) | Completo |
+| [10_PLAZO_FIJO.md](10_PLAZO_FIJO.md) | Cartera de Plazo Fijo (reporte ejecutivo vigente/vencida/cancelada, distinto de `04_PLAZO_FIJO.md` operativo) | Completo |
+| [11_UTILIDAD_RENTABILIDAD.md](11_UTILIDAD_RENTABILIDAD.md) | Utilidad y Rentabilidad (CUC-SEPS, ROA/ROE aproximados) | Completo |
 
 Se completan progresivamente conforme cada módulo se revisa (ver plan de trabajo activo).

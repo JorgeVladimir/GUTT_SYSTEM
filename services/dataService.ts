@@ -63,6 +63,38 @@ export class DataService {
     });
   }
 
+  static async forgotPassword(usuarioId: string): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>('auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ usuarioId })
+    });
+  }
+
+  static async resetPassword(token: string, newPassword: string): Promise<{ ok: boolean, message?: string, error?: string }> {
+    return this.request<{ ok: boolean, message?: string, error?: string }>('auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword })
+    });
+  }
+
+  static async getUsuariosSistema(): Promise<{ ok: boolean, usuarios: any[] }> {
+    return this.request<{ ok: boolean, usuarios: any[] }>('admin/usuarios');
+  }
+
+  static async updateUsuarioPermisos(id: string, modulos: string[] | null): Promise<{ ok: boolean, message?: string }> {
+    return this.request<{ ok: boolean, message?: string }>(`admin/usuarios/${id}/permisos`, {
+      method: 'PUT',
+      body: JSON.stringify({ modulos })
+    });
+  }
+
+  static async adminResetPassword(id: string, newPassword?: string): Promise<{ ok: boolean, message?: string, temporalPassword?: string }> {
+    return this.request<{ ok: boolean, message?: string, temporalPassword?: string }>(`admin/usuarios/${id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify(newPassword ? { newPassword } : {})
+    });
+  }
+
   static async updatePrinter(id: string, printer: string): Promise<{ ok: boolean, message?: string }> {
     return this.request<{ ok: boolean, message?: string }>('users/update_printer', {
       method: 'POST',
@@ -81,6 +113,50 @@ export class DataService {
       method: 'POST',
       body: JSON.stringify({ type, ...params })
     });
+  }
+
+  // Cartera de crédito (vigente/vencido/demandado/castigado) a fecha de corte, consultada en vivo
+  // contra Informix (afccajapatate) vía subproceso Java. Puede tardar ~15-40s: es una query real
+  // sobre el core bancario legacy a través del túnel Tailscale, no un mock.
+  // Desde 2026-08-01 `data` es un objeto { fechaCorte, operaciones, porLineaAntiguedad }, no un
+  // arreglo plano (ver CarteraJsonRunner.java) -- porLineaAntiguedad replica el reporte legado
+  // "ANEXO LINEAS" (por línea de crédito y antigüedad, no por letra de calificación).
+  static async getCarteraCredito(fecha?: string): Promise<{ ok: boolean; data: { fechaCorte: string; operaciones: any[]; porLineaAntiguedad: any[] }; fecha?: string; error?: string }> {
+    const qs = fecha ? `?fecha=${encodeURIComponent(fecha)}` : '';
+    return this.request<{ ok: boolean; data: { fechaCorte: string; operaciones: any[]; porLineaAntiguedad: any[] }; fecha?: string; error?: string }>(`reportes/cartera-credito${qs}`);
+  }
+
+  // Reporte de Cartera Mensual (recuperación del mes): esperado (cuotas vencidas ese mes)
+  // vs. recuperado (abonos capturados ese mes), consultado en vivo contra Informix vía
+  // subproceso Java (CarteraMensualJsonRunner). DISTINTO de getCarteraCredito (foto a
+  // fecha de corte). Por defecto el backend usa el mes calendario anterior al actual.
+  static async getCarteraMensual(anio?: number, mes?: number): Promise<{ ok: boolean; data: any; error?: string }> {
+    const params = new URLSearchParams();
+    if (anio) params.set('anio', String(anio));
+    if (mes) params.set('mes', String(mes));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<{ ok: boolean; data: any; error?: string }>(`reportes/cartera-mensual${qs}`);
+  }
+
+  // Cartera de Depósitos a Plazo Fijo (bcadpfi), consultada en vivo contra Informix
+  // (afccajapatate) vía subproceso Java. No requiere fecha de corte: bcadpfi ya
+  // refleja el estado vigente de cada póliza. Puede tardar ~15-40s (core legacy).
+  // Desde 2026-08-01 `data` es un objeto { polizas, reconciliacion } -- reconciliacion trae
+  // inventario vs contable (familias 210136 + 2103) ver PlazoFijoReconciliacionQueries.java.
+  static async getCarteraPlazoFijo(): Promise<{ ok: boolean; data: { polizas: any[]; reconciliacion: any }; error?: string }> {
+    return this.request<{ ok: boolean; data: { polizas: any[]; reconciliacion: any }; error?: string }>('reportes/cartera-plazo-fijo');
+  }
+
+  // Utilidad neta y rentabilidad (ROA/ROE aproximados) del ejercicio, calculados en
+  // vivo contra el Catálogo Único de Cuentas (CUC-SEPS) real de Informix vía
+  // subproceso Java. Incluye validaciones de partida doble y hallazgos de calidad de
+  // datos explícitos (no ocultos).
+  static async getUtilidadRentabilidad(ejercicio?: number, anio?: number): Promise<{ ok: boolean; data: any; error?: string }> {
+    const params = new URLSearchParams();
+    if (ejercicio) params.set('ejercicio', String(ejercicio));
+    if (anio) params.set('anio', String(anio));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<{ ok: boolean; data: any; error?: string }>(`reportes/utilidad-rentabilidad${qs}`);
   }
 
   static async applyLoan(loan: any): Promise<{ ok: boolean, message?: string }> {

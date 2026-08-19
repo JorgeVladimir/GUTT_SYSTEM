@@ -21,12 +21,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8 animate-in fade-in duration-700">
-      {/* Patate Welcome Banner - Pichincha Style */}
+      {/* Welcome Banner */}
       <div className="bg-[#14532D] rounded-[2.5rem] p-8 lg:p-12 text-white relative overflow-hidden shadow-2xl border-b-[12px] border-[#FACC15]">
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div>
             <div className="bg-[#FACC15] text-[#14532D] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block shadow-xl">
-              Socio Patate Activo
+              Socio Activo
             </div>
             <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter">Bienvenido a tu Caja</h1>
             <p className="text-emerald-100/70 text-sm max-w-lg font-medium leading-relaxed">
@@ -71,7 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                   </p>
                 </div>
                 <div className="mt-8 pt-6 border-t border-slate-50">
-                  <p className="text-xs font-bold text-slate-800">Cuenta de Ahorros Patate</p>
+                  <p className="text-xs font-bold text-slate-800">Cuenta de Ahorros</p>
                   <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Generando intereses diarios</p>
                 </div>
               </div>
@@ -85,7 +85,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 group-hover:bg-emerald-50 shadow-sm transition-all group-hover:scale-110">
                  <Plus size={32} />
                </div>
-               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-center">Solicitar Nuevo<br/>Crédito Patate</p>
+               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-center">Solicitar Nuevo<br/>Crédito</p>
             </div>
           </div>
 

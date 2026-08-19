@@ -17,6 +17,10 @@ import { SavingsView } from './components/SavingsView';
 import { ReportsView } from './components/ReportsView';
 import { ProfileView } from './components/ProfileView';
 import { ReportsSociosCreditos } from './components/ReportsSociosCreditos';
+import { CarteraCreditoView, CarteraCreditoCache } from './components/CarteraCreditoView';
+import { CarteraMensualView, CarteraMensualCache } from './components/CarteraMensualView';
+import { CarteraPlazoFijoView, CarteraPlazoFijoCache } from './components/CarteraPlazoFijoView';
+import { UtilidadRentabilidadView } from './components/UtilidadRentabilidadView';
 import { INITIAL_RATES, DEFAULT_CONFIG } from './constants';
 import { DataService } from './services/dataService';
 import { ArrowRight, ShieldCheck, Lock, User as UserIcon, Eye, EyeOff, UserPlus, KeyRound, Check, RefreshCw, CheckCircle2, Info, X } from 'lucide-react';
@@ -55,7 +59,7 @@ export default function App() {
   const [showPin, setShowPin] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [tellerTab, setTellerTab] = useState<'OPERATIONS' | 'REGISTER' | 'TX_SEARCH' | 'CONSULTAS' | 'CASH_CLOSE'>('OPERATIONS');
-  const [adminTab, setAdminTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD'>('SUMMARY');
+  const [adminTab, setAdminTab] = useState<'SUMMARY' | 'MEMBERS' | 'TASAS' | 'PRODUCTOS' | 'SEGURIDAD' | 'USUARIOS'>('SUMMARY');
   const [biTab, setBiTab] = useState<'BUILDER' | 'PROFITABILITY' | 'BUREAU'>('PROFITABILITY');
   const [creditOfficerTab, setCreditOfficerTab] = useState<'APPROVALS' | 'COLLECTIONS' | 'NEW_LOAN' | 'CARTERA'>('APPROVALS');
   const [plazoFijoTab, setPlazoFijoTab] = useState<'GESTION' | 'NUEVA' | 'VENCIMIENTOS' | 'TASAS' | 'CONTABILIDAD'>('GESTION');
@@ -64,6 +68,19 @@ export default function App() {
   const [interestRates, setInterestRates] = useState<InterestRate[]>(INITIAL_RATES);
   const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(DEFAULT_CONFIG);
   const [users, setUsers] = useState<User[]>([]);
+
+  // ── Caché de reportes en vivo contra Informix (Cartera de Crédito, Cartera de Plazo
+  // Fijo, Utilidad y Rentabilidad) ────────────────────────────────────────────────
+  // Estas 3 vistas consultan el core bancario legado en vivo y pueden tardar hasta 40s.
+  // El estado vive aquí (App.tsx), no dentro de cada vista -- las vistas se desmontan
+  // al cambiar de AppView, así que si el caché viviera ahí se perdería y se volvería a
+  // consultar Informix cada vez que el usuario cambia de menú y regresa. Con el caché
+  // acá, cada vista solo dispara una consulta nueva la primera vez que se visita en la
+  // sesión, o cuando el usuario aprieta "Actualizar" explícitamente.
+  const [carteraCreditoCache, setCarteraCreditoCache] = useState<CarteraCreditoCache | null>(null);
+  const [carteraMensualCache, setCarteraMensualCache] = useState<CarteraMensualCache | null>(null);
+  const [carteraPlazoFijoCache, setCarteraPlazoFijoCache] = useState<CarteraPlazoFijoCache | null>(null);
+  const [utilidadRentabilidadCache, setUtilidadRentabilidadCache] = useState<any | null>(null);
 
   // Custom Alert & Confirm Modals
   const [alertConfig, setAlertConfig] = useState<{
@@ -189,6 +206,67 @@ export default function App() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
+  // ── Recuperación de contraseña ──────────────────────────────────────────
+  // Flujo: (1) socio/usuario pide recuperación con su Identificación -> se envía correo de
+  // autorización a la casilla fija del administrador; (2) el administrador abre el enlace del
+  // correo (?resetToken=...), lo que aterriza aquí mismo en modo RESET_PASSWORD, y define la
+  // nueva contraseña para ese usuario.
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [forgotUsuarioId, setForgotUsuarioId] = useState('');
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [resetNewPin, setResetNewPin] = useState('');
+  const [resetConfirmPin, setResetConfirmPin] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+  const [resetError, setResetError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setView(AppView.RESET_PASSWORD);
+    }
+  }, []);
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotUsuarioId.trim()) return;
+    setForgotSubmitting(true);
+    try {
+      await DataService.forgotPassword(forgotUsuarioId.trim());
+    } catch (err) {
+      console.error('forgot-password:', err);
+    } finally {
+      setForgotSubmitting(false);
+      setForgotSent(true);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    if (!resetToken) return;
+    if (resetNewPin.length < 4) { setResetError('La contraseña debe tener al menos 4 caracteres.'); return; }
+    if (resetNewPin !== resetConfirmPin) { setResetError('Las contraseñas no coinciden.'); return; }
+    setResetSubmitting(true);
+    try {
+      const res = await DataService.resetPassword(resetToken, resetNewPin);
+      if (res.ok) {
+        setResetDone(true);
+      } else {
+        setResetError(res.error || 'No se pudo restablecer la contraseña.');
+      }
+    } catch (err) {
+      console.error('reset-password:', err);
+      setResetError('Error de conexión al restablecer la contraseña.');
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
   // NOTA DE SEGURIDAD: estos registros ya NO llevan un pin adivinable. Antes tenían pin: '1234'
   // hardcodeado y handleLogin() los usaba como respaldo de autenticación local en useRemoteApi=true,
   // lo que permitía iniciar sesión como admin/superuser/etc. con esa contraseña fija sin importar
@@ -284,7 +362,7 @@ export default function App() {
       if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_USER) setView(AppView.ADMIN_HUB);
       else if (user.role === UserRole.ACCOUNTANT) setView(AppView.CHART_OF_ACCOUNTS);
       else if (user.role === UserRole.TELLER) setView(AppView.TELLER_OPERATIONS);
-      else if (user.role === UserRole.CREDIT_OFFICER) setView(AppView.CREDIT_OFFICER_HUB);
+      else if (user.role === UserRole.CREDIT_OFFICER || user.role === UserRole.CARTERA) setView(AppView.CREDIT_OFFICER_HUB);
       else setView(AppView.DASHBOARD);
     }
   };
@@ -611,6 +689,49 @@ export default function App() {
     </div>
   );
 
+  if (view === AppView.RESET_PASSWORD) return (
+    <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4">
+      <div className="w-full max-w-[450px] animate-in slide-in-from-bottom duration-700">
+        <div className="bg-white rounded-[3.5rem] shadow-2xl p-12 border-t-[12px] border-[#14532D]">
+          <div className="flex flex-col items-center mb-10 text-center">
+            <CAPLogo size="lg" />
+            <h2 className="text-2xl font-black text-[#14532D] tracking-tight mt-8 uppercase">Autorizar Recuperación</h2>
+            <p className="text-slate-400 font-bold text-xs mt-2 leading-relaxed">Defina la nueva contraseña de acceso para el usuario que la solicitó.</p>
+          </div>
+
+          {resetDone ? (
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 mx-auto bg-emerald-50 text-[#14532D] rounded-full flex items-center justify-center"><Check size={32} /></div>
+              <p className="text-sm font-bold text-slate-600">Contraseña restablecida con éxito. El usuario ya puede ingresar con la nueva contraseña.</p>
+              <button onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView(AppView.LOGIN); }} className="w-full py-5 bg-[#14532D] text-white rounded-[2rem] font-black text-lg shadow-xl hover:bg-[#1b5e20] transition-all">
+                IR AL LOGIN
+              </button>
+            </div>
+          ) : (
+            <form className="space-y-6" onSubmit={handleResetPasswordSubmit}>
+              {resetError && <div className="bg-red-50 p-4 rounded-2xl border border-red-100"><p className="text-center text-red-600 text-xs font-bold">{resetError}</p></div>}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nueva Contraseña</label>
+                <div className="relative">
+                  <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input required type="password" minLength={4} value={resetNewPin} onChange={e => setResetNewPin(e.target.value)} placeholder="Contraseña" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-bold text-[#14532D] text-center text-xl" />
+                </div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Confirmar Contraseña</label>
+                <div className="relative">
+                  <RefreshCw size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                  <input required type="password" minLength={4} value={resetConfirmPin} onChange={e => setResetConfirmPin(e.target.value)} placeholder="Confirmar" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-bold text-[#14532D] text-center text-xl" />
+                </div>
+              </div>
+              <button type="submit" disabled={resetSubmitting} className="w-full py-5 bg-[#14532D] text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-[#1b5e20] transition-all flex items-center justify-center gap-4 group mt-8 disabled:opacity-60">
+                {resetSubmitting ? 'PROCESANDO...' : <>RESTABLECER CONTRASEÑA <Check size={24} className="text-[#FACC15]" /></>}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   if (view === AppView.LOGIN) return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 relative overflow-hidden">
       <div className="w-full max-w-[450px] animate-in fade-in zoom-in duration-700 relative z-10">
@@ -642,6 +763,11 @@ export default function App() {
                 <input name="pin" required type={showPin ? "text" : "password"} placeholder="Contraseña" className="w-full pl-14 pr-14 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-bold text-[#14532D] text-center text-lg" />
                 <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300">{showPin ? <EyeOff size={20} /> : <Eye size={20} />}</button>
               </div>
+              <div className="text-right">
+                <button type="button" onClick={() => { setForgotUsuarioId(''); setForgotSent(false); setForgotModalOpen(true); }} className="text-[10px] font-black text-slate-400 hover:text-[#14532D] uppercase tracking-widest transition-colors">
+                  ¿Olvidó su contraseña?
+                </button>
+              </div>
             </div>
             <button className="w-full py-5 bg-[#14532D] text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-[#1b5e20] transition-all flex items-center justify-center gap-4 group mt-8">
               INGRESAR AHORA <ArrowRight size={24} className="text-[#FACC15] group-hover:translate-x-2 transition-transform" />
@@ -655,12 +781,49 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {forgotModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setForgotModalOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-10 border border-slate-100">
+            <button onClick={() => setForgotModalOpen(false)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-600"><X size={22} /></button>
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-14 h-14 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center mb-4"><KeyRound size={26} /></div>
+              <h3 className="text-xl font-black text-[#14532D] uppercase tracking-tight">Recuperar Contraseña</h3>
+              <p className="text-slate-400 text-xs font-bold mt-2 leading-relaxed">Se enviará una solicitud de autorización al administrador del sistema para restablecer su acceso.</p>
+            </div>
+
+            {forgotSent ? (
+              <div className="text-center space-y-6">
+                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex gap-3 items-start text-left">
+                  <Info size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-emerald-800 leading-relaxed">Si el usuario existe, se envió la solicitud. El administrador autorizará y le entregará la nueva contraseña.</p>
+                </div>
+                <button onClick={() => setForgotModalOpen(false)} className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-sm uppercase tracking-widest">Entendido</button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase ml-1 block">Su Identificación / Usuario</label>
+                  <div className="relative">
+                    <UserIcon size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input required type="text" value={forgotUsuarioId} onChange={e => setForgotUsuarioId(e.target.value)} placeholder="Cédula o usuario" className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#14532D] outline-none font-bold text-[#14532D]" />
+                  </div>
+                </div>
+                <button type="submit" disabled={forgotSubmitting} className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg disabled:opacity-60">
+                  {forgotSubmitting ? 'ENVIANDO...' : 'ENVIAR SOLICITUD'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 
   return (
     <>
-      <Layout activeView={view as any} onViewChange={setView as any} onLogout={handleLogout} userName={currentUser?.name || ''} role={currentUser?.role || UserRole.MEMBER} activeSubView={activeSubView} onSubViewChange={handleSubViewChange}>
+      <Layout activeView={view as any} onViewChange={setView as any} onLogout={handleLogout} userName={currentUser?.name || ''} role={currentUser?.role || UserRole.MEMBER} permisosModulos={currentUser?.permisosModulos} activeSubView={activeSubView} onSubViewChange={handleSubViewChange}>
         {view === AppView.ADMIN_HUB && <AdminView users={users} rates={interestRates} config={globalConfig} onUpdateRates={setInterestRates} onUpdateConfig={setGlobalConfig} onRestoreDatabase={(d) => setUsers(d.users)} activeTab={adminTab} onActiveTabChange={setAdminTab} />}
         {view === AppView.BI_PANEL && <BIPanel users={users} currentUserRole={currentUser?.role} activeTab={biTab} onActiveTabChange={setBiTab} />}
         {view === AppView.TELLER_OPERATIONS && <TellerView users={users} onUpdateUser={handleUpdateUser} currentUserRole={currentUser?.role} currentUser={currentUser || undefined} activeTab={tellerTab} onActiveTabChange={setTellerTab} />}
@@ -673,6 +836,10 @@ export default function App() {
         {view === AppView.SAVINGS && <SavingsView currentUser={currentUser || undefined} activeTab={savingsTab} onActiveTabChange={setSavingsTab} />}
         {view === AppView.REPORTS && <ReportsView users={users} onUpdateUser={handleUpdateUser} currentUser={currentUser || undefined} />}
         {view === AppView.REPORTS_SOCIOS_CREDITOS && <ReportsSociosCreditos users={users} currentUser={currentUser || undefined} activeTab={reportsSocioTab} onActiveTabChange={setReportsSocioTab} />}
+        {view === AppView.CARTERA_CREDITO && <CarteraCreditoView currentUser={currentUser || undefined} cachedData={carteraCreditoCache} onDataLoaded={setCarteraCreditoCache} />}
+        {view === AppView.CARTERA_MENSUAL && <CarteraMensualView currentUser={currentUser || undefined} cachedData={carteraMensualCache} onDataLoaded={setCarteraMensualCache} />}
+        {view === AppView.CARTERA_PLAZO_FIJO && <CarteraPlazoFijoView currentUser={currentUser || undefined} cachedData={carteraPlazoFijoCache} onDataLoaded={setCarteraPlazoFijoCache} />}
+        {view === AppView.UTILIDAD_RENTABILIDAD && <UtilidadRentabilidadView currentUser={currentUser || undefined} cachedData={utilidadRentabilidadCache} onDataLoaded={setUtilidadRentabilidadCache} />}
         {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}
         {currentUser?.role === UserRole.MEMBER && <ChatAssistant user={currentUser} currentBalance={currentUser.accounts[0]?.balance} transactions={currentUser.transactions} />}
       </Layout>

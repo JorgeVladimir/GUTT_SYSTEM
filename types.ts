@@ -6,7 +6,8 @@ export enum UserRole {
   ACCOUNTANT = 'ACCOUNTANT',
   TELLER = 'TELLER',
   MEMBER = 'MEMBER',
-  CREDIT_OFFICER = 'CREDIT_OFFICER'
+  CREDIT_OFFICER = 'CREDIT_OFFICER',
+  CARTERA = 'CARTERA'
 }
 
 export enum AccountType {
@@ -165,6 +166,9 @@ export interface User {
   personType?: PersonType;
   rutaImagenMapa?: string;
   rutaImagenCroquis?: string;
+  // null/undefined = acceso completo por defecto de su Rol. Array = solo esos ids de módulo
+  // (ver NAV_BY_ROLE en constants.tsx), asignados desde el panel Admin > Usuarios del Sistema.
+  permisosModulos?: string[] | null;
 }
 
 export interface Account {
@@ -188,10 +192,15 @@ export enum AppView {
   CREDIT_OFFICER_HUB = 'CREDIT_OFFICER_HUB',
   REPORTS = 'REPORTS',
   REPORTS_SOCIOS_CREDITOS = 'REPORTS_SOCIOS_CREDITOS',
+  CARTERA_CREDITO = 'CARTERA_CREDITO',
+  CARTERA_MENSUAL = 'CARTERA_MENSUAL',
+  CARTERA_PLAZO_FIJO = 'CARTERA_PLAZO_FIJO',
+  UTILIDAD_RENTABILIDAD = 'UTILIDAD_RENTABILIDAD',
   BI_PANEL = 'BI_PANEL',
   PROFILE = 'PROFILE',
   CHANGE_PIN = 'CHANGE_PIN',
-  PLAZO_FIJO = 'PLAZO_FIJO'
+  PLAZO_FIJO = 'PLAZO_FIJO',
+  RESET_PASSWORD = 'RESET_PASSWORD'
 }
 
 export interface ChartOfAccountEntry {
