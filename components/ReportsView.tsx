@@ -231,12 +231,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
     }
   };
 
+  // El Estado de Situación Financiera devuelve un objeto estructurado (secciones Activo /
+  // Pasivo / Patrimonio + control de cuadre), no la tabla plana que usan los otros reportes,
+  // así que vive en su propio estado en vez de en `data`.
+  const [esf, setEsf] = useState<any | null>(null);
+  // La Estructura B11 también es estructurada (matriz segmento × estado de cartera + totales
+  // y morosidad), no una tabla plana.
+  const [b11, setB11] = useState<any | null>(null);
+  // Matriz UAFE: dos secciones (operaciones individuales sobre umbral + acumulados mensuales
+  // por socio), con los umbrales aplicados visibles para que sea auditable.
+  const [uafe, setUafe] = useState<any | null>(null);
+  // Indicadores PERLAS / Límites de Riesgo + su bloque de reconciliación cartera contable
+  // vs cartera operativa.
+  const [perlas, setPerlas] = useState<any | null>(null);
+
   const runReport = async () => {
     if (!hasFinancialAccess) return;
     setLoading(true);
     try {
-      const results = await DataService.getFinancialReport(reportType, {});
-      setData(results || []);
+      const results: any = await DataService.getFinancialReport(reportType, {});
+      const clear = () => { setEsf(null); setB11(null); setUafe(null); setPerlas(null); setData([]); };
+      clear();
+      if (reportType === 'sp_esf_seps') {
+        setEsf(results && results.ok ? results : null);
+      } else if (reportType === 'sp_sepsb11') {
+        setB11(results && results.ok ? results : null);
+      } else if (reportType === 'sp_uaf_matriz') {
+        setUafe(results && results.ok ? results : null);
+      } else if (reportType === 'sp_indicadores_perlas') {
+        setPerlas(results && results.ok ? results : null);
+      } else {
+        setData(Array.isArray(results) ? results : []);
+      }
     } catch (e) {
       alert("Error al generar el reporte. Verifique la conexión con el servidor.");
     } finally {
@@ -245,13 +271,106 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
   };
 
   const downloadCSV = () => {
-    if (data.length === 0) return;
     const REPORT_LABELS: Record<string, string> = {
+      sp_esf_seps:           'Estado_Situacion_Financiera',
+      sp_indicadores_perlas: 'Indicadores_PERLAS',
       sp_r_bal_compro: 'Balance_Comprobacion',
       sp_r_situa_gene: 'Situacion_General',
       sp_sepsb11:      'Estructura_B11',
       sp_uaf_matriz:   'Matriz_UAF',
     };
+
+    // El ESF no es tabular: se aplana a "Sección;Código;Rubro;Monto" con las líneas de total,
+    // que es el formato en que la SEPS espera ver el balance presentado.
+    if (reportType === 'sp_esf_seps') {
+      if (!esf) return;
+      const lines: string[] = ['Seccion;Codigo;Rubro;Monto'];
+      for (const r of esf.activo)     lines.push(`ACTIVO;${r.codigo};${r.nombre};${r.monto.toFixed(2)}`);
+      lines.push(`ACTIVO;;TOTAL ACTIVO;${esf.totalActivo.toFixed(2)}`);
+      for (const r of esf.pasivo)     lines.push(`PASIVO;${r.codigo};${r.nombre};${r.monto.toFixed(2)}`);
+      lines.push(`PASIVO;;TOTAL PASIVO;${esf.totalPasivo.toFixed(2)}`);
+      for (const r of esf.patrimonio) lines.push(`PATRIMONIO;${r.codigo};${r.nombre};${r.monto.toFixed(2)}`);
+      lines.push(`PATRIMONIO;;RESULTADO DEL EJERCICIO;${esf.resultadoEjercicio.toFixed(2)}`);
+      lines.push(`PATRIMONIO;;TOTAL PATRIMONIO;${esf.totalPatrimonio.toFixed(2)}`);
+      lines.push(`;;TOTAL PASIVO + PATRIMONIO;${esf.totalPasivoMasPatrimonio.toFixed(2)}`);
+      lines.push(`;;DIFERENCIA (CONTROL DE CUADRE);${esf.diferencia.toFixed(2)}`);
+      const csvEsf = '﻿' + lines.join('\r\n');
+      const blobEsf = new Blob([csvEsf], { type: 'text/csv;charset=utf-8;' });
+      const urlEsf = URL.createObjectURL(blobEsf);
+      const aEsf = document.createElement('a');
+      aEsf.href = urlEsf;
+      aEsf.download = `${REPORT_LABELS[reportType]}_${new Date().toISOString().slice(0,10)}.csv`;
+      aEsf.click();
+      URL.revokeObjectURL(urlEsf);
+      return;
+    }
+
+    if (reportType === 'sp_sepsb11') {
+      if (!b11) return;
+      const lines: string[] = ['Cuenta SEPS;Segmento;Estado Cartera;Banda de Antiguedad;Operaciones;Saldo'];
+      for (const f of b11.filas) {
+        lines.push(`${f.cuentaSeps ?? ''};${f.segmento};${f.estadoCartera};${f.banda};${f.operaciones};${f.saldo.toFixed(2)}`);
+      }
+      lines.push(`;;TOTAL POR VENCER;;;${b11.totales.porVencer.toFixed(2)}`);
+      lines.push(`;;TOTAL NO DEVENGA INTERESES;;;${b11.totales.noDevenga.toFixed(2)}`);
+      lines.push(`;;TOTAL VENCIDA;;;${b11.totales.vencida.toFixed(2)}`);
+      lines.push(`;;CARTERA BRUTA;;;${b11.totales.carteraBruta.toFixed(2)}`);
+      lines.push(`;;MOROSIDAD AMPLIADA (%);;;${b11.totales.morosidadPct.toFixed(2)}`);
+      const csvB11 = '﻿' + lines.join('\r\n');
+      const blobB11 = new Blob([csvB11], { type: 'text/csv;charset=utf-8;' });
+      const urlB11 = URL.createObjectURL(blobB11);
+      const aB11 = document.createElement('a');
+      aB11.href = urlB11;
+      aB11.download = `${REPORT_LABELS[reportType]}_${new Date().toISOString().slice(0,10)}.csv`;
+      aB11.click();
+      URL.revokeObjectURL(urlB11);
+      return;
+    }
+
+    if (reportType === 'sp_uaf_matriz') {
+      if (!uafe) return;
+      const lines: string[] = ['Seccion;Periodo/Fecha;Tipo ID;Identificacion;Socio;Concepto;Sentido;Operaciones;Monto'];
+      for (const r of uafe.individuales) {
+        lines.push(`INDIVIDUAL;${r.fecha};${r.tipoIdentificacion ?? ''};${r.identificacion ?? ''};${r.socio ?? ''};${String(r.concepto ?? '').replace(/;/g, ',')};${r.sentido};1;${r.monto.toFixed(2)}`);
+      }
+      for (const r of uafe.acumuladas) {
+        lines.push(`ACUMULADO MENSUAL;${r.periodo};${r.tipoIdentificacion ?? ''};${r.identificacion ?? ''};${r.socio ?? ''};;;${r.operaciones};${r.montoAcumulado.toFixed(2)}`);
+      }
+      const csvU = '﻿' + lines.join('\r\n');
+      const blobU = new Blob([csvU], { type: 'text/csv;charset=utf-8;' });
+      const urlU = URL.createObjectURL(blobU);
+      const aU = document.createElement('a');
+      aU.href = urlU;
+      aU.download = `${REPORT_LABELS[reportType]}_${new Date().toISOString().slice(0,10)}.csv`;
+      aU.click();
+      URL.revokeObjectURL(urlU);
+      return;
+    }
+
+    if (reportType === 'sp_indicadores_perlas') {
+      if (!perlas) return;
+      const lines: string[] = ['Categoria;Indicador;Valor (%);Calculo exacto;Formula'];
+      for (const i of perlas.indicadores) {
+        lines.push(`${i.categoria};${i.nombre};${i.valor ?? ''};${i.exacto ? 'SI' : 'NO (aproximacion declarada)'};${String(i.formula).replace(/;/g, ',')}`);
+      }
+      lines.push('');
+      lines.push('RECONCILIACION CARTERA;;;;');
+      lines.push(`Cartera contable;;${perlas.reconciliacion.carteraContable.toFixed(2)};;`);
+      lines.push(`Cartera operativa (amortizacion);;${perlas.reconciliacion.carteraOperativa.toFixed(2)};;`);
+      lines.push(`Diferencia;;${perlas.reconciliacion.diferenciaCartera.toFixed(2)};;`);
+      for (const a of perlas.reconciliacion.alertas) lines.push(`ALERTA;;;;${String(a).replace(/;/g, ',')}`);
+      const csvP = '﻿' + lines.join('\r\n');
+      const blobP = new Blob([csvP], { type: 'text/csv;charset=utf-8;' });
+      const urlP = URL.createObjectURL(blobP);
+      const aP = document.createElement('a');
+      aP.href = urlP;
+      aP.download = `${REPORT_LABELS[reportType]}_${new Date().toISOString().slice(0,10)}.csv`;
+      aP.click();
+      URL.revokeObjectURL(urlP);
+      return;
+    }
+
+    if (data.length === 0) return;
     const cols = Object.keys(data[0]);
     const header = cols.join(';');
     const rows = data.map(row => cols.map(c => String(row[c] ?? '').replace(/;/g, ',')).join(';'));
@@ -866,14 +985,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2">Reportes SEPS</h3>
               <div className="space-y-2">
                 {[
-                  { id: 'sp_r_bal_compro', label: 'Balance de Comprobación',  desc: 'Debe / Haber por cuenta' },
-                  { id: 'sp_r_situa_gene', label: 'Situación General',         desc: 'Socios, ahorros, créditos' },
-                  { id: 'sp_sepsb11',      label: 'Estructura B11',             desc: 'Cartera por estado' },
-                  { id: 'sp_uaf_matriz',   label: 'Matriz UAF',                 desc: 'Transacciones ≥ $5,000' },
+                  { id: 'sp_esf_seps',            label: 'Estado de Situación Financiera', desc: 'Balance por rubro SEPS' },
+                  { id: 'sp_r_bal_compro',        label: 'Balance de Comprobación',  desc: 'Debe / Haber por cuenta' },
+                  { id: 'sp_indicadores_perlas',  label: 'Indicadores PERLAS',       desc: 'Liquidez, morosidad, ROA/ROE' },
+                  { id: 'sp_sepsb11',             label: 'Estructura B11',            desc: 'Cartera por segmento y mora' },
+                  { id: 'sp_uaf_matriz',          label: 'Matriz UAFE',               desc: 'Efectivo sobre umbral' },
+                  { id: 'sp_r_situa_gene',        label: 'Situación General',         desc: 'Socios, ahorros, créditos' },
                 ].map(r => (
                   <button
                     key={r.id}
-                    onClick={() => { setReportType(r.id); setData([]); }}
+                    onClick={() => { setReportType(r.id); setData([]); setEsf(null); setB11(null); setUafe(null); setPerlas(null); }}
                     className={`w-full p-4 rounded-2xl text-left transition-all ${reportType === r.id ? 'bg-emerald-50 text-[#14532D] border border-emerald-100' : 'text-slate-400 hover:bg-slate-50'}`}
                   >
                     <p className="text-[10px] font-black uppercase">{r.label}</p>
@@ -888,7 +1009,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
               >
                 {loading ? 'GENERANDO...' : 'GENERAR REPORTE'}
               </button>
-              {data.length > 0 && (
+              {(data.length > 0 || esf || b11 || uafe || perlas) && (
                 <div className="flex gap-2">
                   <button
                     onClick={downloadCSV}
@@ -909,7 +1030,259 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
           <div className="lg:col-span-3">
             <div className="bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden min-h-[500px]">
-              {data.length > 0 ? (
+              {esf ? (
+                <div>
+                  <div className="px-8 py-5 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Estado de Situación Financiera</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Catálogo Único de Cuentas SEPS · Corte {esf.fecha}</p>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    {[
+                      { titulo: 'ACTIVO',     filas: esf.activo,     total: esf.totalActivo,     color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                      { titulo: 'PASIVO',     filas: esf.pasivo,     total: esf.totalPasivo,     color: 'text-red-600',     bg: 'bg-red-50' },
+                      { titulo: 'PATRIMONIO', filas: esf.patrimonio, total: esf.totalPatrimonio, color: 'text-blue-700',    bg: 'bg-blue-50', resultado: esf.resultadoEjercicio },
+                    ].map(sec => (
+                      <div key={sec.titulo}>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-3 ${sec.color}`}>{sec.titulo}</p>
+                        <table className="w-full text-sm">
+                          <tbody className="divide-y divide-slate-50">
+                            {sec.filas.map((r: any) => (
+                              <tr key={r.codigo} className="hover:bg-slate-50 transition-colors">
+                                <td className="py-3 pr-4 font-black text-[#14532D] text-[11px] w-20">{r.codigo}</td>
+                                <td className="py-3 font-bold text-slate-700 text-xs">{r.nombre}</td>
+                                <td className="py-3 text-right font-black text-slate-900 text-[11px]">${r.monto.toFixed(2)}</td>
+                              </tr>
+                            ))}
+                            {sec.resultado !== undefined && (
+                              <tr className="hover:bg-slate-50 transition-colors">
+                                <td className="py-3 pr-4 font-black text-slate-300 text-[11px] w-20">—</td>
+                                <td className="py-3 font-bold text-slate-500 text-xs italic">Resultado del ejercicio (ingresos − gastos)</td>
+                                <td className={`py-3 text-right font-black text-[11px] ${sec.resultado >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>${sec.resultado.toFixed(2)}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                          <tfoot>
+                            <tr className={`${sec.bg} font-black border-t-2 border-slate-200`}>
+                              <td className="py-3 px-2 text-[11px] uppercase tracking-wider" colSpan={2}>Total {sec.titulo}</td>
+                              <td className={`py-3 text-right text-[12px] ${sec.color}`}>${sec.total.toFixed(2)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    ))}
+
+                    <div className="border-t-2 border-[#14532D] pt-6 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Activo</span>
+                        <span className="text-lg font-black text-slate-900">${esf.totalActivo.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Pasivo + Patrimonio</span>
+                        <span className="text-lg font-black text-slate-900">${esf.totalPasivoMasPatrimonio.toFixed(2)}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${esf.cuadrado ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                          {esf.cuadrado ? '✓ Balance Cuadrado (Activo = Pasivo + Patrimonio)' : `⚠ Descuadre: $${esf.diferencia.toFixed(2)}`}
+                        </span>
+                        {esf.cuentasSinCatalogar?.length > 0 && (
+                          <span className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-700">
+                            ⚠ {esf.cuentasSinCatalogar.length} cuenta(s) fuera del Catálogo SEPS: {esf.cuentasSinCatalogar.join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : b11 ? (
+                <div>
+                  <div className="px-8 py-5 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Estructura B11 — Cartera por Segmento y Antigüedad</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Catálogo Único de Cuentas SEPS · Corte {b11.fecha}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-8 pb-2">
+                    {[
+                      { label: 'Por Vencer',       val: b11.totales.porVencer, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                      { label: 'No Devenga Int.',  val: b11.totales.noDevenga, color: 'text-amber-700',   bg: 'bg-amber-50' },
+                      { label: 'Vencida',          val: b11.totales.vencida,   color: 'text-red-600',     bg: 'bg-red-50' },
+                      { label: 'Cartera Bruta',    val: b11.totales.carteraBruta, color: 'text-slate-900', bg: 'bg-slate-50' },
+                    ].map(k => (
+                      <div key={k.label} className={`${k.bg} p-5 rounded-3xl border border-slate-100`}>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{k.label}</p>
+                        <p className={`text-xl font-black mt-1 ${k.color}`}>${k.val.toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="px-8 pb-4">
+                    <div className={`inline-block px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${b11.totales.morosidadPct > 10 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                      Morosidad Ampliada: {b11.totales.morosidadPct.toFixed(2)}%
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 border-y">
+                        <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <th className="px-6 py-4 text-left">Cta. SEPS</th>
+                          <th className="px-6 py-4 text-left">Segmento</th>
+                          <th className="px-6 py-4 text-left">Estado</th>
+                          <th className="px-6 py-4 text-left">Antigüedad</th>
+                          <th className="px-6 py-4 text-right">Oper.</th>
+                          <th className="px-6 py-4 text-right">Saldo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {b11.filas.map((f: any, i: number) => (
+                          <tr key={i} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 font-black text-[#14532D] text-[11px]">{f.cuentaSeps ?? '—'}</td>
+                            <td className="px-6 py-4 font-bold text-slate-700 text-xs">{f.segmento}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                                f.estadoCartera === 'VENCIDA' ? 'bg-red-100 text-red-700'
+                                : f.estadoCartera === 'NO DEVENGA INTERESES' ? 'bg-amber-100 text-amber-700'
+                                : 'bg-emerald-100 text-emerald-700'}`}>{f.estadoCartera}</span>
+                            </td>
+                            <td className="px-6 py-4 font-bold text-slate-500 text-[11px]">{f.banda}</td>
+                            <td className="px-6 py-4 text-right font-bold text-slate-600 text-[11px]">{f.operaciones}</td>
+                            <td className="px-6 py-4 text-right font-black text-slate-900 text-[11px]">${f.saldo.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black">
+                          <td className="px-6 py-4 text-[#14532D] text-[11px] uppercase" colSpan={5}>Cartera Bruta Total</td>
+                          <td className="px-6 py-4 text-right text-slate-900 text-[11px]">${b11.totales.carteraBruta.toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              ) : uafe ? (
+                <div>
+                  <div className="px-8 py-5 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Matriz UAFE — Operaciones en Efectivo</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      Corte {uafe.fecha} · Umbral individual ${uafe.umbrales.individual.toLocaleString()} · Acumulado mensual ${uafe.umbrales.acumuladoMensual.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="p-8 space-y-10">
+                    {[
+                      { titulo: 'Operaciones individuales sobre umbral', filas: uafe.individuales, tipo: 'ind' as const },
+                      { titulo: 'Acumulado mensual por socio sobre umbral', filas: uafe.acumuladas, tipo: 'acum' as const },
+                    ].map(sec => (
+                      <div key={sec.titulo}>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-500">{sec.titulo}</p>
+                        {sec.filas.length === 0 ? (
+                          <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                            <p className="text-xs font-bold text-emerald-800">
+                              Sin operaciones que superen el umbral en el período. No hay reporte obligatorio pendiente por esta vía.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-slate-50 border-y">
+                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                  <th className="px-4 py-3 text-left">{sec.tipo === 'ind' ? 'Fecha' : 'Período'}</th>
+                                  <th className="px-4 py-3 text-left">Identificación</th>
+                                  <th className="px-4 py-3 text-left">Socio</th>
+                                  {sec.tipo === 'ind'
+                                    ? <><th className="px-4 py-3 text-left">Concepto</th><th className="px-4 py-3 text-left">Sentido</th></>
+                                    : <th className="px-4 py-3 text-right">Oper.</th>}
+                                  <th className="px-4 py-3 text-right">Monto</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50">
+                                {sec.filas.map((r: any, i: number) => (
+                                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-bold text-slate-600 text-[11px]">{sec.tipo === 'ind' ? r.fecha : r.periodo}</td>
+                                    <td className="px-4 py-3 font-black text-[#14532D] text-[11px]">{r.identificacion ?? '—'}</td>
+                                    <td className="px-4 py-3 font-bold text-slate-700 text-xs">{r.socio ?? '—'}</td>
+                                    {sec.tipo === 'ind'
+                                      ? <><td className="px-4 py-3 text-slate-500 text-[11px]">{r.concepto}</td>
+                                          <td className="px-4 py-3 text-[11px] font-bold text-slate-500">{r.sentido}</td></>
+                                      : <td className="px-4 py-3 text-right font-bold text-slate-600 text-[11px]">{r.operaciones}</td>}
+                                    <td className="px-4 py-3 text-right font-black text-slate-900 text-[11px]">
+                                      ${(sec.tipo === 'ind' ? r.monto : r.montoAcumulado).toFixed(2)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : perlas ? (
+                <div>
+                  <div className="px-8 py-5 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Indicadores PERLAS — Límites de Riesgo SEPS</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Calculado sobre el Catálogo Único de Cuentas · Corte {perlas.fecha}</p>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    {['LIQUIDEZ', 'CALIDAD DE ACTIVOS', 'RENTABILIDAD', 'SOLVENCIA'].map(cat => {
+                      const items = perlas.indicadores.filter((i: any) => i.categoria === cat);
+                      if (items.length === 0) return null;
+                      return (
+                        <div key={cat}>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-500">{cat}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {items.map((i: any) => (
+                              <div key={i.nombre} className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+                                <div className="flex items-start justify-between gap-3">
+                                  <p className="text-[11px] font-black text-slate-700 leading-tight">{i.nombre}</p>
+                                  {!i.exacto && (
+                                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-700">Aprox.</span>
+                                  )}
+                                </div>
+                                <p className={`text-2xl font-black mt-2 ${i.valor === null ? 'text-slate-300' : 'text-[#14532D]'}`}>
+                                  {i.valor === null ? 'N/D' : `${i.valor.toFixed(2)}${i.unidad}`}
+                                </p>
+                                <p className="text-[9px] font-medium text-slate-400 mt-2 leading-snug">{i.formula}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <div className="border-t-2 border-slate-200 pt-6">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-500">Control de reconciliación — cartera contable vs. cartera operativa</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                        {[
+                          { l: 'Cartera contable',  v: perlas.reconciliacion.carteraContable },
+                          { l: 'Cartera operativa', v: perlas.reconciliacion.carteraOperativa },
+                          { l: 'Diferencia',        v: perlas.reconciliacion.diferenciaCartera },
+                        ].map(k => (
+                          <div key={k.l} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{k.l}</p>
+                            <p className="text-base font-black text-slate-900 mt-1">${k.v.toFixed(2)}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {perlas.reconciliacion.alertas.length === 0 ? (
+                        <div className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 inline-block">
+                          ✓ Cartera contable reconciliada con cartera operativa
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {perlas.reconciliacion.alertas.map((a: string, i: number) => (
+                            <div key={i} className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                              <p className="text-[11px] font-bold text-amber-800 leading-snug">⚠ {a}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : data.length > 0 ? (
                 <div className="overflow-x-auto">
                   <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
                     <div>

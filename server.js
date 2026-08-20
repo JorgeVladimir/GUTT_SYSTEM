@@ -1044,35 +1044,443 @@ app.post('/api/reports/generate.php', async (req, res) => {
     }
 
     if (type === 'sp_sepsb11') {
-      // Estructura B11 — cartera por estado
+      // Estructura B11 — cartera por segmento y estado de vencimiento, con bandas de
+      // antigüedad. Reemplaza el stub anterior (GROUP BY Estado sobre un string), que no
+      // reproducía ningún entregable SEPS real.
+      //
+      // Estructura verificada contra el Catálogo Único cargado en dbo.PlanCuentas:
+      //   1401/1402/1403/1404 = COMERCIAL/CONSUMO/VIVIENDA/MICROEMPRESA **POR VENCER**
+      //   1411..1414          = las mismas **QUE NO DEVENGAN INTERESES**
+      //   1421..1424          = las mismas **VENCIDA**
+      // Ojo: las bandas de antigüedad NO son iguales en ambos estados (dato real del
+      // catálogo, no asumido): "Por vencer" corta en 181-360 / >360 (1402 05..25) mientras
+      // "Vencida" corta en 181-270 / >270 (1422 05..25).
+      //
+      // Regla contable aplicada: si una operación tiene al menos una cuota vencida, sus
+      // cuotas aún no vencidas dejan de devengar interés y se reclasifican a 141x -- no se
+      // quedan en "por vencer". Es el tratamiento SEPS estándar de la cartera en mora.
       const result = await pool.request().query(`
-        SELECT Estado AS code, Estado AS name, COUNT(*) AS cantidad, SUM(Monto) AS balance
-        FROM dbo.Creditos
-        GROUP BY Estado
-        ORDER BY Estado
+        ;WITH Cuotas AS (
+          SELECT c.CreditoID, c.Tipo,
+                 j.number, j.capital,
+                 DATEADD(MONTH, j.number, c.FechaDesembolso) AS FechaVenceCuota
+          FROM dbo.Creditos c
+          JOIN dbo.SolicitudesCredito s ON s.SolicitudID = c.SolicitudID
+          CROSS APPLY OPENJSON(s.PlanPagos) WITH (
+            number  INT            '$.number',
+            capital DECIMAL(15,2)  '$.capital',
+            status  NVARCHAR(20)   '$.status'
+          ) j
+          WHERE c.Estado = 'VIGENTE' AND ISNULL(j.status,'') <> 'PAGADO'
+        ),
+        Clasificadas AS (
+          SELECT CreditoID, Tipo, capital,
+                 DATEDIFF(DAY, FechaVenceCuota, CAST(GETDATE() AS DATE)) AS DiasMora,
+                 MAX(CASE WHEN FechaVenceCuota < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END)
+                   OVER (PARTITION BY CreditoID) AS OperacionEnMora
+          FROM Cuotas
+        )
+        SELECT
+          CASE
+            WHEN UPPER(Tipo) LIKE '%MICRO%'                              THEN 'MICROEMPRESA'
+            WHEN UPPER(Tipo) LIKE '%VIVIENDA%' OR UPPER(Tipo) LIKE '%INMOBIL%' THEN 'VIVIENDA'
+            WHEN UPPER(Tipo) LIKE '%COMERCIAL%' OR UPPER(Tipo) LIKE '%PRODUCTIVO%' THEN 'COMERCIAL'
+            ELSE 'CONSUMO'
+          END AS segmento,
+          CASE
+            WHEN DiasMora > 0            THEN 'VENCIDA'
+            WHEN OperacionEnMora = 1     THEN 'NO DEVENGA INTERESES'
+            ELSE 'POR VENCER'
+          END AS estadoCartera,
+          CASE
+            WHEN DiasMora > 0 THEN
+              CASE WHEN DiasMora <= 30  THEN 'De 1 a 30 días'
+                   WHEN DiasMora <= 90  THEN 'De 31 a 90 días'
+                   WHEN DiasMora <= 180 THEN 'De 91 a 180 días'
+                   WHEN DiasMora <= 270 THEN 'De 181 a 270 días'
+                   ELSE 'De más de 270 días' END
+            WHEN OperacionEnMora = 1 THEN 'No devenga'
+            ELSE
+              CASE WHEN -DiasMora <= 30  THEN 'De 1 a 30 días'
+                   WHEN -DiasMora <= 90  THEN 'De 31 a 90 días'
+                   WHEN -DiasMora <= 180 THEN 'De 91 a 180 días'
+                   WHEN -DiasMora <= 360 THEN 'De 181 a 360 días'
+                   ELSE 'De más de 360 días' END
+          END AS banda,
+          COUNT(DISTINCT CreditoID) AS operaciones,
+          SUM(capital) AS saldo
+        FROM Clasificadas
+        GROUP BY
+          CASE
+            WHEN UPPER(Tipo) LIKE '%MICRO%'                              THEN 'MICROEMPRESA'
+            WHEN UPPER(Tipo) LIKE '%VIVIENDA%' OR UPPER(Tipo) LIKE '%INMOBIL%' THEN 'VIVIENDA'
+            WHEN UPPER(Tipo) LIKE '%COMERCIAL%' OR UPPER(Tipo) LIKE '%PRODUCTIVO%' THEN 'COMERCIAL'
+            ELSE 'CONSUMO'
+          END,
+          CASE
+            WHEN DiasMora > 0            THEN 'VENCIDA'
+            WHEN OperacionEnMora = 1     THEN 'NO DEVENGA INTERESES'
+            ELSE 'POR VENCER'
+          END,
+          CASE
+            WHEN DiasMora > 0 THEN
+              CASE WHEN DiasMora <= 30  THEN 'De 1 a 30 días'
+                   WHEN DiasMora <= 90  THEN 'De 31 a 90 días'
+                   WHEN DiasMora <= 180 THEN 'De 91 a 180 días'
+                   WHEN DiasMora <= 270 THEN 'De 181 a 270 días'
+                   ELSE 'De más de 270 días' END
+            WHEN OperacionEnMora = 1 THEN 'No devenga'
+            ELSE
+              CASE WHEN -DiasMora <= 30  THEN 'De 1 a 30 días'
+                   WHEN -DiasMora <= 90  THEN 'De 31 a 90 días'
+                   WHEN -DiasMora <= 180 THEN 'De 91 a 180 días'
+                   WHEN -DiasMora <= 360 THEN 'De 181 a 360 días'
+                   ELSE 'De más de 360 días' END
+          END
+        ORDER BY segmento, estadoCartera, banda
       `);
-      return res.json(result.recordset.map(r => ({
-        code: r.code, name: r.name,
-        balance: parseFloat(r.balance || 0),
-        movimientos: r.cantidad
-      })));
+
+      // Código de cuenta SEPS por segmento y estado (mismo mapeo del Catálogo Único).
+      const CUENTA_SEPS = {
+        'COMERCIAL':    { 'POR VENCER': '1401', 'NO DEVENGA INTERESES': '1411', 'VENCIDA': '1421' },
+        'CONSUMO':      { 'POR VENCER': '1402', 'NO DEVENGA INTERESES': '1412', 'VENCIDA': '1422' },
+        'VIVIENDA':     { 'POR VENCER': '1403', 'NO DEVENGA INTERESES': '1413', 'VENCIDA': '1423' },
+        'MICROEMPRESA': { 'POR VENCER': '1404', 'NO DEVENGA INTERESES': '1414', 'VENCIDA': '1424' },
+      };
+
+      const filas = result.recordset.map(r => ({
+        segmento: r.segmento,
+        estadoCartera: r.estadoCartera,
+        banda: r.banda,
+        cuentaSeps: (CUENTA_SEPS[r.segmento] || {})[r.estadoCartera] || null,
+        operaciones: r.operaciones,
+        saldo: parseFloat(r.saldo || 0),
+      }));
+
+      const carteraBruta   = filas.reduce((s, f) => s + f.saldo, 0);
+      const carteraVencida = filas.filter(f => f.estadoCartera === 'VENCIDA').reduce((s, f) => s + f.saldo, 0);
+      const noDevenga      = filas.filter(f => f.estadoCartera === 'NO DEVENGA INTERESES').reduce((s, f) => s + f.saldo, 0);
+      const porVencer      = filas.filter(f => f.estadoCartera === 'POR VENCER').reduce((s, f) => s + f.saldo, 0);
+      // Morosidad ampliada SEPS = (vencida + no devenga intereses) / cartera bruta
+      const morosidad = carteraBruta > 0 ? ((carteraVencida + noDevenga) / carteraBruta) * 100 : 0;
+
+      return res.json({
+        ok: true,
+        fecha: new Date().toISOString().split('T')[0],
+        filas,
+        totales: {
+          porVencer:      Math.round(porVencer * 100) / 100,
+          noDevenga:      Math.round(noDevenga * 100) / 100,
+          vencida:        Math.round(carteraVencida * 100) / 100,
+          carteraBruta:   Math.round(carteraBruta * 100) / 100,
+          morosidadPct:   Math.round(morosidad * 100) / 100,
+        },
+      });
     }
 
     if (type === 'sp_uaf_matriz') {
-      // Matriz UAF — últimas transacciones grandes (≥ $5000)
-      const result = await pool.request().query(`
-        SELECT TOP 100 rc.AsientoId AS code, rc.Concepto AS name,
-          rc.Debe AS debe, rc.Haber AS haber,
-          (rc.Debe + rc.Haber) AS balance,
-          rc.NumeroCuenta, CONVERT(NVARCHAR(10), rc.Fecha, 23) AS fecha
+      // Matriz UAFE — operaciones en EFECTIVO sobre los umbrales de reporte obligatorio.
+      // Reemplaza la aproximación anterior, que tomaba cualquier asiento >= $5000 de
+      // RegistroContable: eso incluía desembolsos de crédito y acreditaciones que NO son
+      // movimientos de efectivo, es decir, sobre-reportaba y a la vez no identificaba al
+      // socio ni acumulaba por mes (las dos cosas que la UAFE exige).
+      //
+      // Criterio de efectivo: el asiento toca la cuenta de Caja del Catálogo SEPS (110105
+      // Efectivo). Es el mismo criterio contable que usa el cierre de caja, así que no puede
+      // desincronizarse de lo que el cajero realmente recibió/entregó.
+      // Umbrales (Ecuador): individual >= $5,000; acumulado mensual por socio >= $10,000.
+      const UMBRAL_INDIVIDUAL = 5000;
+      const UMBRAL_ACUMULADO  = 10000;
+
+      const [individuales, acumuladas] = await Promise.all([
+        pool.request()
+          .input('umbral', sql.Decimal(15, 2), UMBRAL_INDIVIDUAL)
+          .query(`
+            SELECT rc.AsientoId, CONVERT(NVARCHAR(10), rc.Fecha, 23) AS fecha,
+                   s.Identificacion, s.TipoIdentificacion,
+                   LTRIM(RTRIM(ISNULL(s.PrimerNombre,'') + ' ' + ISNULL(s.Apellidos,''))) AS socio,
+                   rc.Concepto, rc.UsuarioId,
+                   CASE WHEN rc.Debe > 0 THEN 'INGRESO' ELSE 'EGRESO' END AS sentido,
+                   (rc.Debe + rc.Haber) AS monto
+            FROM dbo.RegistroContable rc
+            LEFT JOIN dbo.RegistroSocios s ON s.SOCIOID = rc.SocioId
+            WHERE rc.CuentaContable = '110105'
+              AND (rc.Debe + rc.Haber) >= @umbral
+            ORDER BY rc.Fecha DESC, rc.AsientoId DESC
+          `),
+        pool.request()
+          .input('umbral', sql.Decimal(15, 2), UMBRAL_ACUMULADO)
+          .query(`
+            SELECT anio, mes, Identificacion, TipoIdentificacion, socio, operaciones, montoAcumulado
+            FROM (
+              SELECT YEAR(rc.Fecha) AS anio, MONTH(rc.Fecha) AS mes,
+                     s.Identificacion, s.TipoIdentificacion,
+                     LTRIM(RTRIM(ISNULL(s.PrimerNombre,'') + ' ' + ISNULL(s.Apellidos,''))) AS socio,
+                     COUNT(*) AS operaciones,
+                     SUM(rc.Debe + rc.Haber) AS montoAcumulado
+              FROM dbo.RegistroContable rc
+              LEFT JOIN dbo.RegistroSocios s ON s.SOCIOID = rc.SocioId
+              WHERE rc.CuentaContable = '110105' AND rc.SocioId IS NOT NULL
+              GROUP BY YEAR(rc.Fecha), MONTH(rc.Fecha), s.Identificacion, s.TipoIdentificacion,
+                       LTRIM(RTRIM(ISNULL(s.PrimerNombre,'') + ' ' + ISNULL(s.Apellidos,'')))
+            ) t
+            WHERE montoAcumulado >= @umbral
+            ORDER BY anio DESC, mes DESC, montoAcumulado DESC
+          `),
+      ]);
+
+      return res.json({
+        ok: true,
+        fecha: new Date().toISOString().split('T')[0],
+        umbrales: { individual: UMBRAL_INDIVIDUAL, acumuladoMensual: UMBRAL_ACUMULADO },
+        individuales: individuales.recordset.map(r => ({
+          asientoId: r.AsientoId,
+          fecha: r.fecha,
+          identificacion: r.Identificacion || null,
+          tipoIdentificacion: r.TipoIdentificacion || null,
+          socio: (r.socio || '').trim() || null,
+          concepto: r.Concepto,
+          usuarioId: r.UsuarioId,
+          sentido: r.sentido,
+          monto: parseFloat(r.monto || 0),
+        })),
+        acumuladas: acumuladas.recordset.map(r => ({
+          periodo: `${r.anio}-${String(r.mes).padStart(2, '0')}`,
+          identificacion: r.Identificacion || null,
+          tipoIdentificacion: r.TipoIdentificacion || null,
+          socio: (r.socio || '').trim() || null,
+          operaciones: r.operaciones,
+          montoAcumulado: parseFloat(r.montoAcumulado || 0),
+        })),
+      });
+    }
+
+    if (type === 'sp_esf_seps') {
+      // Estado de Situación Financiera (ESF) — agrupado por rubro (nivel de 2 dígitos del
+      // Catálogo Único SEPS: 11 Fondos Disponibles, 14 Cartera de Créditos, 21 Obligaciones
+      // con el Público, 31 Capital Social, etc.). Estructura verificada contra la jerarquía
+      // real del catálogo cargado en dbo.PlanCuentas (ver db/sqlserver/26-27), que es la
+      // organización oficial SEPS (Activo 1/11-19, Pasivo 2/21-29, Patrimonio 3/31-36).
+      // Cuentas de provisión (contra-activo, ej. 149910) quedan dentro del mismo rubro de su
+      // grupo (14) y se netean automáticamente al sumar Debe-Haber de todas las cuentas del
+      // rubro -- no requieren tratamiento especial.
+      const [rubros, huerfanas] = await Promise.all([
+        pool.request().query(`
+          ;WITH Saldos AS (
+            SELECT LEFT(pc.Codigo, 2) AS GrupoCodigo, pc.TipoCuenta,
+                   SUM(rc.Debe) AS Debe, SUM(rc.Haber) AS Haber
+            FROM dbo.RegistroContable rc
+            JOIN dbo.PlanCuentas pc ON pc.Codigo = rc.CuentaContable
+            WHERE pc.TipoCuenta IN ('ACTIVO','PASIVO','PATRIMONIO','INGRESO','GASTO')
+            GROUP BY LEFT(pc.Codigo, 2), pc.TipoCuenta
+          )
+          SELECT s.GrupoCodigo AS codigo, g.Nombre AS nombre, s.TipoCuenta AS tipoCuenta,
+                 s.Debe AS debe, s.Haber AS haber
+          FROM Saldos s
+          JOIN dbo.PlanCuentas g ON g.Codigo = s.GrupoCodigo
+          ORDER BY s.GrupoCodigo
+        `),
+        pool.request().query(`
+          SELECT DISTINCT rc.CuentaContable
+          FROM dbo.RegistroContable rc
+          LEFT JOIN dbo.PlanCuentas pc ON pc.Codigo = rc.CuentaContable
+          WHERE pc.CuentaContableId IS NULL
+        `),
+      ]);
+
+      const activo = [], pasivo = [], patrimonio = [];
+      let totalActivo = 0, totalPasivo = 0, totalPatrimonio = 0, totalIngresos = 0, totalGastos = 0;
+
+      for (const r of rubros.recordset) {
+        const debe = parseFloat(r.debe || 0), haber = parseFloat(r.haber || 0);
+        if (r.tipoCuenta === 'ACTIVO') {
+          const monto = debe - haber;
+          activo.push({ codigo: r.codigo, nombre: r.nombre, monto });
+          totalActivo += monto;
+        } else if (r.tipoCuenta === 'PASIVO') {
+          const monto = haber - debe;
+          pasivo.push({ codigo: r.codigo, nombre: r.nombre, monto });
+          totalPasivo += monto;
+        } else if (r.tipoCuenta === 'PATRIMONIO') {
+          const monto = haber - debe;
+          patrimonio.push({ codigo: r.codigo, nombre: r.nombre, monto });
+          totalPatrimonio += monto;
+        } else if (r.tipoCuenta === 'INGRESO') {
+          totalIngresos += (haber - debe);
+        } else if (r.tipoCuenta === 'GASTO') {
+          totalGastos += (debe - haber);
+        }
+      }
+
+      // Resultado del ejercicio (utilidad/pérdida no distribuida) se muestra como línea de
+      // Patrimonio aunque todavía no haya un asiento formal de cierre de período -- es la
+      // misma convención que usa la fórmula PERLAS de Patrimonio Técnico ({5}-{4}).
+      const resultadoEjercicio = totalIngresos - totalGastos;
+      totalPatrimonio += resultadoEjercicio;
+
+      const totalPasivoMasPatrimonio = totalPasivo + totalPatrimonio;
+      const diferencia = Math.round((totalActivo - totalPasivoMasPatrimonio) * 100) / 100;
+
+      return res.json({
+        ok: true,
+        fecha: new Date().toISOString().split('T')[0],
+        activo, totalActivo,
+        pasivo, totalPasivo,
+        patrimonio, resultadoEjercicio, totalPatrimonio,
+        totalPasivoMasPatrimonio,
+        cuadrado: Math.abs(diferencia) < 0.01,
+        diferencia,
+        cuentasSinCatalogar: huerfanas.recordset.map(r => r.CuentaContable),
+      });
+    }
+
+    if (type === 'sp_indicadores_perlas') {
+      // Indicadores financieros SEPS ("Límites de Riesgo", alineados con la metodología
+      // PERLAS de WOCCU). Las fórmulas marcadas `exacto: true` son las mismas que están
+      // escritas en el motor de indicadores del core real (bcaindi), expresadas sobre saldos
+      // del Catálogo Único: p.ej. LIQUIDEZ = ({11}+{13}) / ({2101}+{2103}), ROA = ({5}-{4})/{1}.
+      //
+      // SOLVENCIA se marca `exacto: false` a propósito: el indicador regulatorio real es
+      // Patrimonio Técnico Constituido / Activos Ponderados por Riesgo, y la ponderación por
+      // riesgo de cada familia de activo no está parametrizada todavía en este sistema. Se
+      // publica la razón Patrimonio/Activo como aproximación DECLARADA, nunca presentándola
+      // como el índice de solvencia regulatorio -- reportar un número de solvencia mal
+      // calculado sería peor que declararlo pendiente.
+      const saldos = await pool.request().query(`
+        SELECT LEFT(pc.Codigo, 4) AS c4, LEFT(pc.Codigo, 2) AS c2, LEFT(pc.Codigo, 1) AS c1,
+               pc.TipoCuenta, SUM(rc.Debe) AS Debe, SUM(rc.Haber) AS Haber
         FROM dbo.RegistroContable rc
-        WHERE (rc.Debe >= 5000 OR rc.Haber >= 5000)
-        ORDER BY rc.AsientoId DESC
+        JOIN dbo.PlanCuentas pc ON pc.Codigo = rc.CuentaContable
+        GROUP BY LEFT(pc.Codigo, 4), LEFT(pc.Codigo, 2), LEFT(pc.Codigo, 1), pc.TipoCuenta
       `);
-      return res.json(result.recordset.map(r => ({
-        code: String(r.code), name: `${r.name} | Cta:${r.NumeroCuenta} | ${r.fecha}`,
-        balance: parseFloat(r.balance || 0)
-      })));
+
+      // Saldo natural por prefijo: activo/gasto = Debe-Haber; pasivo/patrimonio/ingreso = Haber-Debe.
+      const saldoPrefijo = (prefijo) => {
+        let total = 0;
+        for (const r of saldos.recordset) {
+          const codigo = prefijo.length <= 1 ? r.c1 : (prefijo.length <= 2 ? r.c2 : r.c4);
+          if (codigo !== prefijo) continue;
+          const debe = parseFloat(r.Debe || 0), haber = parseFloat(r.Haber || 0);
+          total += (r.TipoCuenta === 'ACTIVO' || r.TipoCuenta === 'GASTO') ? (debe - haber) : (haber - debe);
+        }
+        return total;
+      };
+
+      const activoTotal    = saldoPrefijo('1');
+      const patrimonio     = saldoPrefijo('3');
+      const ingresos       = saldoPrefijo('5');
+      const gastos         = saldoPrefijo('4');
+      const resultado      = ingresos - gastos;
+      const fondosDisp     = saldoPrefijo('11');
+      const inversiones    = saldoPrefijo('13');
+      const cartera        = saldoPrefijo('14');
+      const depVista       = saldoPrefijo('2101');
+      const depPlazo       = saldoPrefijo('2103');
+      // Cartera improductiva según CONTABILIDAD = no devenga intereses (141x) + vencida (142x).
+      const carteraImprodContable = ['1411','1412','1413','1414','1415','1416','1417','1418',
+                                     '1421','1422','1423','1424','1425','1426','1427','1428']
+                                     .reduce((s, p) => s + saldoPrefijo(p), 0);
+
+      // Cartera improductiva según OPERACIÓN (tabla de amortización real): cuotas efectivamente
+      // vencidas + saldo de operaciones en mora que dejó de devengar. Esta es la fuente de
+      // verdad de la morosidad mientras no exista el proceso mensual de reclasificación
+      // contable de cartera entre bandas/estados (ver db/sqlserver/29_...sql). Si sólo se
+      // leyera contabilidad, una cartera 100% en mora podría reportar 0% de morosidad.
+      const opRes = await pool.request().query(`
+        ;WITH Cuotas AS (
+          SELECT c.CreditoID, j.number, j.capital,
+                 DATEADD(MONTH, j.number, c.FechaDesembolso) AS FechaVenceCuota
+          FROM dbo.Creditos c
+          JOIN dbo.SolicitudesCredito s ON s.SolicitudID = c.SolicitudID
+          CROSS APPLY OPENJSON(s.PlanPagos) WITH (
+            number INT '$.number', capital DECIMAL(15,2) '$.capital', status NVARCHAR(20) '$.status'
+          ) j
+          WHERE c.Estado = 'VIGENTE' AND ISNULL(j.status,'') <> 'PAGADO'
+        ),
+        Clasificadas AS (
+          SELECT capital,
+                 DATEDIFF(DAY, FechaVenceCuota, CAST(GETDATE() AS DATE)) AS DiasMora,
+                 MAX(CASE WHEN FechaVenceCuota < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END)
+                   OVER (PARTITION BY CreditoID) AS OperacionEnMora
+          FROM Cuotas
+        )
+        SELECT
+          SUM(capital) AS carteraBruta,
+          SUM(CASE WHEN DiasMora > 0 OR OperacionEnMora = 1 THEN capital ELSE 0 END) AS improductiva
+        FROM Clasificadas
+      `);
+      const carteraBrutaOp = parseFloat((opRes.recordset[0] || {}).carteraBruta || 0);
+      const carteraImprod  = parseFloat((opRes.recordset[0] || {}).improductiva || 0);
+      // El patrimonio contable todavía no incorpora el resultado del período (no hay asiento
+      // de cierre), así que se le suma para los ratios -- misma convención que el ESF.
+      const patrimonioConResultado = patrimonio + resultado;
+
+      const ratio = (num, den) => (den && Math.abs(den) > 0.001) ? (num / den) * 100 : null;
+      const r2 = (v) => v === null ? null : Math.round(v * 100) / 100;
+
+      const indicadores = [
+        { categoria: 'LIQUIDEZ', nombre: 'Indicador de Liquidez',
+          formula: '(Fondos disponibles {11} + Inversiones {13}) / (Depósitos a la vista {2101} + Depósitos a plazo {2103})',
+          valor: r2(ratio(fondosDisp + inversiones, depVista + depPlazo)), unidad: '%', exacto: true },
+        { categoria: 'CALIDAD DE ACTIVOS', nombre: 'Morosidad Ampliada',
+          formula: 'Cartera improductiva (cuotas vencidas + saldo que dejó de devengar) / Cartera bruta. Calculada sobre la tabla de amortización real, no sobre la clasificación contable, porque el proceso mensual de reclasificación de cartera aún no existe.',
+          valor: r2(ratio(carteraImprod, carteraBrutaOp)), unidad: '%', exacto: true },
+        { categoria: 'CALIDAD DE ACTIVOS', nombre: 'Participación de Cartera en el Activo',
+          formula: 'Cartera de créditos {14} / Activo total {1}',
+          valor: r2(ratio(cartera, activoTotal)), unidad: '%', exacto: true },
+        { categoria: 'RENTABILIDAD', nombre: 'ROA (Rendimiento sobre Activos)',
+          formula: '(Ingresos {5} − Gastos {4}) / Activo total {1}',
+          valor: r2(ratio(resultado, activoTotal)), unidad: '%', exacto: true },
+        { categoria: 'RENTABILIDAD', nombre: 'ROE (Rendimiento sobre Patrimonio)',
+          formula: '(Ingresos {5} − Gastos {4}) / Patrimonio {3}',
+          valor: r2(ratio(resultado, patrimonioConResultado)), unidad: '%', exacto: true },
+        { categoria: 'RENTABILIDAD', nombre: 'Grado de Absorción del Margen Financiero',
+          formula: 'Gastos de operación {45} / Margen financiero (Ingresos {5} − Intereses causados {41})',
+          valor: r2(ratio(saldoPrefijo('45'), ingresos - saldoPrefijo('41'))), unidad: '%', exacto: true },
+        { categoria: 'SOLVENCIA', nombre: 'Patrimonio sobre Activo (aproximación)',
+          formula: 'Patrimonio {3} / Activo total {1}. NO es el índice regulatorio de solvencia: ese exige Patrimonio Técnico Constituido sobre Activos Ponderados por Riesgo, cuyas ponderaciones aún no están parametrizadas.',
+          valor: r2(ratio(patrimonioConResultado, activoTotal)), unidad: '%', exacto: false },
+      ];
+
+      // Control de reconciliación cartera contable vs cartera operativa. Se publica siempre,
+      // aunque cuadre, porque es justamente el control que una revisión SEPS pide ver.
+      const difCartera = Math.round((cartera - carteraBrutaOp) * 100) / 100;
+      const difImprod  = Math.round((carteraImprodContable - carteraImprod) * 100) / 100;
+      const alertas = [];
+      if (Math.abs(difCartera) >= 0.01) {
+        alertas.push(`El saldo de cartera contable ($${cartera.toFixed(2)}) no coincide con el saldo de cartera de la tabla de amortización ($${carteraBrutaOp.toFixed(2)}): diferencia $${difCartera.toFixed(2)}.`);
+      }
+      if (Math.abs(difImprod) >= 0.01) {
+        alertas.push(`La cartera improductiva registrada en contabilidad ($${carteraImprodContable.toFixed(2)}) no coincide con la real según vencimientos ($${carteraImprod.toFixed(2)}). Falta el proceso mensual de reclasificación de cartera entre por vencer / no devenga / vencida.`);
+      }
+
+      return res.json({
+        ok: true,
+        fecha: new Date().toISOString().split('T')[0],
+        indicadores,
+        reconciliacion: {
+          carteraContable: Math.round(cartera * 100) / 100,
+          carteraOperativa: Math.round(carteraBrutaOp * 100) / 100,
+          diferenciaCartera: difCartera,
+          improductivaContable: Math.round(carteraImprodContable * 100) / 100,
+          improductivaOperativa: Math.round(carteraImprod * 100) / 100,
+          diferenciaImproductiva: difImprod,
+          alertas,
+        },
+        insumos: {
+          activoTotal: Math.round(activoTotal * 100) / 100,
+          patrimonio: Math.round(patrimonioConResultado * 100) / 100,
+          cartera: Math.round(cartera * 100) / 100,
+          carteraImproductiva: Math.round(carteraImprod * 100) / 100,
+          fondosDisponibles: Math.round(fondosDisp * 100) / 100,
+          inversiones: Math.round(inversiones * 100) / 100,
+          depositosVista: Math.round(depVista * 100) / 100,
+          depositosPlazo: Math.round(depPlazo * 100) / 100,
+          ingresos: Math.round(ingresos * 100) / 100,
+          gastos: Math.round(gastos * 100) / 100,
+          resultadoEjercicio: Math.round(resultado * 100) / 100,
+        },
+      });
     }
 
     return res.json([]);
@@ -2037,7 +2445,7 @@ app.post('/api/socios/loans/disburse', requireAuth, requireSelf('usuarioId'), as
         // Asiento 1: Debe en Cartera de Créditos Vigentes (1.2.01) por el capital completo solicitado (Activo)
         await transaction.request()
           .input('socioId', sql.BigInt, account.SocioId)
-          .input('cuentaContable', sql.NVarChar(20), '143110')
+          .input('cuentaContable', sql.NVarChar(20), '140205')
           .input('concepto', sql.NVarChar(200), concept)
           .input('debe', sql.Decimal(18, 2), loanAmount)
           .input('haber', sql.Decimal(18, 2), 0.00)
@@ -2479,7 +2887,7 @@ app.post('/api/socios/loans/pay-dividend', async (req, res) => {
       // Asiento 2: Haber en Cartera de Crédito Vigente (disminuye activo) por el capital
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '143110')
+        .input('cuentaContable', sql.NVarChar(20), '140205')
         .input('concepto', sql.NVarChar(200), payConcept)
         .input('debe', sql.Decimal(18, 2), 0.00)
         .input('haber', sql.Decimal(18, 2), targetInst.capital)
@@ -3669,7 +4077,7 @@ app.post('/api/socios/loans/anular', requireAuth, requireSelf('usuarioId'), asyn
       // Revert seat 1: Haber in Cartera de Créditos Vigentes (1.2.01) for Monto (capital)
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '143110')
+        .input('cuentaContable', sql.NVarChar(20), '140205')
         .input('concepto', sql.NVarChar(200), concept)
         .input('debe', sql.Decimal(18, 2), 0.00)
         .input('haber', sql.Decimal(18, 2), loanAmount)
@@ -3913,7 +4321,7 @@ app.post('/api/socios/loans/anular-pago', requireAuth, requireSelf('usuarioId'),
       // Revert Asiento 2: Debe en Cartera de Crédito Vigente (aumenta activo) por el capital
       await transaction.request()
         .input('socioId', sql.BigInt, account.SocioId)
-        .input('cuentaContable', sql.NVarChar(20), '143110')
+        .input('cuentaContable', sql.NVarChar(20), '140205')
         .input('concepto', sql.NVarChar(200), revConcept)
         .input('debe', sql.Decimal(18, 2), targetInst.capital)
         .input('haber', sql.Decimal(18, 2), 0.00)
