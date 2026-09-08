@@ -127,7 +127,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ rates, config, onApply
       try {
         const response = await fetch('/api/socios/loans', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
           body: JSON.stringify(newLoan)
         });
         const data = await response.json();

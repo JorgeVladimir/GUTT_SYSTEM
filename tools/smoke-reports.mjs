@@ -68,17 +68,30 @@ const checks = {
   },
 };
 
-let fallos = 0;
-console.log(`Smoke test reportería SEPS — ${API_BASE}\n`);
-for (const [type, fn] of Object.entries(checks)) {
-  try {
-    const { ok, detalle } = await fn();
-    if (!ok) fallos++;
-    console.log(`${ok ? 'PASS' : 'FAIL'}  ${type.padEnd(22)} ${detalle}`);
-  } catch (err) {
-    fallos++;
-    console.log(`FAIL  ${type.padEnd(22)} ${err.message}`);
+// Contrato { passed, failed, errors } para que test-all.js pueda incluirlo como una suite
+// más. Antes esto solo servía corriéndolo a mano, y por eso no formaba parte del `npm test`
+// que se supone que hay que correr antes de desplegar.
+export async function runTests() {
+  let fallos = 0, pasadas = 0;
+  const errores = [];
+  console.log(`Smoke test reportería SEPS — ${API_BASE}\n`);
+  for (const [type, fn] of Object.entries(checks)) {
+    try {
+      const { ok, detalle } = await fn();
+      if (ok) pasadas++; else { fallos++; errores.push(`${type}: ${detalle}`); }
+      console.log(`${ok ? 'PASS' : 'FAIL'}  ${type.padEnd(22)} ${detalle}`);
+    } catch (err) {
+      fallos++;
+      errores.push(`${type}: ${err.message}`);
+      console.log(`FAIL  ${type.padEnd(22)} ${err.message}`);
+    }
   }
+  console.log(`\n${pasadas}/${Object.keys(checks).length} PASS`);
+  return { passed: pasadas, failed: fallos, errors: errores };
 }
-console.log(`\n${Object.keys(checks).length - fallos}/${Object.keys(checks).length} PASS`);
-process.exitCode = fallos ? 1 : 0;
+
+import { pathToFileURL } from 'url';
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const r = await runTests();
+  process.exitCode = r.failed ? 1 : 0;
+}

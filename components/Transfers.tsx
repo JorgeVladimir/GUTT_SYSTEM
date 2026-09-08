@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, AccountType } from '../types';
+import { DataService } from '../services/dataService';
 import { Search, UserPlus, CreditCard, ArrowRight, ShieldCheck, Info, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface TransfersProps {
@@ -38,9 +39,13 @@ export const Transfers: React.FC<TransfersProps> = ({ user }) => {
     setResultados([]);
     setError('');
     try {
-      const res = await fetch(`/api/socios/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await fetch(`/api/socios/buscar?q=${encodeURIComponent(searchQuery.trim())}`, {
+        headers: DataService.authHeaders(),
+      });
       const data = await res.json();
-      const socios: BeneficiarioEncontrado[] = (data || [])
+      // La respuesta es { ok, data: Socio[] }, no un arreglo plano -- ver DataService/dataService.ts
+      // y el mismo contrato en server.js/server.gutt_system.js (`return res.json({ ok: true, data: socios })`).
+      const socios: BeneficiarioEncontrado[] = (data?.data || [])
         .filter((s: any) => s.id !== user.id)
         .flatMap((s: any) =>
           (s.accounts || [])
@@ -68,7 +73,7 @@ export const Transfers: React.FC<TransfersProps> = ({ user }) => {
     try {
       const res = await fetch('/api/socios/transferir', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
         body: JSON.stringify({
           cuentaOrigenId,
           cuentaDestinoId: beneficiario.cuentaId,

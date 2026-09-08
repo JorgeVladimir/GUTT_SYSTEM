@@ -4,6 +4,53 @@ Este documento sirve como memoria técnica ("Engram") para preservar las reglas 
 
 ---
 
+## 0. Suite completa — `npm test`
+
+Con el backend arriba en `localhost:5005`:
+
+```bash
+npm test              # 8 suites, 55 pruebas
+npm run test:reportes # solo los 6 reportes SEPS
+npm run test:cartera  # solo el proceso de cartera y la solvencia
+```
+
+| Suite | Pruebas | Qué cubre |
+|---|---|---|
+| Conectividad | 5 | SQL Server, endpoints base, salud |
+| Registro/Login | 7 | flujo completo de banca en línea (sección 2) |
+| Créditos | 6 | solicitud → aprobación → desembolso, con roles reales |
+| Seguridad | 4 | 401 sin sesión, 403 sin permiso, firma de token, suplantación |
+| DPF | 6 | depósitos a plazo: alta, liquidación, cancelación, renovación |
+| Caja | 5 | apertura/cierre, validaciones, reporte consolidado |
+| Reportes SEPS | 6 | los 6 reportes, verificando que **cuadren**, no solo que respondan |
+| Cartera SEPS | 16 | simula, aplica, verifica saldos, provisión, morosidad, reversa |
+
+### Dos cosas que estas pruebas aprendieron a hacer bien
+
+**Distinguir 401 de 403.** Sin sesión el servidor responde **401**; con sesión válida pero rol
+sin autorización responde **403**. Las pruebas comprueban las dos capas por separado. Mezclarlas
+hace que una regresión de permisos pase inadvertida detrás de un 401. Los helpers están en
+`test-helpers.js` (`conSesion`, `sinSesion`, `tokenFalsificado`).
+
+**No dar por ruido un test que falla.** Cuatro pruebas fallaban desde que el sistema ganó
+autenticación JWT, porque no mandaban token. Parecían obsoletas y lo eran — pero detrás del 401
+estaba escondido un bug real: `20_ice_seps.sql` nunca se había ejecutado contra la base y **la
+aprobación de créditos estaba caída por completo**, escribiendo cinco columnas `ICE*`
+inexistentes. Arreglar las pruebas fue lo que lo destapó.
+
+### Verificaciones que no son "responde 200"
+
+- **Cartera**: después de aplicar el proceso se lee el balance de comprobación y se comprueba
+  que **cada cuenta** quedó en el saldo objetivo, que la provisión constituida es la requerida
+  por calificación, que el ESF sigue cuadrando, que no se puede aplicar dos veces el mismo corte
+  y que la reversa devuelve los saldos **al centavo** al punto de partida.
+- **Bandas**: se verifica que salgan del Catálogo Único y no de una tabla escrita a mano —
+  concretamente que `1423` (vivienda vencida) tenga sus **seis** bandas.
+- **Reportes**: se comprueba que el balance de comprobación cuadre Debe = Haber y que no haya
+  cuentas fuera del catálogo.
+
+---
+
 ## 1. Arquitectura de Activación de Banca en Línea
 
 La activación digital opera a través de dos tablas sincronizadas en SQL Server:

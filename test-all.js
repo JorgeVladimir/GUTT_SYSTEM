@@ -11,6 +11,10 @@ import { runTests as testCreditos      } from './test-credit-workflow.js';
 import { runTests as testSeguridad     } from './security_test_suite.js';
 import { runTests as testDPF           } from './test-dpf-workflow.js';
 import { runTests as testCaja          } from './test-caja.js';
+// Reportería SEPS y procesos de cierre. Vivían solo como scripts de tools/ que había que
+// acordarse de correr a mano; ahora entran en el `npm test` que se corre antes de desplegar.
+import { runTests as testReportesSeps  } from './tools/smoke-reports.mjs';
+import { runTests as testCarteraSeps   } from './tools/smoke-cartera.mjs';
 
 const API_HEALTH = 'http://localhost:5005/api/health';
 
@@ -71,6 +75,10 @@ async function main() {
     { nombre: 'Seguridad',     fn: testSeguridad     },
     { nombre: 'DPF',           fn: testDPF           },
     { nombre: 'Caja',          fn: testCaja          },
+    { nombre: 'Reportes SEPS', fn: testReportesSeps  },
+    // Va al final a propósito: aplica y luego reversa un asiento real de reclasificación,
+    // así que conviene que las demás suites hayan corrido sobre saldos estables.
+    { nombre: 'Cartera SEPS',  fn: testCarteraSeps   },
   ];
 
   const resultados = [];

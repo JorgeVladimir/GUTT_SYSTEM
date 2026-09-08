@@ -19,6 +19,7 @@ import { ProfileView } from './components/ProfileView';
 import { ReportsSociosCreditos } from './components/ReportsSociosCreditos';
 import { CarteraCreditoView, CarteraCreditoCache } from './components/CarteraCreditoView';
 import { CarteraMensualView, CarteraMensualCache } from './components/CarteraMensualView';
+import { ReclasificacionCarteraView } from './components/ReclasificacionCarteraView';
 import { CarteraPlazoFijoView, CarteraPlazoFijoCache } from './components/CarteraPlazoFijoView';
 import { UtilidadRentabilidadView } from './components/UtilidadRentabilidadView';
 import { INITIAL_RATES, DEFAULT_CONFIG } from './constants';
@@ -839,6 +840,7 @@ export default function App() {
         {view === AppView.CARTERA_CREDITO && <CarteraCreditoView currentUser={currentUser || undefined} cachedData={carteraCreditoCache} onDataLoaded={setCarteraCreditoCache} />}
         {view === AppView.CARTERA_MENSUAL && <CarteraMensualView currentUser={currentUser || undefined} cachedData={carteraMensualCache} onDataLoaded={setCarteraMensualCache} />}
         {view === AppView.CARTERA_PLAZO_FIJO && <CarteraPlazoFijoView currentUser={currentUser || undefined} cachedData={carteraPlazoFijoCache} onDataLoaded={setCarteraPlazoFijoCache} />}
+        {view === AppView.RECLASIFICACION_CARTERA && <ReclasificacionCarteraView currentUser={currentUser || undefined} />}
         {view === AppView.UTILIDAD_RENTABILIDAD && <UtilidadRentabilidadView currentUser={currentUser || undefined} cachedData={utilidadRentabilidadCache} onDataLoaded={setUtilidadRentabilidadCache} />}
         {view === AppView.PROFILE && currentUser && <ProfileView user={currentUser} onUpdateUser={(updated) => { handleUpdateUser(updated); setCurrentUser(updated); }} />}
         {currentUser?.role === UserRole.MEMBER && <ChatAssistant user={currentUser} currentBalance={currentUser.accounts[0]?.balance} transactions={currentUser.transactions} />}

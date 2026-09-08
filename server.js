@@ -14,10 +14,19 @@ import { spawn } from 'child_process';
 import { createInterface } from 'readline';
 import sql from 'mssql';
 import pg from 'pg';
-import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+// Motor único de clasificación de cartera y solvencia. Lo comparten el proceso mensual
+// de reclasificación y los reportes SEPS, para que no puedan dar números distintos.
+import {
+  clasificarCartera, calcularReclasificacion, calcularProvisiones, calcularSolvencia,
+  cargarBandasCartera, CUENTA_REVERSION_PROVISION, PREFIJOS_CARTERA,
+  TOLERANCIA_DESCUADRE_ABS, TOLERANCIA_DESCUADRE_PCT,
+} from './services/carteraSeps.js';
+// Única salida de correo del sistema. Devuelve el resultado del envío en vez de
+// tragárselo, que era la razón por la que "el correo no sale" no dejaba rastro.
+import { enviarCorreo, verificarSmtp, configuracionSmtp, plantillaCorreo } from './services/mailer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require   = createRequire(import.meta.url);
@@ -274,6 +283,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Lista blanca de roles. A diferencia de la aprobación de créditos --que solo BLOQUEA
+// CREDIT_OFFICER y deja pasar a cualquier otro rol--, los procesos contables de cierre
+// se restringen explícitamente: enumerar quién SÍ puede es lo que una revisión SEPS
+// pide poder leer en el código. Debe usarse siempre después de requireAuth.
+function requireRoles(...roles) {
+  const permitidos = roles.map(r => r.toUpperCase());
+  return (req, res, next) => {
+    const rol = ((req.actor || {}).rol || '').toUpperCase();
+    if (!permitidos.includes(rol)) {
+      return res.status(403).json({
+        ok: false,
+        error: `Esta acción requiere uno de estos roles: ${permitidos.join(', ')}. Su rol es ${rol || 'desconocido'}.`,
+      });
+    }
+    next();
+  };
+}
+
 // ─── 4.5 Auditoría estructurada por proceso (dbo.AuditoriaProcesos, ver db/sqlserver/23_auditoria_procesos.sql) ──
 // Complementa (no reemplaza) dbo.AuditoriaUsuarios: captura entidad/campo/valor anterior-nuevo por
 // proceso de negocio (CREDITOS, CAJA, AHORROS, PLAZO_FIJO, CONTABILIDAD, SOCIOS, SEGURIDAD, REPORTES_SEPS).
@@ -487,57 +514,38 @@ function inferAccountType(code, desc) {
 }
 
 // ─── 6.5 Enviar Correo de Verificación ──────────────────────────────────────
+// Devuelve el resultado del envío en vez de tragárselo. Quien llama decide si un
+// correo no enviado invalida el caso de uso; antes esto respondía siempre "ok".
 async function sendVerificationEmail(email, code, name) {
   const cleanEmail = (email || '').trim();
   const cleanName = (name || 'Socio').trim();
-  
-  console.log('================================================================');
-  console.log(`📧 [MOCK EMAIL SENDER]`);
-  console.log(`Para: ${cleanEmail}`);
-  console.log(`Asunto: Código de Activación - Banca Móvil Gutt`);
-  console.log(`Mensaje: Estimado(a) ${cleanName}, su código de activación es: ${code}`);
-  console.log('================================================================');
 
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT || 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const resultado = await enviarCorreo({
+    para: cleanEmail,
+    asunto: 'Código de Activación de Banca en Línea',
+    texto: `Estimado(a) ${cleanName}, su código de activación es: ${code}`,
+    html: plantillaCorreo('Código de activación', `
+      <p>Estimado(a) <strong>${cleanName}</strong>,</p>
+      <p>Para ingresar a su banca en línea debe validar su correo electrónico ingresando el código de confirmación de 6 dígitos:</p>
+      <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <span style="font-size: 28px; font-weight: bold; color: #047857; letter-spacing: 5px;">${code}</span>
+      </div>
+      <p>De la misma manera, recuerde que su PIN temporal de ingreso registrado es de 4 dígitos.</p>
+    `),
+  });
 
-  if (host && user && pass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host,
-        port: parseInt(port, 10),
-        secure: port == 465,
-        auth: { user, pass }
-      });
-
-      await transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME || 'Gutt System'}" <${process.env.SMTP_FROM_EMAIL || user}>`,
-        to: cleanEmail,
-        subject: 'Código de Activación de Banca en Línea',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-            <h2 style="color: #005930; text-align: center;">GUTT SYSTEM</h2>
-            <p>Estimado(a) <strong>${cleanName}</strong>,</p>
-            <p>Para ingresar a su banca en línea debe validar su correo electrónico ingresando el código de confirmación de 6 dígitos:</p>
-            <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 28px; font-weight: bold; color: #047857; letter-spacing: 5px;">${code}</span>
-            </div>
-            <p>De la misma manera, recuerde que su PIN temporal de ingreso registrado es de 4 dígitos.</p>
-            <p style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-              Este es un correo automático, por favor no responda a este mensaje.
-            </p>
-          </div>
-        `
-      });
-      console.log(`✅ Correo real enviado exitosamente a ${cleanEmail}`);
-    } catch (err) {
-      console.error(`❌ Error al enviar correo real:`, err.message);
-    }
+  if (resultado.enviado) {
+    console.log(`✅ Código de activación enviado a ${cleanEmail} (${resultado.messageId})`);
   } else {
-    console.log(`ℹ️ SMTP no configurado. El correo se simuló en consola.`);
+    // El código se registra en consola SOLO cuando no hubo envío real, para que la
+    // demo siga siendo operable, y con la causa a la vista en vez de un "se simuló".
+    console.warn('================================================================');
+    console.warn(`⚠️  CÓDIGO DE ACTIVACIÓN NO ENVIADO POR CORREO — ${resultado.motivo}`);
+    console.warn(`    ${resultado.error}`);
+    console.warn(`    Para: ${cleanEmail} · Socio: ${cleanName} · Código: ${code}`);
+    console.warn('================================================================');
   }
+  return resultado;
 }
 
 // ─── 6.6 Enviar Correo de Recuperación de Contraseña ────────────────────────
@@ -551,55 +559,37 @@ const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL || 'https://cony-desarrollo.t
 async function sendPasswordResetEmail(usuarioId, nombre, token) {
   const resetLink = `${PUBLIC_APP_URL}/?resetToken=${encodeURIComponent(token)}`;
 
-  console.log('================================================================');
-  console.log(`🔑 [SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA]`);
-  console.log(`Usuario: ${usuarioId} (${nombre})`);
-  console.log(`Autorizar en: ${resetLink}`);
-  console.log('================================================================');
+  const resultado = await enviarCorreo({
+    para: PASSWORD_RECOVERY_EMAIL,
+    asunto: `Solicitud de recuperación de contraseña - Usuario ${usuarioId}`,
+    texto: `Se solicitó restablecer la contraseña de ${usuarioId} (${nombre}). Autorizar en: ${resetLink}`,
+    html: plantillaCorreo('Solicitud de recuperación de contraseña', `
+      <p>Se solicitó restablecer la contraseña del usuario:</p>
+      <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Usuario:</strong> ${usuarioId}</p>
+        <p style="margin: 0;"><strong>Nombre:</strong> ${nombre}</p>
+      </div>
+      <p>Para autorizar y definir la nueva contraseña, ingrese al siguiente enlace (válido por 1 hora):</p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${resetLink}" style="background-color: #14532D; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold;">Restablecer Contraseña</a>
+      </div>
+      <p>Si usted no solicitó este cambio, ignore este mensaje.</p>
+    `),
+  });
 
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT || 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (host && user && pass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host,
-        port: parseInt(port, 10),
-        secure: port == 465,
-        auth: { user, pass }
-      });
-
-      await transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME || 'Gutt System'}" <${process.env.SMTP_FROM_EMAIL || user}>`,
-        to: PASSWORD_RECOVERY_EMAIL,
-        subject: `Solicitud de recuperación de contraseña - Usuario ${usuarioId}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-            <h2 style="color: #14532D; text-align: center;">GUTT SYSTEM</h2>
-            <p>Se solicitó restablecer la contraseña del usuario:</p>
-            <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0;"><strong>Usuario:</strong> ${usuarioId}</p>
-              <p style="margin: 0;"><strong>Nombre:</strong> ${nombre}</p>
-            </div>
-            <p>Para autorizar y definir la nueva contraseña, ingrese al siguiente enlace (válido por 1 hora):</p>
-            <div style="text-align: center; margin: 25px 0;">
-              <a href="${resetLink}" style="background-color: #14532D; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold;">Restablecer Contraseña</a>
-            </div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-              Si usted no solicitó este cambio, ignore este mensaje. Este es un correo automático, por favor no responda.
-            </p>
-          </div>
-        `
-      });
-      console.log(`✅ Correo de recuperación enviado a ${PASSWORD_RECOVERY_EMAIL}`);
-    } catch (err) {
-      console.error(`❌ Error al enviar correo de recuperación:`, err.message);
-    }
+  if (resultado.enviado) {
+    console.log(`✅ Correo de recuperación enviado a ${PASSWORD_RECOVERY_EMAIL} (${resultado.messageId})`);
   } else {
-    console.log(`ℹ️ SMTP no configurado. El enlace de recuperación se simuló en consola (ver arriba).`);
+    // Sin SMTP el enlace queda solo en consola: es el modo degradado explícito de la
+    // demo, no un envío exitoso. El endpoint que llama informa el estado al usuario.
+    console.warn('================================================================');
+    console.warn(`⚠️  ENLACE DE RECUPERACIÓN NO ENVIADO POR CORREO — ${resultado.motivo}`);
+    console.warn(`    ${resultado.error}`);
+    console.warn(`    Usuario: ${usuarioId} (${nombre})`);
+    console.warn(`    Autorizar en: ${resetLink}`);
+    console.warn('================================================================');
   }
+  return resultado;
 }
 
 // ─── 7. Express app ───────────────────────────────────────────────────────
@@ -781,10 +771,29 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         ip: req.ip || req.headers['x-forwarded-for'] || null,
       });
 
-      await sendPasswordResetEmail(user.UsuarioId, user.NombreCompleto, token);
+      const envio = await sendPasswordResetEmail(user.UsuarioId, user.NombreCompleto, token);
+      if (!envio.enviado) {
+        await registrarAuditoriaProceso(pool, {
+          proceso: 'SEGURIDAD', accion: 'FALLO_ENVIO_CORREO', entidadTipo: 'Usuario',
+          entidadId: user.UsuarioId, usuarioId: user.UsuarioId,
+          detalle: `No se pudo enviar el correo de recuperación (${envio.motivo}): ${envio.error}`.slice(0, 500),
+          ip: req.ip || req.headers['x-forwarded-for'] || null,
+        });
+      }
     }
 
-    return res.json({ ok: true, message: 'Si el usuario existe, se envió una solicitud de autorización.' });
+    // `correoConfigurado` es estado del SISTEMA, no del usuario: decirlo no filtra
+    // qué usuarios existen, y evita que alguien quede esperando un correo que el
+    // servidor sabe que no va a salir. La respuesta sigue siendo idéntica exista o
+    // no el usuario, que es lo que impide la enumeración de cuentas.
+    const smtp = configuracionSmtp();
+    return res.json({
+      ok: true,
+      message: smtp.configurado
+        ? 'Si el usuario existe, se envió una solicitud de autorización al correo configurado.'
+        : 'Si el usuario existe, se generó la solicitud de autorización. ATENCIÓN: el servidor de correo no está configurado, así que el enlace quedó registrado en el log del servidor y debe entregarlo el administrador.',
+      correoConfigurado: smtp.configurado,
+    });
   } catch (err) {
     console.error('[forgot-password]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
@@ -831,6 +840,71 @@ app.post('/api/auth/reset-password', async (req, res) => {
     console.error('[reset-password]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
+});
+
+// ── GET /api/admin/smtp/estado ─────────────────────────────────────────────
+// Diagnóstico del servidor de correo. Existe porque "el correo no sale" era un
+// síntoma sin instrumento: el envío se hacía en un try/catch que solo escribía en
+// consola. Este endpoint conecta al SMTP y valida credenciales SIN enviar nada.
+// Nunca devuelve la contraseña, solo si está definida.
+app.get('/api/admin/smtp/estado', requireAuth, requireAdmin, async (_req, res) => {
+  const cfg = configuracionSmtp();
+  const verificacion = await verificarSmtp();
+  return res.json({
+    ok: true,
+    configuracion: {
+      host: cfg.host || null,
+      port: cfg.port,
+      secure: cfg.secure,
+      user: cfg.user || null,
+      passDefinida: cfg.tienePass,
+      remitente: cfg.fromEmail ? `${cfg.fromName} <${cfg.fromEmail}>` : null,
+      destinoRecuperacion: PASSWORD_RECOVERY_EMAIL,
+      urlPublica: PUBLIC_APP_URL,
+    },
+    configurado: cfg.configurado,
+    faltantes: cfg.faltantes,
+    conexion: verificacion,
+    ayuda: cfg.configurado
+      ? 'Use POST /api/admin/smtp/prueba para enviar un correo real de verificación.'
+      : `Defina ${cfg.faltantes.join(', ')} en api/.env y reinicie el backend. Con Gmail, SMTP_PASS debe ser una App Password de 16 caracteres.`,
+  });
+});
+
+// ── POST /api/admin/smtp/prueba ────────────────────────────────────────────
+// body: { para: 'destino@dominio' }. Envía un correo real y devuelve el resultado.
+app.post('/api/admin/smtp/prueba', requireAuth, requireAdmin, async (req, res) => {
+  const usuarioId = (req.actor || {}).usuarioId || 'sistema';
+  const para = ((req.body || {}).para || '').toString().trim() || PASSWORD_RECOVERY_EMAIL;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(para)) {
+    return res.status(400).json({ ok: false, error: `Destino inválido: "${para}"` });
+  }
+
+  const sello = new Date().toISOString();
+  const resultado = await enviarCorreo({
+    para,
+    asunto: 'Prueba de configuración de correo — Gutt System',
+    texto: `Prueba de SMTP enviada por ${usuarioId} el ${sello}.`,
+    html: plantillaCorreo('Prueba de configuración de correo', `
+      <p>Si está leyendo esto, el servidor de correo de <strong>Gutt System</strong> está correctamente configurado.</p>
+      <p style="margin:0;"><strong>Solicitada por:</strong> ${usuarioId}</p>
+      <p style="margin:0;"><strong>Fecha:</strong> ${sello}</p>
+    `),
+  });
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    await registrarAuditoriaProceso(pool, {
+      proceso: 'SEGURIDAD', accion: resultado.enviado ? 'PRUEBA_SMTP_OK' : 'PRUEBA_SMTP_FALLIDA',
+      entidadTipo: 'CONFIGURACION', entidadId: 'SMTP', usuarioId,
+      detalle: `Prueba de correo a ${para}: ${resultado.enviado ? 'enviado' : resultado.error}`.slice(0, 500),
+      ip: req.ip || req.headers['x-forwarded-for'] || null,
+    });
+  } catch (err) {
+    console.error('[smtp/prueba auditoría]', err.message);
+  }
+
+  return res.status(resultado.enviado ? 200 : 502).json({ ok: resultado.enviado, para, ...resultado });
 });
 
 // ── GET /api/admin/usuarios ────────────────────────────────────────────────
@@ -1044,136 +1118,44 @@ app.post('/api/reports/generate.php', async (req, res) => {
     }
 
     if (type === 'sp_sepsb11') {
-      // Estructura B11 — cartera por segmento y estado de vencimiento, con bandas de
-      // antigüedad. Reemplaza el stub anterior (GROUP BY Estado sobre un string), que no
-      // reproducía ningún entregable SEPS real.
+      // Estructura B11 -- cartera por segmento, estado de vencimiento y banda de
+      // antiguedad, con la cuenta del Catalogo Unico a la que corresponde cada renglon.
       //
-      // Estructura verificada contra el Catálogo Único cargado en dbo.PlanCuentas:
-      //   1401/1402/1403/1404 = COMERCIAL/CONSUMO/VIVIENDA/MICROEMPRESA **POR VENCER**
-      //   1411..1414          = las mismas **QUE NO DEVENGAN INTERESES**
-      //   1421..1424          = las mismas **VENCIDA**
-      // Ojo: las bandas de antigüedad NO son iguales en ambos estados (dato real del
-      // catálogo, no asumido): "Por vencer" corta en 181-360 / >360 (1402 05..25) mientras
-      // "Vencida" corta en 181-270 / >270 (1422 05..25).
-      //
-      // Regla contable aplicada: si una operación tiene al menos una cuota vencida, sus
-      // cuotas aún no vencidas dejan de devengar interés y se reclasifican a 141x -- no se
-      // quedan en "por vencer". Es el tratamiento SEPS estándar de la cartera en mora.
-      const result = await pool.request().query(`
-        ;WITH Cuotas AS (
-          SELECT c.CreditoID, c.Tipo,
-                 j.number, j.capital,
-                 DATEADD(MONTH, j.number, c.FechaDesembolso) AS FechaVenceCuota
-          FROM dbo.Creditos c
-          JOIN dbo.SolicitudesCredito s ON s.SolicitudID = c.SolicitudID
-          CROSS APPLY OPENJSON(s.PlanPagos) WITH (
-            number  INT            '$.number',
-            capital DECIMAL(15,2)  '$.capital',
-            status  NVARCHAR(20)   '$.status'
-          ) j
-          WHERE c.Estado = 'VIGENTE' AND ISNULL(j.status,'') <> 'PAGADO'
-        ),
-        Clasificadas AS (
-          SELECT CreditoID, Tipo, capital,
-                 DATEDIFF(DAY, FechaVenceCuota, CAST(GETDATE() AS DATE)) AS DiasMora,
-                 MAX(CASE WHEN FechaVenceCuota < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END)
-                   OVER (PARTITION BY CreditoID) AS OperacionEnMora
-          FROM Cuotas
-        )
-        SELECT
-          CASE
-            WHEN UPPER(Tipo) LIKE '%MICRO%'                              THEN 'MICROEMPRESA'
-            WHEN UPPER(Tipo) LIKE '%VIVIENDA%' OR UPPER(Tipo) LIKE '%INMOBIL%' THEN 'VIVIENDA'
-            WHEN UPPER(Tipo) LIKE '%COMERCIAL%' OR UPPER(Tipo) LIKE '%PRODUCTIVO%' THEN 'COMERCIAL'
-            ELSE 'CONSUMO'
-          END AS segmento,
-          CASE
-            WHEN DiasMora > 0            THEN 'VENCIDA'
-            WHEN OperacionEnMora = 1     THEN 'NO DEVENGA INTERESES'
-            ELSE 'POR VENCER'
-          END AS estadoCartera,
-          CASE
-            WHEN DiasMora > 0 THEN
-              CASE WHEN DiasMora <= 30  THEN 'De 1 a 30 días'
-                   WHEN DiasMora <= 90  THEN 'De 31 a 90 días'
-                   WHEN DiasMora <= 180 THEN 'De 91 a 180 días'
-                   WHEN DiasMora <= 270 THEN 'De 181 a 270 días'
-                   ELSE 'De más de 270 días' END
-            WHEN OperacionEnMora = 1 THEN 'No devenga'
-            ELSE
-              CASE WHEN -DiasMora <= 30  THEN 'De 1 a 30 días'
-                   WHEN -DiasMora <= 90  THEN 'De 31 a 90 días'
-                   WHEN -DiasMora <= 180 THEN 'De 91 a 180 días'
-                   WHEN -DiasMora <= 360 THEN 'De 181 a 360 días'
-                   ELSE 'De más de 360 días' END
-          END AS banda,
-          COUNT(DISTINCT CreditoID) AS operaciones,
-          SUM(capital) AS saldo
-        FROM Clasificadas
-        GROUP BY
-          CASE
-            WHEN UPPER(Tipo) LIKE '%MICRO%'                              THEN 'MICROEMPRESA'
-            WHEN UPPER(Tipo) LIKE '%VIVIENDA%' OR UPPER(Tipo) LIKE '%INMOBIL%' THEN 'VIVIENDA'
-            WHEN UPPER(Tipo) LIKE '%COMERCIAL%' OR UPPER(Tipo) LIKE '%PRODUCTIVO%' THEN 'COMERCIAL'
-            ELSE 'CONSUMO'
-          END,
-          CASE
-            WHEN DiasMora > 0            THEN 'VENCIDA'
-            WHEN OperacionEnMora = 1     THEN 'NO DEVENGA INTERESES'
-            ELSE 'POR VENCER'
-          END,
-          CASE
-            WHEN DiasMora > 0 THEN
-              CASE WHEN DiasMora <= 30  THEN 'De 1 a 30 días'
-                   WHEN DiasMora <= 90  THEN 'De 31 a 90 días'
-                   WHEN DiasMora <= 180 THEN 'De 91 a 180 días'
-                   WHEN DiasMora <= 270 THEN 'De 181 a 270 días'
-                   ELSE 'De más de 270 días' END
-            WHEN OperacionEnMora = 1 THEN 'No devenga'
-            ELSE
-              CASE WHEN -DiasMora <= 30  THEN 'De 1 a 30 días'
-                   WHEN -DiasMora <= 90  THEN 'De 31 a 90 días'
-                   WHEN -DiasMora <= 180 THEN 'De 91 a 180 días'
-                   WHEN -DiasMora <= 360 THEN 'De 181 a 360 días'
-                   ELSE 'De más de 360 días' END
-          END
-        ORDER BY segmento, estadoCartera, banda
-      `);
-
-      // Código de cuenta SEPS por segmento y estado (mismo mapeo del Catálogo Único).
-      const CUENTA_SEPS = {
-        'COMERCIAL':    { 'POR VENCER': '1401', 'NO DEVENGA INTERESES': '1411', 'VENCIDA': '1421' },
-        'CONSUMO':      { 'POR VENCER': '1402', 'NO DEVENGA INTERESES': '1412', 'VENCIDA': '1422' },
-        'VIVIENDA':     { 'POR VENCER': '1403', 'NO DEVENGA INTERESES': '1413', 'VENCIDA': '1423' },
-        'MICROEMPRESA': { 'POR VENCER': '1404', 'NO DEVENGA INTERESES': '1414', 'VENCIDA': '1424' },
-      };
-
-      const filas = result.recordset.map(r => ({
-        segmento: r.segmento,
-        estadoCartera: r.estadoCartera,
-        banda: r.banda,
-        cuentaSeps: (CUENTA_SEPS[r.segmento] || {})[r.estadoCartera] || null,
-        operaciones: r.operaciones,
-        saldo: parseFloat(r.saldo || 0),
-      }));
-
-      const carteraBruta   = filas.reduce((s, f) => s + f.saldo, 0);
-      const carteraVencida = filas.filter(f => f.estadoCartera === 'VENCIDA').reduce((s, f) => s + f.saldo, 0);
-      const noDevenga      = filas.filter(f => f.estadoCartera === 'NO DEVENGA INTERESES').reduce((s, f) => s + f.saldo, 0);
-      const porVencer      = filas.filter(f => f.estadoCartera === 'POR VENCER').reduce((s, f) => s + f.saldo, 0);
-      // Morosidad ampliada SEPS = (vencida + no devenga intereses) / cartera bruta
-      const morosidad = carteraBruta > 0 ? ((carteraVencida + noDevenga) / carteraBruta) * 100 : 0;
+      // Toda la clasificacion la resuelve services/carteraSeps.js, el mismo motor que
+      // usa el proceso mensual de reclasificacion. Antes esta consulta llevaba su propia
+      // tabla de bandas escrita a mano, y eso era un bug latente: las bandas NO son
+      // iguales entre familias. 1423 (vivienda vencida) tiene SEIS bandas
+      // (1-30 | 31-90 | 91-270 | 271-360 | 361-720 | >720), asi que la tabla hardcodeada
+      // mandaba saldo de vivienda a bandas que no existen en el catalogo. Ahora las
+      // bandas se leen de dbo.PlanCuentas.
+      const fechaCorte = req.body.fechaCorte
+        ? String(req.body.fechaCorte).slice(0, 10)
+        : new Date().toISOString().split('T')[0];
+      const clasificacion = await clasificarCartera(pool, fechaCorte);
 
       return res.json({
         ok: true,
-        fecha: new Date().toISOString().split('T')[0],
-        filas,
+        fecha: fechaCorte,
+        filas: clasificacion.filas.map(f => ({
+          segmento:      f.segmento,
+          estadoCartera: f.estado,
+          banda:         f.banda,
+          cuentaSeps:    f.cuenta,
+          operaciones:   f.operaciones,
+          saldo:         f.saldo,
+        })),
+        // Calificacion de riesgo por operacion (A1..E) y provision requerida: es el
+        // insumo que la SEPS pide junto al B11 y que antes no se publicaba.
+        operaciones: clasificacion.operaciones,
+        provisiones: clasificacion.provisiones,
         totales: {
-          porVencer:      Math.round(porVencer * 100) / 100,
-          noDevenga:      Math.round(noDevenga * 100) / 100,
-          vencida:        Math.round(carteraVencida * 100) / 100,
-          carteraBruta:   Math.round(carteraBruta * 100) / 100,
-          morosidadPct:   Math.round(morosidad * 100) / 100,
+          porVencer:          clasificacion.totales.porVencer,
+          noDevenga:          clasificacion.totales.noDevenga,
+          vencida:            clasificacion.totales.vencida,
+          carteraBruta:       clasificacion.totales.carteraBruta,
+          carteraImproductiva: clasificacion.totales.improductiva,
+          morosidadPct:       clasificacion.totales.morosidadPct,
+          provisionRequerida: clasificacion.totales.provisionRequerida,
         },
       });
     }
@@ -1340,12 +1322,12 @@ app.post('/api/reports/generate.php', async (req, res) => {
       // escritas en el motor de indicadores del core real (bcaindi), expresadas sobre saldos
       // del Catálogo Único: p.ej. LIQUIDEZ = ({11}+{13}) / ({2101}+{2103}), ROA = ({5}-{4})/{1}.
       //
-      // SOLVENCIA se marca `exacto: false` a propósito: el indicador regulatorio real es
-      // Patrimonio Técnico Constituido / Activos Ponderados por Riesgo, y la ponderación por
-      // riesgo de cada familia de activo no está parametrizada todavía en este sistema. Se
-      // publica la razón Patrimonio/Activo como aproximación DECLARADA, nunca presentándola
-      // como el índice de solvencia regulatorio -- reportar un número de solvencia mal
-      // calculado sería peor que declararlo pendiente.
+      // SOLVENCIA ya es el indicador regulatorio real (Patrimonio Técnico Constituido /
+      // Activos Ponderados por Riesgo), calculado en services/carteraSeps.js sobre las
+      // tablas paramétricas dbo.PonderacionesRiesgo y dbo.ParametrosPatrimonioTecnico
+      // (db/sqlserver/31_*.sql). Antes se publicaba Patrimonio/Activo marcado como
+      // aproximación porque las ponderaciones no existían; esa razón se conserva abajo,
+      // pero renombrada a lo que de verdad es, para no confundirla con la solvencia.
       const saldos = await pool.request().query(`
         SELECT LEFT(pc.Codigo, 4) AS c4, LEFT(pc.Codigo, 2) AS c2, LEFT(pc.Codigo, 1) AS c1,
                pc.TipoCuenta, SUM(rc.Debe) AS Debe, SUM(rc.Haber) AS Haber
@@ -1373,7 +1355,13 @@ app.post('/api/reports/generate.php', async (req, res) => {
       const resultado      = ingresos - gastos;
       const fondosDisp     = saldoPrefijo('11');
       const inversiones    = saldoPrefijo('13');
-      const cartera        = saldoPrefijo('14');
+      // OJO con la diferencia entre las dos: {14} incluye 1499 "(Provisiones para créditos
+      // incobrables)", que es una cuenta de activo de saldo ACREEDOR. Es decir, {14} es
+      // cartera NETA. Compararla contra la cartera de la tabla de amortización (que es
+      // BRUTA) daba un descuadre igual a la provisión constituida -- un falso positivo que
+      // apareció el día que el proceso de provisiones empezó a constituirlas de verdad.
+      const carteraNeta    = saldoPrefijo('14');
+      const cartera        = PREFIJOS_CARTERA.reduce((s, p) => s + saldoPrefijo(p), 0); // bruta, sin provisiones
       const depVista       = saldoPrefijo('2101');
       const depPlazo       = saldoPrefijo('2103');
       // Cartera improductiva según CONTABILIDAD = no devenga intereses (141x) + vencida (142x).
@@ -1415,6 +1403,10 @@ app.post('/api/reports/generate.php', async (req, res) => {
       // de cierre), así que se le suma para los ratios -- misma convención que el ESF.
       const patrimonioConResultado = patrimonio + resultado;
 
+      // Solvencia regulatoria real. Se calcula aquí (y no se replica la fórmula) para
+      // que el tablero PERLAS y GET /api/reportes/solvencia no puedan discrepar.
+      const solvencia = await calcularSolvencia(pool);
+
       const ratio = (num, den) => (den && Math.abs(den) > 0.001) ? (num / den) * 100 : null;
       const r2 = (v) => v === null ? null : Math.round(v * 100) / 100;
 
@@ -1426,8 +1418,11 @@ app.post('/api/reports/generate.php', async (req, res) => {
           formula: 'Cartera improductiva (cuotas vencidas + saldo que dejó de devengar) / Cartera bruta. Calculada sobre la tabla de amortización real, no sobre la clasificación contable, porque el proceso mensual de reclasificación de cartera aún no existe.',
           valor: r2(ratio(carteraImprod, carteraBrutaOp)), unidad: '%', exacto: true },
         { categoria: 'CALIDAD DE ACTIVOS', nombre: 'Participación de Cartera en el Activo',
-          formula: 'Cartera de créditos {14} / Activo total {1}',
-          valor: r2(ratio(cartera, activoTotal)), unidad: '%', exacto: true },
+          formula: 'Cartera de créditos neta de provisiones {14} / Activo total {1}. Se usa la cartera NETA porque el activo total del denominador también va neto de provisiones.',
+          valor: r2(ratio(carteraNeta, activoTotal)), unidad: '%', exacto: true },
+        { categoria: 'CALIDAD DE ACTIVOS', nombre: 'Cobertura de Cartera Improductiva',
+          formula: 'Provisiones constituidas {1499} / Cartera improductiva (no devenga {141x} + vencida {142x}). Mide cuánto de la cartera problemática está respaldada por provisión.',
+          valor: r2(ratio(cartera - carteraNeta, carteraImprodContable)), unidad: '%', exacto: true },
         { categoria: 'RENTABILIDAD', nombre: 'ROA (Rendimiento sobre Activos)',
           formula: '(Ingresos {5} − Gastos {4}) / Activo total {1}',
           valor: r2(ratio(resultado, activoTotal)), unidad: '%', exacto: true },
@@ -1437,9 +1432,13 @@ app.post('/api/reports/generate.php', async (req, res) => {
         { categoria: 'RENTABILIDAD', nombre: 'Grado de Absorción del Margen Financiero',
           formula: 'Gastos de operación {45} / Margen financiero (Ingresos {5} − Intereses causados {41})',
           valor: r2(ratio(saldoPrefijo('45'), ingresos - saldoPrefijo('41'))), unidad: '%', exacto: true },
-        { categoria: 'SOLVENCIA', nombre: 'Patrimonio sobre Activo (aproximación)',
-          formula: 'Patrimonio {3} / Activo total {1}. NO es el índice regulatorio de solvencia: ese exige Patrimonio Técnico Constituido sobre Activos Ponderados por Riesgo, cuyas ponderaciones aún no están parametrizadas.',
-          valor: r2(ratio(patrimonioConResultado, activoTotal)), unidad: '%', exacto: false },
+        { categoria: 'SOLVENCIA', nombre: 'Índice de Solvencia (Patrimonio Técnico / APR)',
+          formula: 'Patrimonio Técnico Constituido / Activos Ponderados por Riesgo. Ponderaciones y composición del patrimonio técnico en dbo.PonderacionesRiesgo y dbo.ParametrosPatrimonioTecnico (Resolución 127-2015-F). Mínimo regulatorio: ' + solvencia.solvencia.minimoPct + '%.',
+          valor: solvencia.solvencia.indicePct, unidad: '%', exacto: true,
+          minimo: solvencia.solvencia.minimoPct, cumple: solvencia.solvencia.cumple },
+        { categoria: 'SOLVENCIA', nombre: 'Patrimonio sobre Activo (apalancamiento contable)',
+          formula: 'Patrimonio {3} / Activo total {1}. Es una razón contable de apalancamiento, NO el índice regulatorio de solvencia — ese es el indicador anterior.',
+          valor: r2(ratio(patrimonioConResultado, activoTotal)), unidad: '%', exacto: true },
       ];
 
       // Control de reconciliación cartera contable vs cartera operativa. Se publica siempre,
@@ -1447,11 +1446,27 @@ app.post('/api/reports/generate.php', async (req, res) => {
       const difCartera = Math.round((cartera - carteraBrutaOp) * 100) / 100;
       const difImprod  = Math.round((carteraImprodContable - carteraImprod) * 100) / 100;
       const alertas = [];
-      if (Math.abs(difCartera) >= 0.01) {
-        alertas.push(`El saldo de cartera contable ($${cartera.toFixed(2)}) no coincide con el saldo de cartera de la tabla de amortización ($${carteraBrutaOp.toFixed(2)}): diferencia $${difCartera.toFixed(2)}.`);
+      // Umbral de materialidad, no $0.01. La suma de capital del plan de pagos no cierra
+      // al centavo contra el monto desembolsado (3 créditos de $5.000 dan $14.999,97), así
+      // que un umbral de un centavo dejaba la alerta encendida para siempre y la volvía
+      // ruido que nadie mira. Es el mismo criterio con que el proceso de reclasificación
+      // decide si puede aplicarse.
+      const materialidad = Math.max(TOLERANCIA_DESCUADRE_ABS, Math.abs(cartera) * TOLERANCIA_DESCUADRE_PCT);
+      if (Math.abs(difCartera) > materialidad) {
+        alertas.push(`El saldo de cartera contable ($${cartera.toFixed(2)}) no coincide con el saldo de cartera de la tabla de amortización ($${carteraBrutaOp.toFixed(2)}): diferencia $${difCartera.toFixed(2)}, sobre una tolerancia de $${materialidad.toFixed(2)}.`);
       }
-      if (Math.abs(difImprod) >= 0.01) {
-        alertas.push(`La cartera improductiva registrada en contabilidad ($${carteraImprodContable.toFixed(2)}) no coincide con la real según vencimientos ($${carteraImprod.toFixed(2)}). Falta el proceso mensual de reclasificación de cartera entre por vencer / no devenga / vencida.`);
+      if (Math.abs(difImprod) > materialidad) {
+        alertas.push(`La cartera improductiva registrada en contabilidad ($${carteraImprodContable.toFixed(2)}) no coincide con la real según vencimientos ($${carteraImprod.toFixed(2)}). Corra el proceso mensual de reclasificación de cartera (Cartera › Reclasificación mensual) para llevar la clasificación contable a las bandas reales.`);
+      }
+      // Las alertas de solvencia van en su propio bloque, no mezcladas con las de
+      // reconciliación de cartera: hablan de suficiencia patrimonial, no de que los
+      // saldos no cuadren, y quien las lee actúa distinto en cada caso.
+      const alertasSolvencia = [];
+      if (solvencia.solvencia.cumple === false) {
+        alertasSolvencia.push(`El índice de solvencia (${solvencia.solvencia.indicePct}%) está por debajo del mínimo regulatorio de ${solvencia.solvencia.minimoPct}%: déficit de patrimonio técnico por $${Math.abs(solvencia.solvencia.excedenteDeficit).toFixed(2)}.`);
+      }
+      if (solvencia.apr.cuentasSinPonderar.length) {
+        alertasSolvencia.push(`${solvencia.apr.cuentasSinPonderar.length} cuenta(s) de activo con movimiento no tienen ponderación de riesgo asignada, así que no entran en los activos ponderados: ${solvencia.apr.cuentasSinPonderar.map(c => c.cuenta).join(', ')}. Agréguelas a dbo.PonderacionesRiesgo.`);
       }
 
       return res.json({
@@ -1459,7 +1474,9 @@ app.post('/api/reports/generate.php', async (req, res) => {
         fecha: new Date().toISOString().split('T')[0],
         indicadores,
         reconciliacion: {
-          carteraContable: Math.round(cartera * 100) / 100,
+          carteraContable: Math.round(cartera * 100) / 100,          // bruta, sin restar provisiones
+          carteraContableNeta: Math.round(carteraNeta * 100) / 100,  // {14}, ya neta de 1499
+          provisionConstituida: Math.round((cartera - carteraNeta) * 100) / 100,
           carteraOperativa: Math.round(carteraBrutaOp * 100) / 100,
           diferenciaCartera: difCartera,
           improductivaContable: Math.round(carteraImprodContable * 100) / 100,
@@ -1467,10 +1484,27 @@ app.post('/api/reports/generate.php', async (req, res) => {
           diferenciaImproductiva: difImprod,
           alertas,
         },
+        // Desglose completo del índice de solvencia, para que el número del tablero
+        // sea auditable sin salir del reporte: categorías de ponderación y composición
+        // del patrimonio técnico con su base normativa.
+        solvencia: {
+          indicePct: solvencia.solvencia.indicePct,
+          minimoPct: solvencia.solvencia.minimoPct,
+          cumple: solvencia.solvencia.cumple,
+          excedenteDeficit: solvencia.solvencia.excedenteDeficit,
+          baseNormativa: solvencia.solvencia.baseNormativa,
+          activosPonderados: solvencia.apr.activosPonderados,
+          activoContable: solvencia.apr.activoContable,
+          categorias: solvencia.apr.categorias,
+          cuentasSinPonderar: solvencia.apr.cuentasSinPonderar,
+          patrimonioTecnico: solvencia.patrimonioTecnico,
+          alertas: alertasSolvencia,
+        },
         insumos: {
           activoTotal: Math.round(activoTotal * 100) / 100,
           patrimonio: Math.round(patrimonioConResultado * 100) / 100,
           cartera: Math.round(cartera * 100) / 100,
+          carteraNeta: Math.round(carteraNeta * 100) / 100,
           carteraImproductiva: Math.round(carteraImprod * 100) / 100,
           fondosDisponibles: Math.round(fondosDisp * 100) / 100,
           inversiones: Math.round(inversiones * 100) / 100,
@@ -5788,6 +5822,463 @@ app.get('/api/contabilidad/balance-legacy', async (req, res) => {
     return res.json({ ok: true, cuentas, totalDebe, totalHaber, origen: 'LEGACY_PG', nota: 'Saldos agregados legacy de solo consulta (espejo Postgres). No reemplaza dbo.RegistroContable.' });
   } catch (err) {
     console.error('[balance-legacy]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ═══ 7.5 PROCESO MENSUAL DE RECLASIFICACIÓN DE CARTERA ═══════════════════════
+//
+// Cierra el hueco que los indicadores PERLAS venían denunciando: la clasificación
+// contable de la cartera quedaba congelada en la cuenta con la que se desembolsó el
+// crédito (140205), así que una cartera 100% en mora seguía reportando morosidad
+// contable 0%. Este proceso mueve el saldo entre estados (por vencer / no devenga /
+// vencida) y bandas de antigüedad reales, y ajusta la provisión por calificación.
+//
+// Toda la aritmética vive en services/carteraSeps.js, compartida con los reportes
+// SEPS. Aquí solo está el ciclo de vida: simular, aplicar, consultar, reversar.
+
+/** Valida y normaliza una fecha de corte 'YYYY-MM-DD'; por defecto, hoy. */
+function normalizarFechaCorte(valor) {
+  const texto = String(valor || '').trim() || new Date().toISOString().split('T')[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    throw new Error(`Fecha de corte inválida: "${texto}". Formato esperado YYYY-MM-DD.`);
+  }
+  const fecha = new Date(`${texto}T00:00:00Z`);
+  if (Number.isNaN(fecha.getTime())) throw new Error(`Fecha de corte inexistente: "${texto}".`);
+  return texto;
+}
+
+// ── GET /api/cartera/clasificacion — vista previa, no toca nada ───────────────
+app.get('/api/cartera/clasificacion', requireAuth, async (req, res) => {
+  try {
+    const fechaCorte = normalizarFechaCorte(req.query.fechaCorte);
+    const pool = await sql.connect(sqlConfig);
+    const reclasificacion = await calcularReclasificacion(pool, fechaCorte);
+    const provisiones = await calcularProvisiones(pool, reclasificacion.clasificacion, fechaCorte);
+    return res.json({
+      ok: true,
+      fechaCorte,
+      totales: reclasificacion.clasificacion.totales,
+      filas: reclasificacion.clasificacion.filas,
+      operaciones: reclasificacion.clasificacion.operaciones,
+      movimientos: reclasificacion.movimientos,
+      provisiones,
+      aplicable: reclasificacion.aplicable,
+      bloqueos: reclasificacion.bloqueos,
+      control: reclasificacion.totales,
+    });
+  } catch (err) {
+    console.error('[cartera/clasificacion]', err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/cartera/parametros-provision — la tabla normativa, auditable ────
+app.get('/api/cartera/parametros-provision', requireAuth, async (_req, res) => {
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const [parametros, bandas] = await Promise.all([
+      pool.request().query(`
+        SELECT Segmento, Calificacion, DiasMoraDesde, DiasMoraHasta,
+               PorcentajeProvision, CuentaProvision, BaseNormativa, Activo
+        FROM dbo.ParametrosProvisionCartera
+        ORDER BY Segmento, DiasMoraDesde
+      `),
+      cargarBandasCartera(pool),
+    ]);
+    return res.json({
+      ok: true,
+      parametros: parametros.recordset.map(p => ({
+        segmento: p.Segmento, calificacion: p.Calificacion,
+        diasDesde: p.DiasMoraDesde, diasHasta: p.DiasMoraHasta,
+        porcentajeProvision: parseFloat(p.PorcentajeProvision),
+        cuentaProvision: p.CuentaProvision,
+        baseNormativa: p.BaseNormativa, activo: !!p.Activo,
+      })),
+      // Se publican para que se vea que NO están hardcodeadas: salen del Catálogo Único.
+      bandasPorFamilia: bandas,
+    });
+  } catch (err) {
+    console.error('[cartera/parametros-provision]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/cartera/reclasificar ───────────────────────────────────────────
+// body: { fechaCorte?: 'YYYY-MM-DD', simular?: boolean, observaciones?: string }
+app.post('/api/cartera/reclasificar', requireAuth,
+  requireRoles('ADMIN', 'SUPER_USER', 'ACCOUNTANT', 'CARTERA'), async (req, res) => {
+  const usuarioId = (req.actor || {}).usuarioId || 'sistema';
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+  let fechaCorte;
+  try {
+    fechaCorte = normalizarFechaCorte((req.body || {}).fechaCorte);
+  } catch (err) {
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+  const simular = (req.body || {}).simular !== false; // por defecto SIMULA: aplicar es explícito
+  const observaciones = ((req.body || {}).observaciones || '').toString().slice(0, 500) || null;
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const reclasificacion = await calcularReclasificacion(pool, fechaCorte);
+    const provisiones = await calcularProvisiones(pool, reclasificacion.clasificacion, fechaCorte);
+    const { clasificacion, movimientos, totales } = reclasificacion;
+
+    if (simular) {
+      await registrarAuditoriaProceso(pool, {
+        proceso: 'CARTERA', accion: 'SIMULAR_RECLASIFICACION', entidadTipo: 'PROCESO_CARTERA',
+        entidadId: fechaCorte, usuarioId, ip,
+        detalle: `Simulación al corte ${fechaCorte}: ${movimientos.length} movimiento(s), ` +
+                 `$${totales.totalDebe.toFixed(2)} reclasificados, provisión a ajustar $${provisiones.totalAjuste.toFixed(2)}`,
+      });
+      return res.json({
+        ok: true, estado: 'SIMULADO', fechaCorte,
+        aplicable: reclasificacion.aplicable, bloqueos: reclasificacion.bloqueos,
+        totales: clasificacion.totales, control: totales,
+        filas: clasificacion.filas, movimientos, provisiones,
+        operaciones: clasificacion.operaciones,
+      });
+    }
+
+    if (!reclasificacion.aplicable) {
+      return res.status(409).json({
+        ok: false, estado: 'BLOQUEADO', fechaCorte,
+        error: reclasificacion.bloqueos.join(' '),
+        bloqueos: reclasificacion.bloqueos, control: totales,
+      });
+    }
+
+    const yaAplicado = await pool.request()
+      .input('FechaCorte', sql.Date, fechaCorte)
+      .query(`SELECT ProcesoId FROM dbo.ReclasificacionCartera WHERE FechaCorte = @FechaCorte AND Estado = 'APLICADO'`);
+    if (yaAplicado.recordset.length) {
+      return res.status(409).json({
+        ok: false, estado: 'DUPLICADO', fechaCorte,
+        procesoId: yaAplicado.recordset[0].ProcesoId,
+        error: `La reclasificación al corte ${fechaCorte} ya fue aplicada (proceso #${yaAplicado.recordset[0].ProcesoId}). ` +
+               `Revérsela antes de volver a correrla.`,
+      });
+    }
+
+    if (!movimientos.length && !provisiones.ajustes.length) {
+      return res.json({
+        ok: true, estado: 'SIN_CAMBIOS', fechaCorte,
+        mensaje: 'La clasificación contable ya coincide con los vencimientos reales y la provisión está completa.',
+        totales: clasificacion.totales, control: totales,
+      });
+    }
+
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+    try {
+      const cabecera = await transaction.request()
+        .input('FechaCorte', sql.Date, fechaCorte)
+        .input('UsuarioId', sql.NVarChar(50), usuarioId)
+        .input('OperacionesEvaluadas', sql.Int, clasificacion.totales.operaciones)
+        .input('MontoReclasificado', sql.Decimal(15, 2), totales.totalDebe)
+        .input('CarteraBruta', sql.Decimal(15, 2), clasificacion.totales.carteraBruta)
+        .input('CarteraImproductiva', sql.Decimal(15, 2), clasificacion.totales.improductiva)
+        .input('ProvisionRequerida', sql.Decimal(15, 2), provisiones.totalRequerida)
+        .input('ProvisionConstituida', sql.Decimal(15, 2), provisiones.totalConstituida)
+        .input('AsientoProvisionado', sql.Decimal(15, 2), provisiones.totalAjuste)
+        .input('Observaciones', sql.NVarChar(500), observaciones)
+        .query(`
+          INSERT INTO dbo.ReclasificacionCartera
+            (FechaCorte, Estado, UsuarioId, OperacionesEvaluadas, MontoReclasificado, CarteraBruta,
+             CarteraImproductiva, ProvisionRequerida, ProvisionConstituida, AsientoProvisionado, Observaciones)
+          OUTPUT INSERTED.ProcesoId
+          VALUES (@FechaCorte, N'APLICADO', @UsuarioId, @OperacionesEvaluadas, @MontoReclasificado, @CarteraBruta,
+                  @CarteraImproductiva, @ProvisionRequerida, @ProvisionConstituida, @AsientoProvisionado, @Observaciones)
+        `);
+      const procesoId = cabecera.recordset[0].ProcesoId;
+      const referencia = `RC-${fechaCorte}-${procesoId}`;
+
+      await asentarMovimientosCartera(transaction, {
+        procesoId, fechaCorte, usuarioId, referencia, movimientos, provisiones, signo: 1,
+      });
+
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CARTERA', accion: 'APLICAR_RECLASIFICACION', entidadTipo: 'PROCESO_CARTERA',
+        entidadId: String(procesoId), usuarioId, ip,
+        campoAfectado: 'ClasificacionContableCartera',
+        valorAnterior: JSON.stringify(movimientos.map(m => ({ c: m.cuenta, s: m.saldoActual }))).slice(0, 3900),
+        valorNuevo: JSON.stringify(movimientos.map(m => ({ c: m.cuenta, s: m.saldoObjetivo }))).slice(0, 3900),
+        detalle: `Reclasificación al corte ${fechaCorte}: $${totales.totalDebe.toFixed(2)} movidos entre bandas; ` +
+                 `provisión ajustada en $${provisiones.totalAjuste.toFixed(2)}`,
+      });
+
+      await transaction.commit();
+      return res.json({
+        ok: true, estado: 'APLICADO', procesoId, fechaCorte, referencia,
+        totales: clasificacion.totales, control: totales,
+        movimientos, provisiones, filas: clasificacion.filas,
+      });
+    } catch (innerErr) {
+      await transaction.rollback();
+      throw innerErr;
+    }
+  } catch (err) {
+    console.error('[cartera/reclasificar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * Graba en dbo.RegistroContable el asiento de reclasificación y el de provisión, y
+ * su detalle en dbo.ReclasificacionCarteraDetalle. `signo` = 1 aplica, -1 reversa.
+ *
+ * Los asientos se fechan en la FECHA DE CORTE (no en la fecha de ejecución) también
+ * al reversar: así el balance a esa fecha vuelve exactamente al estado anterior. La
+ * trazabilidad de cuándo se hizo qué vive en ReclasificacionCartera y AuditoriaProcesos,
+ * que es donde una revisión la busca, no en la fecha del asiento.
+ */
+async function asentarMovimientosCartera(transaction, {
+  procesoId, fechaCorte, usuarioId, referencia, movimientos, provisiones, signo,
+}) {
+  const conceptoBase = signo > 0
+    ? `RECLASIFICACION CARTERA ${fechaCorte}`
+    : `REVERSA RECLASIFICACION CARTERA ${fechaCorte}`;
+
+  const asentar = async (cuenta, debe, haber, concepto) => {
+    await transaction.request()
+      .input('Fecha', sql.DateTime2, new Date(`${fechaCorte}T12:00:00`))
+      // Asiento institucional agregado: no pertenece a ningún socio. SocioId acepta
+      // NULL desde db/sqlserver/32_*.sql; poner 0 rompía la FK contra RegistroSocios.
+      .input('SocioId', sql.BigInt, null)
+      .input('CuentaContable', sql.NVarChar(20), cuenta)
+      .input('Concepto', sql.NVarChar(200), concepto)
+      .input('Debe', sql.Decimal(18, 2), debe)
+      .input('Haber', sql.Decimal(18, 2), haber)
+      .input('NumeroCuenta', sql.NVarChar(20), referencia)
+      .input('UsuarioId', sql.NVarChar(50), usuarioId)
+      .query(`
+        INSERT INTO dbo.RegistroContable (Fecha, SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId)
+        VALUES (@Fecha, @SocioId, @CuentaContable, @Concepto, @Debe, @Haber, @NumeroCuenta, @UsuarioId)
+      `);
+  };
+
+  const detallar = async (fila) => {
+    await transaction.request()
+      .input('ProcesoId', sql.Int, procesoId)
+      .input('Tipo', sql.NVarChar(20), fila.tipo)
+      .input('Segmento', sql.NVarChar(20), fila.segmento || null)
+      .input('CuentaOrigen', sql.NVarChar(20), fila.cuentaOrigen || null)
+      .input('CuentaDestino', sql.NVarChar(20), fila.cuentaDestino || null)
+      .input('EstadoDestino', sql.NVarChar(30), fila.estadoDestino || null)
+      .input('BandaDestino', sql.NVarChar(40), fila.bandaDestino || null)
+      .input('Calificacion', sql.NVarChar(5), fila.calificacion || null)
+      .input('Operaciones', sql.Int, fila.operaciones || 0)
+      .input('Monto', sql.Decimal(15, 2), fila.monto)
+      .query(`
+        INSERT INTO dbo.ReclasificacionCarteraDetalle
+          (ProcesoId, Tipo, Segmento, CuentaOrigen, CuentaDestino, EstadoDestino, BandaDestino, Calificacion, Operaciones, Monto)
+        VALUES (@ProcesoId, @Tipo, @Segmento, @CuentaOrigen, @CuentaDestino, @EstadoDestino, @BandaDestino, @Calificacion, @Operaciones, @Monto)
+      `);
+  };
+
+  for (const m of movimientos) {
+    const debe = signo > 0 ? m.debe : m.haber;
+    const haber = signo > 0 ? m.haber : m.debe;
+    const etiqueta = m.estado ? `${conceptoBase} - ${m.estado}` : `${conceptoBase} - ORIGEN`;
+    await asentar(m.cuenta, debe, haber, etiqueta.slice(0, 200));
+    await detallar({
+      tipo: 'RECLASIFICACION', segmento: m.segmento,
+      cuentaOrigen: m.haber > 0 ? m.cuenta : null,
+      cuentaDestino: m.debe > 0 ? m.cuenta : null,
+      estadoDestino: m.estado, bandaDestino: m.banda,
+      monto: signo > 0 ? m.delta : -m.delta,
+    });
+  }
+
+  for (const a of provisiones.ajustes) {
+    const ajuste = signo > 0 ? a.ajuste : -a.ajuste;
+    const concepto = `${conceptoBase} - PROVISION ${a.segmento}`.slice(0, 200);
+    if (ajuste > 0) {
+      // Constituir: gasto al Debe, provisión (activo acreedor) al Haber.
+      await asentar(a.cuentaGasto, ajuste, 0, concepto);
+      await asentar(a.cuentaProvision, 0, ajuste, concepto);
+    } else {
+      // Reversar exceso: se reconoce como ingreso por reversión de provisiones.
+      await asentar(a.cuentaProvision, -ajuste, 0, concepto);
+      await asentar(CUENTA_REVERSION_PROVISION, 0, -ajuste, concepto);
+    }
+    await detallar({
+      tipo: 'PROVISION', segmento: a.segmento,
+      cuentaOrigen: ajuste > 0 ? a.cuentaGasto : a.cuentaProvision,
+      cuentaDestino: ajuste > 0 ? a.cuentaProvision : CUENTA_REVERSION_PROVISION,
+      operaciones: a.operaciones, monto: ajuste,
+    });
+  }
+}
+
+// ── GET /api/cartera/reclasificaciones — historial del proceso ────────────────
+app.get('/api/cartera/reclasificaciones', requireAuth, async (req, res) => {
+  try {
+    const limite = Math.min(parseInt(req.query.limite || '24', 10), 120);
+    const pool = await sql.connect(sqlConfig);
+    const cabeceras = await pool.request()
+      .input('limite', sql.Int, limite)
+      .query(`
+        SELECT TOP (@limite) ProcesoId, CONVERT(NVARCHAR(10), FechaCorte, 23) AS FechaCorte, Estado, UsuarioId,
+               CONVERT(NVARCHAR(19), FechaEjecucion, 120) AS FechaEjecucion,
+               OperacionesEvaluadas, MontoReclasificado, CarteraBruta, CarteraImproductiva,
+               ProvisionRequerida, ProvisionConstituida, AsientoProvisionado,
+               ReversaDeProcesoId, Observaciones
+        FROM dbo.ReclasificacionCartera
+        ORDER BY FechaCorte DESC, ProcesoId DESC
+      `);
+    const ids = cabeceras.recordset.map(c => c.ProcesoId);
+    let detalles = [];
+    if (ids.length) {
+      const r = await pool.request().query(`
+        SELECT ProcesoId, Tipo, Segmento, CuentaOrigen, CuentaDestino, EstadoDestino,
+               BandaDestino, Calificacion, Operaciones, Monto
+        FROM dbo.ReclasificacionCarteraDetalle
+        WHERE ProcesoId IN (${ids.join(',')})
+        ORDER BY ProcesoId DESC, DetalleId
+      `);
+      detalles = r.recordset;
+    }
+    return res.json({
+      ok: true,
+      procesos: cabeceras.recordset.map(c => ({
+        procesoId: c.ProcesoId, fechaCorte: c.FechaCorte, estado: c.Estado,
+        usuarioId: c.UsuarioId, fechaEjecucion: c.FechaEjecucion,
+        operacionesEvaluadas: c.OperacionesEvaluadas,
+        montoReclasificado: parseFloat(c.MontoReclasificado),
+        carteraBruta: parseFloat(c.CarteraBruta),
+        carteraImproductiva: parseFloat(c.CarteraImproductiva),
+        morosidadPct: parseFloat(c.CarteraBruta) > 0
+          ? Math.round((parseFloat(c.CarteraImproductiva) / parseFloat(c.CarteraBruta)) * 10000) / 100 : 0,
+        provisionRequerida: parseFloat(c.ProvisionRequerida),
+        provisionConstituida: parseFloat(c.ProvisionConstituida),
+        ajusteProvision: parseFloat(c.AsientoProvisionado),
+        reversaDeProcesoId: c.ReversaDeProcesoId,
+        observaciones: c.Observaciones,
+        detalle: detalles
+          .filter(d => d.ProcesoId === c.ProcesoId)
+          .map(d => ({
+            tipo: d.Tipo, segmento: d.Segmento, cuentaOrigen: d.CuentaOrigen,
+            cuentaDestino: d.CuentaDestino, estadoDestino: d.EstadoDestino,
+            bandaDestino: d.BandaDestino, calificacion: d.Calificacion,
+            operaciones: d.Operaciones, monto: parseFloat(d.Monto),
+          })),
+      })),
+    });
+  } catch (err) {
+    console.error('[cartera/reclasificaciones]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── POST /api/cartera/reclasificar/:procesoId/reversar ────────────────────────
+app.post('/api/cartera/reclasificar/:procesoId/reversar', requireAuth,
+  requireRoles('ADMIN', 'SUPER_USER', 'ACCOUNTANT'), async (req, res) => {
+  const usuarioId = (req.actor || {}).usuarioId || 'sistema';
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+  const procesoId = parseInt(req.params.procesoId, 10);
+  const motivo = ((req.body || {}).motivo || '').toString().trim();
+  if (!Number.isInteger(procesoId)) return res.status(400).json({ ok: false, error: 'Id de proceso inválido' });
+  if (motivo.length < 5) return res.status(400).json({ ok: false, error: 'Indique el motivo de la reversa (mínimo 5 caracteres)' });
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const cab = await pool.request()
+      .input('ProcesoId', sql.Int, procesoId)
+      .query(`
+        SELECT ProcesoId, CONVERT(NVARCHAR(10), FechaCorte, 23) AS FechaCorte, Estado
+        FROM dbo.ReclasificacionCartera WHERE ProcesoId = @ProcesoId
+      `);
+    if (!cab.recordset.length) return res.status(404).json({ ok: false, error: `No existe el proceso #${procesoId}` });
+    const proceso = cab.recordset[0];
+    if (proceso.Estado !== 'APLICADO') {
+      return res.status(409).json({ ok: false, error: `El proceso #${procesoId} está en estado ${proceso.Estado}; solo se reversa uno APLICADO.` });
+    }
+
+    const det = await pool.request()
+      .input('ProcesoId', sql.Int, procesoId)
+      .query(`
+        SELECT Tipo, Segmento, CuentaOrigen, CuentaDestino, EstadoDestino, BandaDestino, Operaciones, Monto
+        FROM dbo.ReclasificacionCarteraDetalle WHERE ProcesoId = @ProcesoId ORDER BY DetalleId
+      `);
+
+    // Se reconstruyen los movimientos originales desde el detalle guardado, no se
+    // recalculan: reversar debe deshacer exactamente lo que se asentó, aunque los
+    // vencimientos hayan cambiado desde entonces.
+    const movimientos = det.recordset.filter(d => d.Tipo === 'RECLASIFICACION').map(d => {
+      const monto = parseFloat(d.Monto);
+      return {
+        cuenta: d.CuentaDestino || d.CuentaOrigen,
+        debe: monto > 0 ? monto : 0,
+        haber: monto < 0 ? -monto : 0,
+        delta: monto, segmento: d.Segmento, estado: d.EstadoDestino, banda: d.BandaDestino,
+      };
+    });
+    const ajustes = det.recordset.filter(d => d.Tipo === 'PROVISION').map(d => {
+      const monto = parseFloat(d.Monto);
+      return {
+        segmento: d.Segmento, operaciones: d.Operaciones, ajuste: monto,
+        cuentaGasto: monto > 0 ? d.CuentaOrigen : d.CuentaDestino,
+        cuentaProvision: monto > 0 ? d.CuentaDestino : d.CuentaOrigen,
+      };
+    });
+
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+    try {
+      const nueva = await transaction.request()
+        .input('FechaCorte', sql.Date, proceso.FechaCorte)
+        .input('UsuarioId', sql.NVarChar(50), usuarioId)
+        .input('ReversaDeProcesoId', sql.Int, procesoId)
+        .input('Observaciones', sql.NVarChar(500), `Reversa del proceso #${procesoId}: ${motivo}`.slice(0, 500))
+        .query(`
+          INSERT INTO dbo.ReclasificacionCartera (FechaCorte, Estado, UsuarioId, ReversaDeProcesoId, Observaciones)
+          OUTPUT INSERTED.ProcesoId
+          VALUES (@FechaCorte, N'REVERSADO', @UsuarioId, @ReversaDeProcesoId, @Observaciones)
+        `);
+      const reversaId = nueva.recordset[0].ProcesoId;
+
+      await asentarMovimientosCartera(transaction, {
+        procesoId: reversaId, fechaCorte: proceso.FechaCorte, usuarioId,
+        referencia: `RV-${proceso.FechaCorte}-${reversaId}`,
+        movimientos, provisiones: { ajustes }, signo: -1,
+      });
+
+      // Marcar el original REVERSADO libera el índice único de "un APLICADO por corte"
+      // y deja el corte disponible para volver a correr el proceso corregido.
+      await transaction.request()
+        .input('ProcesoId', sql.Int, procesoId)
+        .query(`UPDATE dbo.ReclasificacionCartera SET Estado = N'REVERSADO' WHERE ProcesoId = @ProcesoId`);
+
+      await registrarAuditoriaProceso(transaction, {
+        proceso: 'CARTERA', accion: 'REVERSAR_RECLASIFICACION', entidadTipo: 'PROCESO_CARTERA',
+        entidadId: String(procesoId), usuarioId, ip,
+        campoAfectado: 'Estado', valorAnterior: 'APLICADO', valorNuevo: 'REVERSADO',
+        detalle: `Reversa del proceso #${procesoId} (corte ${proceso.FechaCorte}) con reversa #${reversaId}. Motivo: ${motivo}`.slice(0, 500),
+      });
+
+      await transaction.commit();
+      return res.json({ ok: true, procesoId, reversaId, fechaCorte: proceso.FechaCorte, estado: 'REVERSADO' });
+    } catch (innerErr) {
+      await transaction.rollback();
+      throw innerErr;
+    }
+  } catch (err) {
+    console.error('[cartera/reversar]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ── GET /api/reportes/solvencia — índice regulatorio real (PTC / APR) ─────────
+app.get('/api/reportes/solvencia', requireAuth, async (req, res) => {
+  try {
+    const fechaCorte = req.query.fechaCorte ? normalizarFechaCorte(req.query.fechaCorte) : null;
+    const pool = await sql.connect(sqlConfig);
+    const solvencia = await calcularSolvencia(pool, fechaCorte);
+    return res.json({ ok: true, ...solvencia });
+  } catch (err) {
+    console.error('[reportes/solvencia]', err.message);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });

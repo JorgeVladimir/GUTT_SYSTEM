@@ -50,3 +50,10 @@ db/informix/_raw/
 
 # Memoria interna de subagentes de Claude Code (no es código del proyecto)
 .claude/agent-memory/
+
+# Respaldos de la base (deploy/backup-db.ps1). Archivos de decenas de MB: nunca a git.
+backups/
+*.bak
+
+# Scripts de exploracion desechables
+scratch/

@@ -73,6 +73,7 @@ const VIEW_TITLES: Record<string, string> = {
   REPORTS_SOCIOS_CREDITOS: 'Socios & Créditos',
   CARTERA_CREDITO:     'Cartera de Crédito',
   CARTERA_PLAZO_FIJO:  'Cartera de Plazo Fijo',
+  RECLASIFICACION_CARTERA: 'Reclasificación de Cartera',
   UTILIDAD_RENTABILIDAD: 'Utilidad y Rentabilidad',
   DASHBOARD:           'Panel de Socios',
   TELLER_OPERATIONS:   'Caja y Ventanilla',

@@ -243,7 +243,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       if (useRemoteApi) {
         setIsSearchingMembers(true);
         try {
-          const res = await fetch(`/api/socios/buscar?q=${encodeURIComponent(trimmed)}`);
+          const res = await fetch(`/api/socios/buscar?q=${encodeURIComponent(trimmed)}`, { headers: DataService.authHeaders() });
           const data = await res.json();
           if (data.ok && Array.isArray(data.data)) {
             // Relacionar socio dentro de la tabla RegistroSocio, este como "SOCIO" en el campo TIPOPERSONA
@@ -469,7 +469,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     const uniqueIds = Array.from(new Set(memberIds));
     for (const id of uniqueIds) {
       try {
-        const searchRes = await fetch(`/api/socios/buscar?q=${encodeURIComponent(id)}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${encodeURIComponent(id)}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
@@ -634,7 +634,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       if (res.ok) {
         alert("¡Cobro de dividendo procesado con éxito!");
         // Reload users list
-        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
@@ -785,7 +785,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         }
 
         // Reload member
-        const searchRes = await fetch(`/api/socios/buscar?q=${selectedUserForLoan.id}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${selectedUserForLoan.id}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
@@ -822,7 +822,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       const res = await DataService.updateLoanStatus(loan.id, newLoanStatus, statusChangeReason, currentUser?.id);
       if (res.ok) {
         alert(`¡Crédito actualizado a ${newLoanStatus} con éxito!`);
-        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
@@ -859,7 +859,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       const res = await DataService.anularLoan(loan.id, currentUser?.id);
       if (res.ok) {
         alert("¡El crédito ha sido ANULADO exitosamente y el reverso contable completado!");
-        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);
@@ -888,7 +888,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
       const res = await DataService.anularPayment(loan.id, installment.number, currentUser?.id);
       if (res.ok) {
         alert("¡El cobro del dividendo ha sido anulado con éxito!");
-        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${member.id}`, { headers: DataService.authHeaders() });
         const data = await searchRes.json();
         if (data.ok && Array.isArray(data.data) && data.data.length > 0) {
           onUpdateUser(data.data[0]);

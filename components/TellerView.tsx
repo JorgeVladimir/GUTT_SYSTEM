@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Transaction, AccountType, UserRole, Dependent, PersonalReference, CashDetail, PersonType, InterbankTransfer } from '../types';
 import { SEPS_CATALOGS as CATALOGS } from '../constants';
 import { MapSelector } from './MapSelector';
-import { 
+import {
   Search, 
   Banknote, 
   UserPlus, 
@@ -265,7 +265,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+          ...DataService.authHeaders(),
         },
         body: JSON.stringify({
           id: tx.id,
@@ -346,7 +346,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
     try {
       const res = await fetch('/api/caja/control/cerrar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
         body: JSON.stringify({
           usuarioId: userId,
           fecha: fDate,
@@ -659,7 +659,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       const sDate = dateData.date;
       setServerDate(sDate);
 
-      const statusRes = await fetch(`/api/caja/control/estado?usuarioId=${currentUser.id}&fecha=${sDate}`);
+      const statusRes = await fetch(`/api/caja/control/estado?usuarioId=${currentUser.id}&fecha=${sDate}`, { headers: DataService.authHeaders() });
       const statusData = await statusRes.json();
       if (statusData.ok) {
         if (statusData.estado === 'ABIERTO') {
@@ -693,7 +693,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
     setPersonType(type);
     setIsFormLocked(true);
     try {
-      const response = await fetch(`/api/socios/siguiente-numero?tipo=${type}`);
+      const response = await fetch(`/api/socios/siguiente-numero?tipo=${type}`, { headers: DataService.authHeaders() });
       const data = await response.json();
       if (data.ok) {
         setSiguienteNumero(data.siguiente);
@@ -799,7 +799,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
 
       setIsValidating(true);
       try {
-        const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(idVal)}`);
+        const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(idVal)}`, { headers: DataService.authHeaders() });
         const data = await response.json();
         if (data.ok && data.data && data.data.length > 0) {
           const match = data.data.find((s: any) => s.id === idVal);
@@ -833,7 +833,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
     const cleanId = (spouseIdVal || '').trim();
     if (cleanId.length === 10) {
       try {
-        const response = await fetch(`/api/socios/buscar?q=${cleanId}`);
+        const response = await fetch(`/api/socios/buscar?q=${cleanId}`, { headers: DataService.authHeaders() });
         const result = await response.json();
         if (result.ok && result.data && result.data.length > 0) {
           const spouse = result.data.find((s: any) => s.id === cleanId);
@@ -864,7 +864,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
   const handleSearch = async () => {
     if (!search.trim()) return;
     try {
-      const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(search.trim())}`);
+      const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(search.trim())}`, { headers: DataService.authHeaders() });
       const data = await response.json();
       if (data.ok && data.data && data.data.length > 0) {
         const dbUser = data.data[0];
@@ -893,7 +893,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
     if (!txSearchInput.trim()) return;
     setTxIsSearching(true);
     try {
-      const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(txSearchInput.trim())}`);
+      const response = await fetch(`/api/socios/buscar?q=${encodeURIComponent(txSearchInput.trim())}`, { headers: DataService.authHeaders() });
       const data = await response.json();
       if (data && data.ok) {
         if (data.data && data.data.length > 0) {
@@ -1124,7 +1124,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       // Registrar socio en SQL Server
       const response = await fetch('/api/socios/registrar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
         body: JSON.stringify({
           tipoPersona: personType,
           tipoIdentificacion: newMember.idType,
@@ -1179,7 +1179,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       if (capturedMapImage && data.socioId) {
         await fetch('/api/socios/guardar-mapa', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
           body: JSON.stringify({
             socioId: data.socioId,
             imagenMapa: capturedMapImage,
@@ -1194,7 +1194,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       if (capturedWorkMapImage && data.socioId) {
         await fetch('/api/socios/guardar-croquis', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
           body: JSON.stringify({
             socioId: data.socioId,
             imagenCroquis: capturedWorkMapImage,
@@ -1206,7 +1206,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       // Buscar el socio recién creado en la base de datos para obtener su objeto completo (con cuentas reales de la DB)
       let dbUserObj = null;
       try {
-        const searchRes = await fetch(`/api/socios/buscar?q=${encodeURIComponent(newMember.id!)}`);
+        const searchRes = await fetch(`/api/socios/buscar?q=${encodeURIComponent(newMember.id!)}`, { headers: DataService.authHeaders() });
         const searchData = await searchRes.json();
         if (searchData.ok && searchData.data && searchData.data.length > 0) {
           dbUserObj = searchData.data[0];
@@ -1239,7 +1239,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
   const loadSociosConsultas = async () => {
     setLoadingConsultas(true);
     try {
-      const response = await fetch('/api/socios/consultas');
+      const response = await fetch('/api/socios/consultas', { headers: DataService.authHeaders() });
       const data = await response.json();
       if (data.ok) {
         setSociosConsultas(data.data);
@@ -1443,7 +1443,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+          ...DataService.authHeaders(),
         },
         body: JSON.stringify({
           accountId: selectedAccountId,
@@ -1649,7 +1649,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   try {
                     const res = await fetch('/api/caja/control/abrir', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 'Content-Type': 'application/json', ...DataService.authHeaders() },
                       body: JSON.stringify({
                         usuarioId: currentUser?.id || 'caja',
                         fecha: serverDate || new Date().toISOString().split('T')[0],

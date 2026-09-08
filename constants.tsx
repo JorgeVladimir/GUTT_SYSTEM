@@ -16,7 +16,8 @@ import {
   PieChart,
   CalendarClock,
   CalendarRange,
-  Percent
+  Percent,
+  Scale
 } from 'lucide-react';
 import { UserRole, GlobalConfig } from './types';
 
@@ -137,6 +138,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
     { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
     { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
+    { id: 'RECLASIFICACION_CARTERA', label: 'Reclasificación de Cartera', icon: <Scale size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -153,6 +155,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
     { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
     { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
+    { id: 'RECLASIFICACION_CARTERA', label: 'Reclasificación de Cartera', icon: <Scale size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -169,6 +172,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
     { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
     { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
+    { id: 'RECLASIFICACION_CARTERA', label: 'Reclasificación de Cartera', icon: <Scale size={20} /> },
     { id: 'DASHBOARD', label: 'Panel Socios', icon: <LayoutDashboard size={20} /> },
     { id: 'TELLER_OPERATIONS', label: 'Caja y Ventanilla', icon: <CreditCard size={20} /> },
     { id: 'SAVINGS', label: 'Ahorro a la Vista', icon: <PiggyBank size={20} /> },
@@ -192,6 +196,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
     { id: 'CARTERA_PLAZO_FIJO', label: 'Cartera de Plazo Fijo', icon: <CalendarClock size={20} /> },
     { id: 'UTILIDAD_RENTABILIDAD', label: 'Utilidad y Rentabilidad', icon: <Percent size={20} /> },
+    { id: 'RECLASIFICACION_CARTERA', label: 'Reclasificación de Cartera', icon: <Scale size={20} /> },
   ],
   CREDIT_OFFICER: [
     { id: 'CREDIT_OFFICER_HUB', label: 'Aprobación de Créditos', icon: <FileCheck size={20} /> },
@@ -210,6 +215,7 @@ export const NAV_BY_ROLE: Record<string, any[]> = {
     { id: 'REPORTS_SOCIOS_CREDITOS', label: 'Reportes Socios-Créditos', icon: <TrendingUp size={20} /> },
     { id: 'CARTERA_CREDITO', label: 'Cartera de Crédito', icon: <PieChart size={20} /> },
     { id: 'CARTERA_MENSUAL', label: 'Cartera Mensual', icon: <CalendarRange size={20} /> },
+    { id: 'RECLASIFICACION_CARTERA', label: 'Reclasificación de Cartera', icon: <Scale size={20} /> },
   ]
 };
 

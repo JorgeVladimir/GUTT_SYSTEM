@@ -2,6 +2,7 @@ import sql from 'mssql';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import { conSesion, sinSesion, tokenFalsificado } from './test-helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = join(__dirname, 'api', '.env');
@@ -52,25 +53,40 @@ async function runTests() {
   const errors = [];
 
   // 🧪 PRUEBA 1: Bypass de Rol (Aprobación)
-  // Un asesor intenta enviar un POST para aprobar un crédito
+  // Dos capas distintas, y hay que probarlas por separado:
+  //   sin token          -> 401 (no autenticado)
+  //   token de asesor    -> 403 (autenticado, pero sin autorización para aprobar)
+  // Antes esta prueba solo miraba el 403 y no mandaba token: desde que existe requireAuth
+  // recibía un 401 y "fallaba", cuando en realidad el sistema se había vuelto más seguro.
   try {
-    console.log('1. [SEGURIDAD] Probando Bypass de Rol en Aprobación (Asesor -> Aprobación)...');
-    const res = await fetch(`${API_BASE}/socios/loans/approve`, {
+    console.log('\n1. [SEGURIDAD] Probando Bypass de Rol en Aprobación (Asesor -> Aprobación)...');
+
+    const sinToken = await fetch(`${API_BASE}/socios/loans/approve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: sinSesion,
+      body: JSON.stringify({ ids: ['CRD-SEC-TEST-001'], reason: 'Sin sesión', usuarioId: 'asesor' })
+    });
+    const sinTokenData = await sinToken.json();
+    const capa1 = sinToken.status === 401 && !sinTokenData.ok;
+
+    const conToken = await fetch(`${API_BASE}/socios/loans/approve`, {
+      method: 'POST',
+      headers: conSesion('asesor', 'CREDIT_OFFICER'),
       body: JSON.stringify({
         ids: ['CRD-SEC-TEST-001'],
         reason: 'Intento malicioso de aprobación por asesor',
         usuarioId: 'asesor'
       })
     });
-    
-    const data = await res.json();
-    if (res.status === 403 && !data.ok && data.error.toLowerCase().includes('no tienen permisos para aprobar')) {
-      console.log('   ✅ PRUEBA PASADA: El servidor denegó la aprobación del Asesor con código 403.');
+    const conTokenData = await conToken.json();
+    const capa2 = conToken.status === 403 && !conTokenData.ok &&
+                  String(conTokenData.error || '').toLowerCase().includes('no tienen permisos para aprobar');
+
+    if (capa1 && capa2) {
+      console.log('   ✅ PRUEBA PASADA: 401 sin sesión y 403 con sesión de asesor.');
       successCount++;
     } else {
-      const msg = `Bypass aprobación: código ${res.status}, ok=${data.ok}`;
+      const msg = `Bypass aprobación: sin token -> ${sinToken.status} (esperado 401); con token de asesor -> ${conToken.status} (esperado 403, error="${conTokenData.error}")`;
       console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
       errors.push(msg); failCount++;
     }
@@ -80,24 +96,32 @@ async function runTests() {
   }
 
   // 🧪 PRUEBA 2: Bypass de Rol (Desembolso)
-  // Un asesor intenta enviar un POST para desembolsar un crédito
+  // Mismo criterio de dos capas que la prueba 1.
   try {
     console.log('\n2. [SEGURIDAD] Probando Bypass de Rol en Desembolso (Asesor -> Desembolso)...');
-    const res = await fetch(`${API_BASE}/socios/loans/disburse`, {
+
+    const sinToken = await fetch(`${API_BASE}/socios/loans/disburse`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ids: ['CRD-SEC-TEST-001'],
-        usuarioId: 'asesor'
-      })
+      headers: sinSesion,
+      body: JSON.stringify({ ids: ['CRD-SEC-TEST-001'], usuarioId: 'asesor' })
     });
-    
-    const data = await res.json();
-    if (res.status === 403 && !data.ok && data.error.toLowerCase().includes('no tienen permisos para desembolsar')) {
-      console.log('   ✅ PRUEBA PASADA: El servidor denegó el desembolso del Asesor con código 403.');
+    const sinTokenData = await sinToken.json();
+    const capa1 = sinToken.status === 401 && !sinTokenData.ok;
+
+    const conToken = await fetch(`${API_BASE}/socios/loans/disburse`, {
+      method: 'POST',
+      headers: conSesion('asesor', 'CREDIT_OFFICER'),
+      body: JSON.stringify({ ids: ['CRD-SEC-TEST-001'], usuarioId: 'asesor' })
+    });
+    const conTokenData = await conToken.json();
+    const capa2 = conToken.status === 403 && !conTokenData.ok &&
+                  String(conTokenData.error || '').toLowerCase().includes('no tienen permisos para desembolsar');
+
+    if (capa1 && capa2) {
+      console.log('   ✅ PRUEBA PASADA: 401 sin sesión y 403 con sesión de asesor.');
       successCount++;
     } else {
-      const msg = `Bypass desembolso: código ${res.status}, ok=${data.ok}`;
+      const msg = `Bypass desembolso: sin token -> ${sinToken.status} (esperado 401); con token de asesor -> ${conToken.status} (esperado 403, error="${conTokenData.error}")`;
       console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
       errors.push(msg); failCount++;
     }
@@ -150,26 +174,35 @@ async function runTests() {
     errors.push(err.message); failCount++;
   }
 
-  // 🧪 PRUEBA 4: Seguridad de Sesión (Denegación por Defecto)
-  // Intentar operar sin enviar usuarioId (debe caer en rol por defecto de 'asesor' y denegar)
+  // 🧪 PRUEBA 4: Integridad de la sesión
+  // Un token bien formado pero firmado con OTRO secreto debe ser rechazado con 401.
+  // Es la prueba que de verdad importa: si el servidor aceptara esta firma, cualquiera
+  // podría emitirse a sí mismo un token de ADMIN. También se comprueba que un usuario
+  // autenticado no pueda operar declarando ser otro (requireSelf).
   try {
-    console.log('\n4. [SEGURIDAD] Probando Seguridad de Sesión (Petición sin credenciales de usuario)...');
-    const res = await fetch(`${API_BASE}/socios/loans/approve`, {
+    console.log('\n4. [SEGURIDAD] Probando integridad de la sesión (token firmado con secreto ajeno)...');
+
+    const falsificado = await fetch(`${API_BASE}/socios/loans/approve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ids: ['CRD-SEC-TEST-003'],
-        reason: 'Prueba sin usuarioId'
-      })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenFalsificado('admin', 'ADMIN')}` },
+      body: JSON.stringify({ ids: ['CRD-SEC-TEST-003'], reason: 'Token forjado', usuarioId: 'admin' })
     });
-    
-    const data = await res.json();
-    // Debe fallar con 403 al caer en rol de asesor por defecto
-    if (res.status === 403 && !data.ok && data.error.toLowerCase().includes('no tienen permisos para aprobar')) {
-      console.log('   ✅ PRUEBA PASADA: El servidor denegó la operación al no contar con un usuarioId válido (cae a rol restrictivo por defecto).');
+    const falsificadoData = await falsificado.json();
+    const rechazaFirma = falsificado.status === 401 && !falsificadoData.ok;
+
+    const suplantacion = await fetch(`${API_BASE}/socios/loans/approve`, {
+      method: 'POST',
+      headers: conSesion('asesor', 'CREDIT_OFFICER'),
+      body: JSON.stringify({ ids: ['CRD-SEC-TEST-003'], reason: 'Suplantando a admin', usuarioId: 'admin' })
+    });
+    const suplantacionData = await suplantacion.json();
+    const rechazaSuplantacion = suplantacion.status === 403 && !suplantacionData.ok;
+
+    if (rechazaFirma && rechazaSuplantacion) {
+      console.log('   ✅ PRUEBA PASADA: token con firma ajena rechazado (401) y suplantación de usuario rechazada (403).');
       successCount++;
     } else {
-      const msg = `Sesión sin credenciales: código ${res.status}, ok=${data.ok}`;
+      const msg = `Integridad de sesión: token forjado -> ${falsificado.status} (esperado 401); suplantación -> ${suplantacion.status} (esperado 403)`;
       console.log(`   ❌ PRUEBA FALLIDA: ${msg}`);
       errors.push(msg); failCount++;
     }

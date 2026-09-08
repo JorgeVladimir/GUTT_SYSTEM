@@ -138,7 +138,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
 
   // ── Carga de datos (staff) ──────────────────────────────────────────────────
   const cargarResumen = useCallback(async () => {
-    try { const r = await fetch('/api/ahorros/resumen'); const d = await r.json(); if (d.ok) setResumen(d.data); } catch {}
+    try { const r = await fetch('/api/ahorros/resumen', { headers: DataService.authHeaders() }); const d = await r.json(); if (d.ok) setResumen(d.data); } catch {}
   }, []);
 
   useEffect(() => { if (!isMember) cargarResumen(); }, [isMember]);
@@ -146,7 +146,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
   const cargarMovimientos = useCallback(async (cuentaId: string) => {
     setLoadingMovs(true);
     try {
-      const r = await fetch(`/api/ahorros/${cuentaId}/movimientos?limit=100`);
+      const r = await fetch(`/api/ahorros/${cuentaId}/movimientos?limit=100`, { headers: DataService.authHeaders() });
       const d = await r.json();
       if (d.ok) {
         setCuentaEnFoco(d.data.account);
@@ -173,7 +173,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
     setResultadosSocio([]);
     setSocioSeleccionado(null);
     try {
-      const r = await fetch(`/api/socios/buscar?q=${encodeURIComponent(q)}`);
+      const r = await fetch(`/api/socios/buscar?q=${encodeURIComponent(q)}`, { headers: DataService.authHeaders() });
       const d = await r.json();
       if (d.ok && Array.isArray(d.data) && d.data.length > 0) {
         setResultadosSocio(d.data.map(mapSocioFromApi));
@@ -224,7 +224,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(DataService.getToken() ? { Authorization: `Bearer ${DataService.getToken()}` } : {}),
+          ...DataService.authHeaders(),
         },
         body: JSON.stringify({
           accountId: socioSeleccionado.cuentaAhorro.id,

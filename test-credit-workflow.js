@@ -2,6 +2,7 @@ import sql from 'mssql';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import { conSesion } from './test-helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = join(__dirname, 'api', '.env');
@@ -146,7 +147,7 @@ async function runTests() {
     console.log('2. Intentando aprobar crédito como Asesor (CREDIT_OFFICER)...');
     const approveAsesorRes = await fetch(`${API_BASE}/socios/loans/approve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: conSesion('asesor', 'CREDIT_OFFICER'),
       body: JSON.stringify({ ids: [TEST_LOAN_ID], reason: 'Dictamen de prueba asesor', usuarioId: 'asesor' })
     });
     
@@ -177,7 +178,7 @@ async function runTests() {
     
     const approveAdminRes = await fetch(`${API_BASE}/socios/loans/approve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: conSesion('admin', 'ADMIN'),
       body: JSON.stringify({ ids: [TEST_LOAN_ID], reason: 'Dictamen técnico - Aprobación junta', usuarioId: 'admin' })
     });
     const approveAdminData = await approveAdminRes.json();
@@ -215,7 +216,7 @@ async function runTests() {
     console.log('4. Intentando desembolsar crédito como Asesor (CREDIT_OFFICER)...');
     const disburseAsesorRes = await fetch(`${API_BASE}/socios/loans/disburse`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: conSesion('asesor', 'CREDIT_OFFICER'),
       body: JSON.stringify({ ids: [TEST_LOAN_ID], usuarioId: 'asesor' })
     });
     console.log(`Status devuelto: ${disburseAsesorRes.status}`);
@@ -232,7 +233,7 @@ async function runTests() {
     console.log('5. Desembolsando crédito como Administrador (ADMIN)...');
     const disburseAdminRes = await fetch(`${API_BASE}/socios/loans/disburse`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: conSesion('admin', 'ADMIN'),
       body: JSON.stringify({ ids: [TEST_LOAN_ID], usuarioId: 'admin' })
     });
     const disburseAdminData = await disburseAdminRes.json();
