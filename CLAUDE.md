@@ -81,6 +81,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/restart-backend.ps1   
   `DATEADD(MONTH, cuota.number, FechaDesembolso)`.
 - **Relanzar node en Windows**: `Start-Process` **con** `-RedirectStandardOutput/-RedirectStandardError`
   deja el proceso vivo pero **sin escuchar el puerto**. Sin redirección arranca bien.
+- **`Get-ScheduledTask` no ve las tareas de principal SYSTEM sin elevación**: no falla, devuelve
+  vacío. `preflight` distinguía mal "no existe" de "no puedo verla" y declaraba NO LISTO un equipo
+  bien instalado. Correr `npm run preflight` **como administrador** para que el punto 4 y 6 valgan.
 - **Archivos `.ps1` en ASCII puro**: Windows PowerShell 5.1 los lee como ANSI; un acento o un guión
   largo en un comentario rompe el parseo con `MissingEndCurlyBrace`.
 - **Aprobación de créditos**: `server.js` no tiene lista blanca de roles; solo **bloquea**

@@ -28,6 +28,20 @@ function Resultado($estado, $titulo, $detalle) {
     if ($detalle) { Write-Host ("         {0}" -f $detalle) -ForegroundColor DarkGray }
 }
 
+# Get-ScheduledTask NO devuelve las tareas cuyo principal es SYSTEM cuando la consulta
+# corre sin elevacion: no falla, simplemente no las ve. Sin distinguir "no existe" de
+# "no puedo verla", el preflight declaraba NO LISTO un equipo correctamente instalado,
+# que es peor que no verificar nada: manda a reinstalar algo que ya estaba bien.
+$Elevado = ([Security.Principal.WindowsPrincipal] `
+            [Security.Principal.WindowsIdentity]::GetCurrent()
+           ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+function EstadoTarea([string]$nombre) {
+    if (Get-ScheduledTask -TaskName $nombre -ErrorAction SilentlyContinue) { return 'SI' }
+    if (-not $Elevado) { return 'INDETERMINADO' }
+    return 'NO'
+}
+
 function Leer-Env([string]$ruta) {
     $mapa = @{}
     if (-not (Test-Path $ruta)) { return $mapa }
@@ -154,7 +168,7 @@ SELECT
 Write-Host ''
 Write-Host '  4. Arranque automatico'
 $svc = Get-Service -Name 'GuttSystemBackend' -ErrorAction SilentlyContinue
-$tarea = Get-ScheduledTask -TaskName 'GuttSystemBackend' -ErrorAction SilentlyContinue
+$tarea = (EstadoTarea 'GuttSystemBackend') -eq 'SI'
 if ($svc) {
     if ($svc.Status -eq 'Running') { Resultado 'OK' 'Servicio GuttSystemBackend en ejecucion' ("Inicio: {0}" -f $svc.StartType) }
     else { Resultado 'FALLA' ("Servicio GuttSystemBackend detenido ({0})" -f $svc.Status) 'Arranque con: Start-Service GuttSystemBackend' }
@@ -164,9 +178,11 @@ if ($svc) {
     Resultado 'FALLA' 'El backend no tiene arranque automatico' 'Ejecute como administrador: deploy\install-service.ps1'
 }
 
-$watchdog = Get-ScheduledTask -TaskName 'GuttSystemWatchdog' -ErrorAction SilentlyContinue
-if ($watchdog) { Resultado 'OK' 'Watchdog registrado' 'Revive el backend si deja de responder /api/health.' }
-else { Resultado 'AVISO' 'Sin watchdog' 'Un proceso colgado (vivo pero sin responder) no se recuperaria solo.' }
+switch (EstadoTarea 'GuttSystemWatchdog') {
+    'SI' { Resultado 'OK' 'Watchdog registrado' 'Revive el backend si deja de responder /api/health.' }
+    'NO' { Resultado 'AVISO' 'Sin watchdog' 'Un proceso colgado (vivo pero sin responder) no se recuperaria solo.' }
+    default { Resultado 'AVISO' 'Watchdog no verificable sin elevacion' 'Repita en PowerShell como administrador para comprobarlo.' }
+}
 
 # --- 5. Salud del backend ---
 Write-Host ''
@@ -182,9 +198,11 @@ try {
 # --- 6. Respaldos ---
 Write-Host ''
 Write-Host '  6. Respaldos'
-$tareaBk = Get-ScheduledTask -TaskName 'GuttSystemBackupDB' -ErrorAction SilentlyContinue
-if ($tareaBk) { Resultado 'OK' 'Tarea de respaldo diaria registrada' $null }
-else { Resultado 'FALLA' 'Sin respaldo automatico de la base' 'Ejecute como administrador: deploy\backup-db.ps1 -Instalar' }
+switch (EstadoTarea 'GuttSystemBackupDB') {
+    'SI' { Resultado 'OK' 'Tarea de respaldo diaria registrada' $null }
+    'NO' { Resultado 'FALLA' 'Sin respaldo automatico de la base' 'Ejecute como administrador: deploy\backup-db.ps1 -Instalar' }
+    default { Resultado 'AVISO' 'Tarea de respaldo no verificable sin elevacion' 'Repita en PowerShell como administrador para comprobarlo.' }
+}
 
 $dirBk = Join-Path $Repo 'backups'
 if (Test-Path $dirBk) {
