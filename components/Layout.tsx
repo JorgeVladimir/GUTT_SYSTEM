@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NAV_BY_ROLE } from '../constants';
+import { NAV_BY_ROLE, AUTHORSHIP } from '../constants';
 import { AppView, UserRole } from '../types';
 import {
   User as UserIcon,
@@ -56,14 +56,14 @@ const ROLE_TRANSLATIONS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:          'from-[#FACC15] to-[#D97706]',
-  SUPER_USER:     'from-[#FACC15] to-[#14532D]',
-  MANAGER:        'from-[#14532D] to-[#166534]',
-  ACCOUNTANT:     'from-[#14532D] to-[#15803D]',
-  TELLER:         'from-[#14532D] to-[#16A34A]',
-  CREDIT_OFFICER: 'from-[#8B1A1A] to-[#C9921A]',
+  ADMIN:          'from-[#03CED4] to-[#05AFB5]',
+  SUPER_USER:     'from-[#03CED4] to-[#002B67]',
+  MANAGER:        'from-[#002B67] to-[#17509C]',
+  ACCOUNTANT:     'from-[#002B67] to-[#17509C]',
+  TELLER:         'from-[#002B67] to-[#17509C]',
+  CREDIT_OFFICER: 'from-[#0A3D80] to-[#067A80]',
   CARTERA:        'from-[#1D4ED8] to-[#1E3A8A]',
-  MEMBER:         'from-[#1E3A2F] to-[#2D5A3D]',
+  MEMBER:         'from-[#002253] to-[#17509C]',
 };
 
 const VIEW_TITLES: Record<string, string> = {
@@ -223,7 +223,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onMouseLeave={() => !isPinned && setIsHovered(false)}
         className={`
           fixed inset-y-0 left-0 z-30 w-64 transition-all duration-300 transform flex flex-col
-          bg-gradient-to-b from-white via-emerald-50/30 to-white
+          bg-gradient-to-b from-white via-brand-50/30 to-white
           border-r border-slate-100 shadow-sm
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
@@ -237,18 +237,18 @@ export const Layout: React.FC<LayoutProps> = ({
         {/* Logo header */}
         <div className="h-16 flex items-center justify-between px-4 shrink-0 border-b border-slate-100">
           <div className={`flex items-center gap-3 transition-all duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none w-0'}`}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/20 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#002B67] to-brand-400 flex items-center justify-center shadow-lg shadow-brand-900/20 shrink-0">
               <span className="font-black text-white text-lg italic">G</span>
             </div>
             <div className="overflow-hidden whitespace-nowrap">
               <p className="text-[13px] font-black text-slate-800 leading-none tracking-tight">Gutt System</p>
-              <p className="text-[9px] font-bold text-emerald-700/70 uppercase tracking-[0.15em] mt-0.5">Portal Financiero SEPS</p>
+              <p className="text-[9px] font-bold text-brand-700/70 uppercase tracking-[0.15em] mt-0.5">Portal Financiero SEPS</p>
             </div>
           </div>
 
           {!isExpanded && (
             <div className="flex justify-center w-full">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14532D] to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#002B67] to-brand-400 flex items-center justify-center shadow-lg shadow-brand-900/20">
                 <span className="font-black text-white text-lg italic">G</span>
               </div>
             </div>
@@ -272,7 +272,7 @@ export const Layout: React.FC<LayoutProps> = ({
               <Clock size={11} />
               <span className="text-[10px] font-bold uppercase tracking-wider">{dateStr}</span>
             </div>
-            <span className="text-[11px] font-black text-[#B8860B] tabular-nums">{timeStr}</span>
+            <span className="text-[11px] font-black text-[#067A80] tabular-nums">{timeStr}</span>
           </div>
         )}
 
@@ -291,16 +291,16 @@ export const Layout: React.FC<LayoutProps> = ({
                     relative w-full flex items-center py-2.5 rounded-xl transition-all duration-200 group
                     ${isExpanded ? 'gap-3 px-3 justify-start' : 'justify-center px-0'}
                     ${isActive
-                      ? 'bg-emerald-50 text-[#14532D] shadow-[0_0_0_1px_rgba(20,83,45,0.15)]'
+                      ? 'bg-brand-50 text-[#002B67] shadow-[0_0_0_1px_rgba(20,83,45,0.15)]'
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}
                   `}
                 >
                   {/* Active left accent */}
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#14532D] rounded-r-full" />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#002B67] rounded-r-full" />
                   )}
 
-                  <div className={`shrink-0 transition-colors ${isActive ? 'text-[#14532D]' : ''}`}>
+                  <div className={`shrink-0 transition-colors ${isActive ? 'text-[#002B67]' : ''}`}>
                     {item.icon}
                   </div>
 
@@ -309,7 +309,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   </span>
 
                   {isActive && isExpanded && (
-                    <ChevronRight size={12} className="ml-auto shrink-0 text-[#14532D]/60" />
+                    <ChevronRight size={12} className="ml-auto shrink-0 text-[#002B67]/60" />
                   )}
 
                   {/* Tooltip */}
@@ -323,7 +323,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
                 {/* Submenu */}
                 {showSub && (
-                  <div className="mt-1 mb-2 ml-4 pl-3 border-l border-emerald-200 space-y-0.5">
+                  <div className="mt-1 mb-2 ml-4 pl-3 border-l border-brand-200 space-y-0.5">
                     {subMenuItems.map(sub => {
                       const subActive = activeSubView === sub.id;
                       return (
@@ -332,13 +332,13 @@ export const Layout: React.FC<LayoutProps> = ({
                           onClick={() => onSubViewChange(sub.id)}
                           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all text-left ${
                             subActive
-                              ? 'bg-emerald-100 text-[#14532D]'
+                              ? 'bg-brand-100 text-[#002B67]'
                               : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <span className={subActive ? 'text-[#14532D]' : 'text-slate-300'}>{sub.icon}</span>
+                          <span className={subActive ? 'text-[#002B67]' : 'text-slate-300'}>{sub.icon}</span>
                           <span className="truncate">{sub.label}</span>
-                          {subActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#14532D] shrink-0" />}
+                          {subActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#002B67] shrink-0" />}
                         </button>
                       );
                     })}
@@ -358,7 +358,7 @@ export const Layout: React.FC<LayoutProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-bold text-slate-800 truncate leading-none">{userName}</p>
-                <p className="text-[9px] font-bold text-[#B8860B] uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
+                <p className="text-[9px] font-bold text-[#067A80] uppercase tracking-wider mt-0.5">{ROLE_TRANSLATIONS[role] || role}</p>
               </div>
             </div>
           ) : (
@@ -378,6 +378,14 @@ export const Layout: React.FC<LayoutProps> = ({
             <LogOut size={16} className="shrink-0" />
             {isExpanded && <span className="text-[11px] font-bold">Cerrar Sesión</span>}
           </button>
+
+          {/* Autoria del desarrollo: la propiedad intelectual es de la empresa
+              (clausula 11 del contrato de socios), el credito queda registrado. */}
+          {isExpanded && (
+            <p className="px-3 pt-2 text-[9px] leading-tight text-slate-300 font-semibold select-none">
+              {AUTHORSHIP}
+            </p>
+          )}
         </div>
       </aside>
 
@@ -402,7 +410,7 @@ export const Layout: React.FC<LayoutProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-[#14532D] px-3 py-1.5 rounded-full">
+            <div className="hidden sm:flex items-center gap-2 bg-brand-50 border border-brand-200 text-[#002B67] px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} />
               <span className="text-[10px] font-black uppercase tracking-widest">SEPS Activo</span>
             </div>

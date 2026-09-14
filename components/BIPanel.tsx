@@ -141,7 +141,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
 
   const getRatingStyle = (rating: CreditRating) => {
     switch (rating) {
-      case 'EXCELENTE': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'EXCELENTE': return 'bg-brand-100 text-brand-700 border-brand-200';
       case 'BUENO': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'REGULAR': return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'MALO': return 'bg-red-100 text-red-700 border-red-200';
@@ -155,7 +155,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
       {/* Header BI */}
       <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
+          <div className="w-16 h-16 bg-[#002B67] text-[#067A80] rounded-[2rem] flex items-center justify-center shadow-lg">
             <BarChart3 size={32} />
           </div>
           <div>
@@ -176,7 +176,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-2">Entidad Fuente</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.keys(availableFields).map(ent => (
-                    <button key={ent} onClick={() => {setReportConfig({entity: ent, fields: availableFields[ent].slice(0, 3), filter: ''}); setIsGenerated(false);}} className={`py-4 rounded-xl font-black text-[10px] border-2 transition-all ${reportConfig.entity === ent ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' : 'border-slate-50 text-slate-400'}`}>{ent}</button>
+                    <button key={ent} onClick={() => {setReportConfig({entity: ent, fields: availableFields[ent].slice(0, 3), filter: ''}); setIsGenerated(false);}} className={`py-4 rounded-xl font-black text-[10px] border-2 transition-all ${reportConfig.entity === ent ? 'border-[#002B67] bg-brand-50 text-[#002B67]' : 'border-slate-50 text-slate-400'}`}>{ent}</button>
                   ))}
                 </div>
               </div>
@@ -196,7 +196,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                           setReportConfig({...reportConfig, fields: newFields});
                           setIsGenerated(false);
                         }}
-                        className="w-5 h-5 accent-[#14532D]" 
+                        className="w-5 h-5 accent-[#002B67]" 
                       />
                       <span className="text-[11px] font-black text-slate-600 uppercase">{field}</span>
                     </label>
@@ -213,14 +213,14 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                     placeholder="Buscar..." 
                     value={reportConfig.filter}
                     onChange={(e) => {setReportConfig({...reportConfig, filter: e.target.value}); setIsGenerated(false);}}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#14532D]"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#002B67]"
                   />
                 </div>
               </div>
 
               <button 
                 onClick={handleGenerateReport}
-                className="w-full py-5 bg-[#14532D] text-white rounded-2xl font-black text-sm uppercase shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                className="w-full py-5 bg-[#002B67] text-white rounded-2xl font-black text-sm uppercase shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
               >
                 GENERAR REPORTE <FileSpreadsheet size={20} />
               </button>
@@ -236,8 +236,8 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{reportConfig.entity} • {reportConfig.fields.length} columnas • {isGenerated ? generatedData.length : 0} registros</p>
                  </div>
                  <div className="flex gap-2">
-                   <button onClick={() => window.print()} className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-[#14532D] transition-colors"><Printer size={20} /></button>
-                   <button className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-[#14532D] transition-colors"><Download size={20} /></button>
+                   <button onClick={() => window.print()} className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-[#002B67] transition-colors"><Printer size={20} /></button>
+                   <button className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-[#002B67] transition-colors"><Download size={20} /></button>
                  </div>
                </div>
                
@@ -284,23 +284,23 @@ export const BIPanel: React.FC<BIPanelProps> = ({
            <div className="lg:col-span-2 bg-white p-10 rounded-[4rem] shadow-sm border border-slate-100">
              <div className="flex justify-between items-center mb-10">
                <h3 className="text-2xl font-black text-slate-900">Análisis de Margen Neto</h3>
-               <div className="px-6 py-2 bg-emerald-100 text-emerald-700 rounded-full font-black text-xs uppercase">Margen: {profitability.margin}%</div>
+               <div className="px-6 py-2 bg-brand-100 text-brand-700 rounded-full font-black text-xs uppercase">Margen: {profitability.margin}%</div>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Ingresos Financieros</p>
-                  <p className="text-4xl font-black text-[#14532D]">${profitability.income.toLocaleString()}</p>
-                  <p className="text-xs text-emerald-600 font-bold mt-2">Por intereses devengados</p>
+                  <p className="text-4xl font-black text-[#002B67]">${profitability.income.toLocaleString()}</p>
+                  <p className="text-xs text-brand-600 font-bold mt-2">Por intereses devengados</p>
                 </div>
                 <div className="p-8 bg-red-50 rounded-3xl border border-red-100">
                   <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4">Egresos Operativos</p>
                   <p className="text-4xl font-black text-red-600">${profitability.expense.toLocaleString()}</p>
                   <p className="text-xs text-red-400 font-bold mt-2">Costo de administración</p>
                 </div>
-                <div className="col-span-full p-8 bg-[#14532D] text-white rounded-[3rem] shadow-2xl relative overflow-hidden">
+                <div className="col-span-full p-8 bg-[#002B67] text-white rounded-[3rem] shadow-2xl relative overflow-hidden">
                   <div className="relative z-10">
-                    <p className="text-[#FACC15] font-black text-[10px] uppercase tracking-[0.3em] mb-4">Utilidad Institucional (Neto)</p>
+                    <p className="text-[#067A80] font-black text-[10px] uppercase tracking-[0.3em] mb-4">Utilidad Institucional (Neto)</p>
                     <p className="text-5xl font-black tracking-tighter">${profitability.net.toLocaleString()}</p>
                   </div>
                   <PieChart className="absolute right-[-20px] bottom-[-20px] text-white/5" size={160} />
@@ -312,8 +312,8 @@ export const BIPanel: React.FC<BIPanelProps> = ({
               <h3 className="text-xl font-black text-slate-900 mb-8">Composición Activos</h3>
               <div className="space-y-6 flex-1">
                  {[
-                   {label: 'Cartera Vigente', val: '72%', color: 'bg-emerald-500'},
-                   {label: 'Disponibles', val: '15%', color: 'bg-[#FACC15]'},
+                   {label: 'Cartera Vigente', val: '72%', color: 'bg-accent-500'},
+                   {label: 'Disponibles', val: '15%', color: 'bg-[#03CED4]'},
                    {label: 'Activos Fijos', val: '8%', color: 'bg-blue-500'},
                    {label: 'Inversiones', val: '5%', color: 'bg-purple-500'},
                  ].map(item => (
@@ -329,7 +329,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                  ))}
               </div>
               {isAdmin && (
-                 <button className="mt-10 w-full py-5 border-2 border-[#14532D] text-[#14532D] rounded-2xl font-black text-xs uppercase hover:bg-emerald-50 transition-all">Exportar Balance Proyectado</button>
+                 <button className="mt-10 w-full py-5 border-2 border-[#002B67] text-[#002B67] rounded-2xl font-black text-xs uppercase hover:bg-brand-50 transition-all">Exportar Balance Proyectado</button>
               )}
            </div>
         </div>
@@ -339,7 +339,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
         <div className="bg-white rounded-[4rem] shadow-sm border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95">
           <div className="p-10 border-b bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center">
+              <div className="w-14 h-14 bg-brand-50 text-[#002B67] rounded-2xl flex items-center justify-center">
                 <ShieldCheck size={28} />
               </div>
               <div>
@@ -351,7 +351,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
             {isAdmin && (
               <div className="relative w-full md:w-80">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                <input type="text" placeholder="Buscar socio..." className="w-full pl-12 pr-6 py-4 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm focus:border-[#14532D] outline-none" />
+                <input type="text" placeholder="Buscar socio..." className="w-full pl-12 pr-6 py-4 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm focus:border-[#002B67] outline-none" />
               </div>
             )}
           </div>
@@ -383,7 +383,7 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                         <div className="flex flex-col items-center">
                            <span className="text-xl font-black text-slate-900">{score}</span>
                            <div className="w-16 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                              <div className={`h-full ${score > 800 ? 'bg-emerald-500' : score > 500 ? 'bg-amber-400' : 'bg-red-500'}`} style={{width: `${(score/1000)*100}%`}}></div>
+                              <div className={`h-full ${score > 800 ? 'bg-brand-500' : score > 500 ? 'bg-amber-400' : 'bg-red-500'}`} style={{width: `${(score/1000)*100}%`}}></div>
                            </div>
                         </div>
                       </td>
@@ -394,13 +394,13 @@ export const BIPanel: React.FC<BIPanelProps> = ({
                       </td>
                       <td className="px-10 py-6 text-center">
                         <div className="flex items-center justify-center gap-2">
-                           <Activity size={14} className={rating === 'EXCELENTE' ? 'text-emerald-500' : 'text-amber-500'} />
+                           <Activity size={14} className={rating === 'EXCELENTE' ? 'text-brand-500' : 'text-amber-500'} />
                            <span className="text-[10px] font-black text-slate-600 uppercase">A tiempo</span>
                         </div>
                       </td>
                       <td className="px-10 py-6 text-right">
                         <div className="flex flex-col items-end">
-                          <span className={`text-[10px] font-black uppercase ${rating === 'EXCELENTE' ? 'text-emerald-600' : 'text-red-500'}`}>
+                          <span className={`text-[10px] font-black uppercase ${rating === 'EXCELENTE' ? 'text-brand-600' : 'text-red-500'}`}>
                             {rating === 'EXCELENTE' ? 'MÍNIMO' : 'MODERADO'}
                           </span>
                         </div>

@@ -31,7 +31,7 @@ import { User, UserRole } from '../types';
 import { DataService } from '../services/dataService';
 
 // Paleta reutilizada de ReportsView.tsx (misma identidad visual en toda la app)
-const COLORS = ['#14532D', '#FACC15', '#2563EB', '#7C3AED', '#EC4899'];
+const COLORS = ['#002B67', '#03CED4', '#F59E0B', '#7C3AED', '#EC4899'];
 
 // Forma exacta de fila devuelta por CarteraJsonRunner (jdbc-informix), sin transformar montos
 // con aritmética adicional: se pasan tal cual llegan de Informix (DECIMAL) y solo se formatean
@@ -130,7 +130,7 @@ const formatFecha = (v: string | null) => {
 };
 
 const CALIFICACION_STYLES: Record<string, string> = {
-  A: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  A: 'bg-brand-50 text-brand-700 border-brand-200',
   B: 'bg-blue-50 text-blue-700 border-blue-200',
   C: 'bg-amber-50 text-amber-700 border-amber-200',
   D: 'bg-orange-50 text-orange-700 border-orange-200',
@@ -336,13 +336,13 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
               type="date"
               value={fechaInput}
               onChange={e => setFechaInput(e.target.value)}
-              className="pl-11 pr-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#14532D] text-xs outline-none focus:border-[#14532D] shadow-sm"
+              className="pl-11 pr-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#002B67] text-xs outline-none focus:border-[#002B67] shadow-sm"
             />
           </div>
           <button
             onClick={() => void loadCartera(fechaInput)}
             disabled={loading}
-            className="px-6 py-3 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
+            className="px-6 py-3 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'Consultando...' : 'Actualizar'}
           </button>
@@ -351,7 +351,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
 
       {loading && !hasLoadedOnce && (
         <div className="bg-white p-8 sm:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="w-12 h-12 border-4 border-[#002B67] border-t-transparent rounded-full animate-spin mb-6"></div>
           <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Consultando Informix en vivo</p>
           <p className="text-[11px] font-bold text-slate-400 mt-2 text-center max-w-md">
             Esta es una consulta real sobre el core bancario legado a través del túnel Tailscale.
@@ -380,7 +380,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
           {/* Fecha de corte y conteo */}
           <div className="flex items-center justify-between px-2 no-print">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Fecha de corte: <span className="text-[#14532D]">{formatFecha(fechaCorte)}</span> · {rows.length} operaciones
+              Fecha de corte: <span className="text-[#002B67]">{formatFecha(fechaCorte)}</span> · {rows.length} operaciones
             </p>
           </div>
 
@@ -388,7 +388,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-[#14532D] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-12 h-12 bg-[#002B67] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
                   <Landmark size={22} />
                 </div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Total Cartera</p>
@@ -397,15 +397,15 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-6">Suma de saldos vigente + vencido + demandado + castigado</p>
             </div>
 
-            <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between">
+            <div className="p-8 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-white text-[#14532D] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-12 h-12 bg-white text-[#002B67] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                   <TrendingUp size={22} />
                 </div>
-                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Cartera Vigente</p>
-                <h4 className="text-2xl font-black text-[#14532D]">{money(summary.vigente)}</h4>
+                <p className="text-[9px] font-black text-accent-600 uppercase tracking-wider mb-1">Cartera Vigente</p>
+                <h4 className="text-2xl font-black text-[#002B67]">{money(summary.vigente)}</h4>
               </div>
-              <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">
+              <p className="text-[8px] font-bold text-brand-700/60 uppercase tracking-widest mt-6">
                 {summary.total > 0 ? ((summary.vigente / summary.total) * 100).toFixed(1) : '0.0'}% de la cartera total
               </p>
             </div>
@@ -487,7 +487,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2">
                   <PieChart size={16} /> Composición de la Cartera
                 </h4>
                 <div className="h-[300px] flex items-center justify-center bg-slate-50 border border-slate-100 rounded-[2.5rem] p-6">
@@ -509,7 +509,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Detalle de Riesgo de Cartera</h4>
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4">Detalle de Riesgo de Cartera</h4>
                 <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-5">
                   {[
                     { label: 'Vigente', value: summary.vigente, color: COLORS[0] },
@@ -527,7 +527,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                   ))}
                   <div className="flex justify-between items-center pt-3">
                     <span className="text-[10px] font-black text-slate-700 uppercase">Índice de Morosidad</span>
-                    <span className="text-lg font-black text-[#14532D]">
+                    <span className="text-lg font-black text-[#002B67]">
                       {summary.total > 0 ? (((summary.vencido + summary.demandado + summary.castigado) / summary.total) * 100).toFixed(2) : '0.00'}%
                     </span>
                   </div>
@@ -544,7 +544,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
             <button
               onClick={() => setVistaTabla('CALIFICACION')}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                vistaTabla === 'CALIFICACION' ? 'bg-[#14532D] text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'
+                vistaTabla === 'CALIFICACION' ? 'bg-[#002B67] text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'
               }`}
             >
               Por Calificación
@@ -552,7 +552,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
             <button
               onClick={() => setVistaTabla('LINEA_ANTIGUEDAD')}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 ${
-                vistaTabla === 'LINEA_ANTIGUEDAD' ? 'bg-[#14532D] text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'
+                vistaTabla === 'LINEA_ANTIGUEDAD' ? 'bg-[#002B67] text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'
               }`}
             >
               <LayoutList size={12} /> Por Línea y Antigüedad
@@ -594,7 +594,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                   <tbody className="divide-y divide-slate-50">
                     {porLineaAntiguedad.map((g, i) => (
                       <tr key={`${g.obl}-${g.bucket}-${i}`} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 font-black text-[#14532D] text-[11px] whitespace-nowrap">{g.obl}</td>
+                        <td className="px-5 py-3 font-black text-[#002B67] text-[11px] whitespace-nowrap">{g.obl}</td>
                         <td className="px-5 py-3 font-bold text-slate-600 text-[10px] whitespace-nowrap max-w-[160px] truncate">{g.linea}</td>
                         <td className="px-5 py-3 font-bold text-slate-500 text-[10px] whitespace-nowrap">{g.situacion}</td>
                         <td className="px-5 py-3 font-bold text-slate-500 text-[10px] whitespace-nowrap">{g.bucket}</td>
@@ -615,8 +615,8 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                   </tbody>
                   {porLineaAntiguedad.length > 0 && (
                     <tfoot>
-                      <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black sticky bottom-0">
-                        <td className="px-5 py-4 text-[#14532D] text-[10px] uppercase" colSpan={5}>Total</td>
+                      <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black sticky bottom-0">
+                        <td className="px-5 py-4 text-[#002B67] text-[10px] uppercase" colSpan={5}>Total</td>
                         <td className="px-5 py-4 text-right text-slate-900 text-[11px]">{money(totalesLineaAntiguedad.capital)}</td>
                         <td className="px-5 py-4 text-right text-slate-700 text-[11px]">{money(totalesLineaAntiguedad.provision)}</td>
                         <td className="px-5 py-4 text-right text-slate-700 text-[11px]">{money(totalesLineaAntiguedad.interesMora)}</td>
@@ -646,7 +646,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Buscar socio, cédula u operación..."
-                    className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#14532D] w-full md:w-64"
+                    className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#002B67] w-full md:w-64"
                   />
                 </div>
                 <button
@@ -698,7 +698,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                           <p className="text-[9px] font-bold text-slate-400">Socio #{r.num_socio}</p>
                         </td>
                         <td className="px-5 py-4 font-bold text-slate-600 text-[11px] whitespace-nowrap">{String(r.identificacion || '').trim()}</td>
-                        <td className="px-5 py-4 font-black text-[#14532D] text-[11px] whitespace-nowrap">{r.num_operacion}</td>
+                        <td className="px-5 py-4 font-black text-[#002B67] text-[11px] whitespace-nowrap">{r.num_operacion}</td>
                         <td className="px-5 py-4 font-bold text-slate-500 text-[10px] whitespace-nowrap max-w-[160px] truncate">{r.linea_credito || 'N/A'}</td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex px-2.5 py-1 rounded-lg border font-black text-[10px] ${CALIFICACION_STYLES[calif] || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
@@ -710,7 +710,7 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                         <td className="px-5 py-4 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">{money(r.cap_concedido)}</td>
                         <td className="px-5 py-4 text-right font-bold text-slate-500 text-[11px] whitespace-nowrap">{money(r.comision_desembolso_3pct)}</td>
                         <td className="px-5 py-4 text-right font-bold text-slate-500 text-[11px] whitespace-nowrap">{(Number(r.tasa) || 0).toFixed(2)}%</td>
-                        <td className="px-5 py-4 text-right font-black text-emerald-700 text-[11px] whitespace-nowrap">{money(r.saldo_vigente)}</td>
+                        <td className="px-5 py-4 text-right font-black text-accent-700 text-[11px] whitespace-nowrap">{money(r.saldo_vigente)}</td>
                         <td className="px-5 py-4 text-right font-black text-amber-700 text-[11px] whitespace-nowrap">{money(r.saldo_vencido)}</td>
                         <td className="px-5 py-4 text-right font-black text-blue-700 text-[11px] whitespace-nowrap">{money(r.saldo_demandado)}</td>
                         <td className="px-5 py-4 text-right font-black text-red-700 text-[11px] whitespace-nowrap">{money(r.saldo_castigado)}</td>
@@ -730,11 +730,11 @@ export const CarteraCreditoView: React.FC<CarteraCreditoViewProps> = ({ currentU
                 </tbody>
                 {filteredRows.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black sticky bottom-0">
-                      <td className="px-5 py-4 text-[#14532D] text-[10px] uppercase" colSpan={8}>Totales (todas las operaciones)</td>
+                    <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black sticky bottom-0">
+                      <td className="px-5 py-4 text-[#002B67] text-[10px] uppercase" colSpan={8}>Totales (todas las operaciones)</td>
                       <td className="px-5 py-4 text-right text-slate-700 text-[11px]">{money(summary.comisionDesembolso)}</td>
                       <td className="px-5 py-4 text-right text-slate-400 text-[11px]"></td>
-                      <td className="px-5 py-4 text-right text-emerald-700 text-[11px]">{money(summary.vigente)}</td>
+                      <td className="px-5 py-4 text-right text-accent-700 text-[11px]">{money(summary.vigente)}</td>
                       <td className="px-5 py-4 text-right text-amber-700 text-[11px]">{money(summary.vencido)}</td>
                       <td className="px-5 py-4 text-right text-blue-700 text-[11px]">{money(summary.demandado)}</td>
                       <td className="px-5 py-4 text-right text-red-700 text-[11px]">{money(summary.castigado)}</td>

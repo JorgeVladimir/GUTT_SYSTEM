@@ -119,7 +119,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
         </div>
         <button
           onClick={() => { fetchBalance(); if (activeTab === 'diario') fetchDiario(); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#14532D] text-white rounded-xl font-bold text-xs hover:bg-[#1b5e20] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#002B67] text-white rounded-xl font-bold text-xs hover:bg-[#0A3D80] transition-colors"
         >
           <RefreshCw size={14} /> Actualizar
         </button>
@@ -128,7 +128,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
       {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center shrink-0">
             <ArrowDownLeft size={22} />
           </div>
           <div>
@@ -144,17 +144,17 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Haber</p>
             <p className="text-xl font-black text-slate-900">{fmtUSD(totalHaber)}</p>
-            <p className={`text-[9px] font-black ${Math.abs(totalDebe - totalHaber) < 0.01 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-[9px] font-black ${Math.abs(totalDebe - totalHaber) < 0.01 ? 'text-brand-600' : 'text-red-600'}`}>
               {Math.abs(totalDebe - totalHaber) < 0.01 ? '✓ Partida doble cuadrada' : `Diferencia: ${fmtUSD(Math.abs(totalDebe - totalHaber))}`}
             </p>
           </div>
         </div>
-        <div className="bg-[#14532D] p-5 rounded-[2rem] shadow-2xl text-white flex items-center gap-4 border-b-8 border-[#FACC15]">
-          <div className="w-12 h-12 bg-white/10 text-[#FACC15] rounded-2xl flex items-center justify-center shrink-0">
+        <div className="bg-[#002B67] p-5 rounded-[2rem] shadow-2xl text-white flex items-center gap-4 border-b-8 border-[#03CED4]">
+          <div className="w-12 h-12 bg-white/10 text-[#067A80] rounded-2xl flex items-center justify-center shrink-0">
             <TrendingUp size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-[#FACC15]/80 uppercase tracking-widest">Patrimonio</p>
+            <p className="text-[10px] font-black text-[#067A80]/80 uppercase tracking-widest">Patrimonio</p>
             <p className="text-xl font-black">{fmtUSD(totals.equity)}</p>
             <p className="text-[9px] text-white/50 font-medium">Plan de cuentas</p>
           </div>
@@ -169,7 +169,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
             onClick={() => setActiveTab(t.id)}
             className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-wider rounded-t-xl transition-all border-b-2 ${
               activeTab === t.id
-                ? 'bg-white border-[#14532D] text-[#14532D] shadow-sm'
+                ? 'bg-white border-[#002B67] text-[#002B67] shadow-sm'
                 : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -196,7 +196,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                 placeholder="Filtrar por código de cuenta..."
                 value={searchCuenta}
                 onChange={e => setSearchCuenta(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#14532D] outline-none"
+                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#002B67] outline-none"
               />
             </div>
           </div>
@@ -221,10 +221,10 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                 <tbody className="divide-y divide-slate-50">
                   {cuentasFiltradas.map(c => (
                     <tr key={c.CuentaContable} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-3 font-black text-[#14532D] text-sm">{c.CuentaContable}</td>
+                      <td className="px-6 py-3 font-black text-[#002B67] text-sm">{c.CuentaContable}</td>
                       <td className="px-6 py-3 text-right text-sm font-bold text-slate-700">{fmtUSD(parseFloat(String(c.TotalDebe)))}</td>
                       <td className="px-6 py-3 text-right text-sm font-bold text-slate-700">{fmtUSD(parseFloat(String(c.TotalHaber)))}</td>
-                      <td className={`px-6 py-3 text-right text-sm font-black ${parseFloat(String(c.Saldo)) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                      <td className={`px-6 py-3 text-right text-sm font-black ${parseFloat(String(c.Saldo)) >= 0 ? 'text-brand-700' : 'text-red-600'}`}>
                         {fmtUSD(parseFloat(String(c.Saldo)))}
                       </td>
                       <td className="px-6 py-3 text-center">
@@ -238,11 +238,11 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                 </tbody>
                 {cuentasFiltradas.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-[#14532D] bg-emerald-50">
-                      <td className="px-6 py-4 font-black text-[#14532D] text-sm uppercase">TOTALES</td>
-                      <td className="px-6 py-4 text-right font-black text-[#14532D]">{fmtUSD(totalDebe)}</td>
-                      <td className="px-6 py-4 text-right font-black text-[#14532D]">{fmtUSD(totalHaber)}</td>
-                      <td className={`px-6 py-4 text-right font-black text-sm ${Math.abs(totalDebe - totalHaber) < 0.01 ? 'text-emerald-700' : 'text-red-600'}`}>
+                    <tr className="border-t-2 border-[#002B67] bg-brand-50">
+                      <td className="px-6 py-4 font-black text-[#002B67] text-sm uppercase">TOTALES</td>
+                      <td className="px-6 py-4 text-right font-black text-[#002B67]">{fmtUSD(totalDebe)}</td>
+                      <td className="px-6 py-4 text-right font-black text-[#002B67]">{fmtUSD(totalHaber)}</td>
+                      <td className={`px-6 py-4 text-right font-black text-sm ${Math.abs(totalDebe - totalHaber) < 0.01 ? 'text-brand-700' : 'text-red-600'}`}>
                         {fmtUSD(totalDebe - totalHaber)}
                       </td>
                       <td className="px-6 py-4 text-center font-black text-slate-600 text-xs">
@@ -268,15 +268,15 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                 placeholder="Buscar por concepto, cuenta o socio..."
                 value={searchDiario}
                 onChange={e => setSearchDiario(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#14532D] outline-none"
+                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:border-[#002B67] outline-none"
               />
             </div>
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-slate-400" />
-              <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:border-[#14532D] outline-none" />
+              <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:border-[#002B67] outline-none" />
               <span className="text-slate-300 text-xs">—</span>
-              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:border-[#14532D] outline-none" />
-              <button onClick={fetchDiario} className="px-3 py-2 bg-[#14532D] text-white rounded-xl text-xs font-bold hover:bg-[#1b5e20] transition-colors">Filtrar</button>
+              <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:border-[#002B67] outline-none" />
+              <button onClick={fetchDiario} className="px-3 py-2 bg-[#002B67] text-white rounded-xl text-xs font-bold hover:bg-[#0A3D80] transition-colors">Filtrar</button>
             </div>
           </div>
 
@@ -306,10 +306,10 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                       <td className="px-4 py-3 text-slate-500 text-[11px] whitespace-nowrap">
                         {new Date(a.FechaAsiento).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: '2-digit' })}
                       </td>
-                      <td className="px-4 py-3 font-black text-[#14532D] text-[11px]">{a.CuentaContable}</td>
+                      <td className="px-4 py-3 font-black text-[#002B67] text-[11px]">{a.CuentaContable}</td>
                       <td className="px-4 py-3 text-slate-600 font-medium text-xs max-w-[220px] truncate">{a.Concepto}</td>
                       <td className="px-4 py-3 text-slate-500 text-[11px] max-w-[140px] truncate">{a.NombreSocio}</td>
-                      <td className="px-4 py-3 text-right font-black text-emerald-700 text-[11px]">
+                      <td className="px-4 py-3 text-right font-black text-brand-700 text-[11px]">
                         {parseFloat(String(a.Debe)) > 0 ? fmtUSD(parseFloat(String(a.Debe))) : '—'}
                       </td>
                       <td className="px-4 py-3 text-right font-black text-red-600 text-[11px]">
@@ -343,7 +343,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
               <tbody className="divide-y divide-slate-50">
                 {chart.map(entry => (
                   <tr key={entry.code} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-4 font-black text-[#14532D] text-sm">{entry.code}</td>
+                    <td className="px-8 py-4 font-black text-[#002B67] text-sm">{entry.code}</td>
                     <td className="px-8 py-4">
                       <div style={{ marginLeft: `${(entry.level - 1) * 20}px` }}>
                         <span className={`text-sm ${entry.level === 1 ? 'font-black text-slate-900' : 'font-bold text-slate-600'}`}>
@@ -353,7 +353,7 @@ export const AccountantView: React.FC<AccountantViewProps> = ({ chart }) => {
                     </td>
                     <td className="px-8 py-4 text-center">
                       <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase ${
-                        entry.type === 'ASSET' ? 'bg-emerald-100 text-emerald-700' :
+                        entry.type === 'ASSET' ? 'bg-brand-100 text-brand-700' :
                         entry.type === 'LIABILITY' ? 'bg-red-100 text-red-700' :
                         'bg-slate-100 text-slate-700'
                       }`}>{entry.type}</span>

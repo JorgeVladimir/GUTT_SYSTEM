@@ -20,8 +20,8 @@
  *   "razonSocial": "Caja de Ahorro Ejemplo",
  *   "ruc": "1234567890001",
  *   "nombreComercial": "Ejemplo",
- *   "colorPrimario": "#14532D",
- *   "colorAcento": "#FACC15",
+ *   "colorPrimario": "#002B67",
+ *   "colorAcento": "#03CED4",
  *   "adminUsuarioId": "admin.ejemplo",
  *   "adminNombreCompleto": "Administrador Ejemplo",
  *   "adminPasswordInicial": "cambiar-en-primer-login",
@@ -127,8 +127,8 @@ async function main() {
         .input('razonSocial', sql.NVarChar(200), cfg.razonSocial)
         .input('ruc', sql.NVarChar(13), cfg.ruc)
         .input('nombreComercial', sql.NVarChar(100), cfg.nombreComercial)
-        .input('colorPrimario', sql.NVarChar(9), cfg.colorPrimario || '#14532D')
-        .input('colorAcento', sql.NVarChar(9), cfg.colorAcento || '#FACC15')
+        .input('colorPrimario', sql.NVarChar(9), cfg.colorPrimario || '#002B67')
+        .input('colorAcento', sql.NVarChar(9), cfg.colorAcento || '#03CED4')
         .query(`
           INSERT INTO dbo.Cooperativas (RazonSocial, RUC, NombreComercial, ColorPrimario, ColorAcento, Activa)
           OUTPUT INSERTED.CooperativaId

@@ -258,7 +258,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const exportDatabase = () => {
     const dataStr = JSON.stringify({ users, rates, config }, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `BAK_PATATE_CORE_${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `BAK_GUTT_CORE_${new Date().toISOString().split('T')[0]}.json`;
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -301,19 +301,19 @@ export const AdminView: React.FC<AdminViewProps> = ({
     <div className="space-y-8 max-w-[1400px] mx-auto pb-20 animate-in fade-in duration-700">
       {/* Header Administrativo Premium */}
       <div className="bg-white rounded-[4rem] p-10 lg:p-14 shadow-2xl border border-slate-100 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-emerald-50 to-transparent"></div>
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-50 to-transparent"></div>
         <div className="relative z-10 flex flex-col xl:flex-row justify-between items-center gap-10">
           <div className="flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
              <div className="relative">
-                <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full"></div>
-                <div className="w-24 h-24 bg-[#14532D] text-white rounded-[2.5rem] flex items-center justify-center shadow-inner relative border-2 border-white">
+                <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full"></div>
+                <div className="w-24 h-24 bg-[#002B67] text-white rounded-[2.5rem] flex items-center justify-center shadow-inner relative border-2 border-white">
                   <ShieldCheck size={48} strokeWidth={1.5} />
                 </div>
              </div>
              <div>
                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">Sistema de Control Central</p>
+                 <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                 <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em]">Sistema de Control Central</p>
                </div>
                <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-3">Portal Administrativo</h2>
                <p className="text-slate-400 font-medium max-w-md">Gestión de Core Bancario, Tasas de Interés y Seguridad.</p>
@@ -327,10 +327,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
       {activeTab === 'SUMMARY' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 animate-in slide-in-from-bottom-8 duration-700">
            {[
-             { label: 'SOCIOS ACTIVOS', val: stats.memberCount, icon: <Users size={28} />, color: 'bg-emerald-500', detail: 'Registrados en Core' },
-             { label: 'PATRIMONIO AHORRO', val: `$${stats.totalSavings.toLocaleString()}`, icon: <Wallet size={28} />, color: 'bg-emerald-600', detail: 'Cuentas a la Vista' },
+             { label: 'SOCIOS ACTIVOS', val: stats.memberCount, icon: <Users size={28} />, color: 'bg-brand-500', detail: 'Registrados en Core' },
+             { label: 'PATRIMONIO AHORRO', val: `$${stats.totalSavings.toLocaleString()}`, icon: <Wallet size={28} />, color: 'bg-brand-600', detail: 'Cuentas a la Vista' },
              { label: 'CARTERA VIGENTE', val: `$${stats.totalPortfolio.toLocaleString()}`, icon: <TrendingUp size={28} />, color: 'bg-blue-600', detail: 'Colocación Total' },
-             { label: 'INDICE SOLVENCIA', val: `${stats.solvency}%`, icon: <Activity size={28} />, color: 'bg-emerald-800', detail: 'Certificados vs Ahorros' }
+             { label: 'INDICE SOLVENCIA', val: `${stats.solvency}%`, icon: <Activity size={28} />, color: 'bg-brand-800', detail: 'Certificados vs Ahorros' }
            ].map((item, i) => (
              <div key={i} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-2xl transition-all">
                 <div className={`absolute top-0 right-0 p-8 opacity-5 transition-transform group-hover:scale-125 ${item.color.replace('bg-', 'text-')}`}>
@@ -356,7 +356,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
              </div>
              <div className="relative w-full md:w-80">
                 <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input type="text" placeholder="Filtrar socio..." className="w-full pl-14 pr-6 py-4 bg-white border-2 border-slate-100 rounded-[2rem] outline-none font-bold text-[#14532D] text-sm focus:border-[#14532D] shadow-inner" />
+                <input type="text" placeholder="Filtrar socio..." className="w-full pl-14 pr-6 py-4 bg-white border-2 border-slate-100 rounded-[2rem] outline-none font-bold text-[#002B67] text-sm focus:border-[#002B67] shadow-inner" />
              </div>
           </div>
           <div className="overflow-x-auto">
@@ -373,12 +373,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 {users.filter(u => u.role === UserRole.MEMBER).map(u => (
                   <tr key={u.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-10 py-6 font-black text-slate-300 italic text-base">#{u.memberNumber || 'S/N'}</td>
-                    <td className="px-10 py-6 font-black text-[#14532D] text-lg">{u.id}</td>
+                    <td className="px-10 py-6 font-black text-[#002B67] text-lg">{u.id}</td>
                     <td className="px-10 py-6 font-black text-slate-700 uppercase">{u.name}</td>
                     <td className="px-10 py-6 text-right">
                       <button 
                         onClick={() => setEditingUser({ ...u, references: u.references || [], dependents: u.dependents || [], homeSketch: u.homeSketch || [] })} 
-                        className="p-4 bg-emerald-50 text-[#14532D] rounded-2xl hover:bg-[#14532D] hover:text-white transition-all shadow-sm group-hover:scale-110"
+                        className="p-4 bg-brand-50 text-[#002B67] rounded-2xl hover:bg-[#002B67] hover:text-white transition-all shadow-sm group-hover:scale-110"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -398,7 +398,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                <h3 className="text-2xl font-black text-slate-900 tracking-tighter">Usuarios del Sistema</h3>
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accesos internos, roles y permisos por módulo</p>
              </div>
-             <button onClick={loadUsuariosSistema} className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:border-[#14532D] hover:text-[#14532D] transition-all flex items-center gap-2">
+             <button onClick={loadUsuariosSistema} className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:border-[#002B67] hover:text-[#002B67] transition-all flex items-center gap-2">
                <RotateCcw size={14} /> Actualizar
              </button>
           </div>
@@ -416,7 +416,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
           )}
 
           {loadingUsuarios ? (
-            <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-[#14532D]" size={32} /></div>
+            <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-[#002B67]" size={32} /></div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -434,13 +434,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   {usuariosSistema.map(u => (
                     <React.Fragment key={u.id}>
                       <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="px-10 py-6 font-black text-[#14532D] text-base">{u.id}</td>
+                        <td className="px-10 py-6 font-black text-[#002B67] text-base">{u.id}</td>
                         <td className="px-10 py-6 font-bold text-slate-700">{u.nombre}</td>
                         <td className="px-10 py-6">
-                          <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">{u.rol}</span>
+                          <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-brand-100 text-brand-800">{u.rol}</span>
                         </td>
                         <td className="px-10 py-6">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${u.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${u.activo ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'}`}>
                             {u.activo ? 'ACTIVO' : 'INACTIVO'}
                           </span>
                         </td>
@@ -448,7 +448,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           {u.permisosModulos ? `${u.permisosModulos.length} de ${MODULES_CATALOG.length} módulos` : 'Acceso completo (por Rol)'}
                         </td>
                         <td className="px-10 py-6 text-right space-x-2 whitespace-nowrap">
-                          <button onClick={() => permisosEditId === u.id ? setPermisosEditId(null) : openPermisosEditor(u)} className="px-4 py-2 bg-slate-100 hover:bg-[#14532D] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all">
+                          <button onClick={() => permisosEditId === u.id ? setPermisosEditId(null) : openPermisosEditor(u)} className="px-4 py-2 bg-slate-100 hover:bg-[#002B67] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all">
                             {permisosEditId === u.id ? 'Cerrar' : 'Permisos'}
                           </button>
                           <button onClick={() => handleAdminResetPassword(u)} className="px-4 py-2 bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-700 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all">
@@ -460,18 +460,18 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         <tr>
                           <td colSpan={6} className="px-10 pb-8 bg-slate-50/50">
                             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
-                              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Módulos habilitados para {u.id}</p>
+                              <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em]">Módulos habilitados para {u.id}</p>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 {MODULES_CATALOG.map(mod => (
                                   <label key={mod.id} className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" checked={permisosDraft.includes(mod.id)} onChange={() => toggleModulo(mod.id)} className="w-4 h-4 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]" />
+                                    <input type="checkbox" checked={permisosDraft.includes(mod.id)} onChange={() => toggleModulo(mod.id)} className="w-4 h-4 rounded border-slate-300 text-[#002B67] focus:ring-[#002B67]" />
                                     <span className="text-[10px] font-bold text-slate-600">{mod.label}</span>
                                   </label>
                                 ))}
                               </div>
                               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                                 <button onClick={() => setPermisosDraft(MODULES_CATALOG.map(m => m.id))} className="px-5 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[9px] uppercase tracking-wider">Marcar Todos</button>
-                                <button onClick={() => savePermisos(u)} disabled={savingPermisos} className="px-6 py-3 bg-[#14532D] text-white rounded-xl font-black text-[9px] uppercase tracking-wider disabled:opacity-60">
+                                <button onClick={() => savePermisos(u)} disabled={savingPermisos} className="px-6 py-3 bg-[#002B67] text-white rounded-xl font-black text-[9px] uppercase tracking-wider disabled:opacity-60">
                                   {savingPermisos ? 'Guardando...' : 'Guardar Permisos'}
                                 </button>
                               </div>
@@ -501,10 +501,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
            </div>
            <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {rates.map((rate, idx) => (
-                <div key={rate.id} className="p-8 bg-slate-50 rounded-3xl border border-slate-100 space-y-6 group hover:bg-white hover:shadow-xl transition-all border-b-4 border-b-transparent hover:border-b-[#14532D]">
+                <div key={rate.id} className="p-8 bg-slate-50 rounded-3xl border border-slate-100 space-y-6 group hover:bg-white hover:shadow-xl transition-all border-b-4 border-b-transparent hover:border-b-[#002B67]">
                    <div className="flex justify-between items-start">
                       <h4 className="font-black text-slate-800 uppercase tracking-tight leading-tight max-w-[160px]">{rate.category}</h4>
-                      <span className="p-2 bg-[#14532D] text-white rounded-lg text-[10px] font-black">{rate.id}</span>
+                      <span className="p-2 bg-[#002B67] text-white rounded-lg text-[10px] font-black">{rate.id}</span>
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
@@ -516,7 +516,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                              newRates[idx] = { ...rate, rate: parseFloat(e.target.value) };
                              onUpdateRates(newRates);
                            }}
-                           className="w-full p-4 bg-white border border-slate-200 rounded-xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D] transition-all" 
+                           className="w-full p-4 bg-white border border-slate-200 rounded-xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67] transition-all" 
                          />
                       </div>
                       <div className="space-y-1">
@@ -528,7 +528,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                              newRates[idx] = { ...rate, maxTerm: parseInt(e.target.value) };
                              onUpdateRates(newRates);
                            }}
-                           className="w-full p-4 bg-white border border-slate-200 rounded-xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D] transition-all" 
+                           className="w-full p-4 bg-white border border-slate-200 rounded-xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67] transition-all" 
                          />
                       </div>
                    </div>
@@ -543,20 +543,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
            <div className="bg-white p-10 rounded-[4rem] shadow-sm border border-slate-100 space-y-10">
               <div>
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
-                  <Database size={24} className="text-[#14532D]" /> Mantenimiento del Core
+                  <Database size={24} className="text-[#002B67]" /> Mantenimiento del Core
                 </h3>
                 <p className="text-slate-400 text-xs mt-2">Gestione respaldos y recuperación de desastres.</p>
               </div>
               <div className="space-y-6">
-                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between group cursor-pointer hover:bg-emerald-50 transition-all shadow-sm" onClick={exportDatabase}>
+                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between group cursor-pointer hover:bg-brand-50 transition-all shadow-sm" onClick={exportDatabase}>
                     <div className="flex items-center gap-4">
-                       <div className="p-4 bg-white rounded-2xl text-emerald-600 shadow-sm border border-emerald-50 group-hover:scale-110 transition-transform"><Download size={24} /></div>
+                       <div className="p-4 bg-white rounded-2xl text-brand-600 shadow-sm border border-brand-50 group-hover:scale-110 transition-transform"><Download size={24} /></div>
                        <div>
                           <p className="text-sm font-black text-slate-800">Exportar Base de Datos</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Respaldo Integral .JSON</p>
                        </div>
                     </div>
-                    <ChevronRight size={20} className="text-slate-200 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight size={20} className="text-slate-200 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                  </div>
                  
                  <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between group cursor-pointer hover:bg-blue-50 transition-all shadow-sm" onClick={() => fileInputRef.current?.click()}>
@@ -573,28 +573,28 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
            </div>
 
-           <div className="bg-[#14532D] p-10 rounded-[4rem] shadow-2xl text-white relative overflow-hidden flex flex-col justify-between">
+           <div className="bg-[#002B67] p-10 rounded-[4rem] shadow-2xl text-white relative overflow-hidden flex flex-col justify-between">
               <div className="relative z-10">
                 <div className="flex justify-between items-start">
                    <div>
                       <h3 className="text-2xl font-black uppercase tracking-tighter">Parámetros de Crédito</h3>
-                      <p className="text-emerald-300 text-xs font-bold uppercase tracking-widest mt-1">Configuración Global de Montos</p>
+                      <p className="text-brand-300 text-xs font-bold uppercase tracking-widest mt-1">Configuración Global de Montos</p>
                    </div>
-                   <Settings className="text-[#FACC15] animate-spin-slow" size={32} />
+                   <Settings className="text-[#067A80] animate-spin-slow" size={32} />
                 </div>
                 <div className="grid grid-cols-2 gap-8 mt-12">
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Crédito Mínimo ($)</label>
+                      <label className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Crédito Mínimo ($)</label>
                       <input type="number" value={config.minLoanAmount} onChange={e => onUpdateConfig({...config, minLoanAmount: parseFloat(e.target.value)})} className="w-full p-5 bg-white/10 border border-white/20 rounded-2xl font-black text-2xl text-white outline-none focus:bg-white/20 transition-all text-center" />
                    </div>
                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Crédito Máximo ($)</label>
+                      <label className="text-[10px] font-black text-brand-400 uppercase tracking-widest">Crédito Máximo ($)</label>
                       <input type="number" value={config.maxLoanAmount} onChange={e => onUpdateConfig({...config, maxLoanAmount: parseFloat(e.target.value)})} className="w-full p-5 bg-white/10 border border-white/20 rounded-2xl font-black text-2xl text-white outline-none focus:bg-white/20 transition-all text-center" />
                    </div>
                 </div>
                 <div className="mt-10 p-5 bg-black/20 rounded-3xl border border-white/10 flex gap-4 items-center">
-                   <ShieldAlert size={28} className="text-[#FACC15] shrink-0" />
-                   <p className="text-[10px] font-bold text-emerald-50/80 leading-relaxed uppercase">La modificación de estos rangos restringe automáticamente el simulador de los socios.</p>
+                   <ShieldAlert size={28} className="text-[#067A80] shrink-0" />
+                   <p className="text-[10px] font-bold text-brand-50/80 leading-relaxed uppercase">La modificación de estos rangos restringe automáticamente el simulador de los socios.</p>
                 </div>
               </div>
               <ShieldCheck className="absolute right-[-40px] bottom-[-40px] text-white/5" size={240} />
@@ -625,7 +625,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Columna 1: Información General */}
                 <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">1. Datos Básicos</p>
+                  <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em]">1. Datos Básicos</p>
                   
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Código del Producto (ID)</label>
@@ -635,7 +635,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       disabled={!!editingProducto.ProductoId}
                       value={editingProducto.CodigoProducto || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CodigoProducto: parseInt(e.target.value) })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -646,7 +646,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="text"
                       value={editingProducto.Nombre || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, Nombre: e.target.value.toUpperCase() })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -657,7 +657,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="text"
                       value={editingProducto.TipoDeposito || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, TipoDeposito: e.target.value.toUpperCase() })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -667,7 +667,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       id="esCertificado"
                       checked={!!editingProducto.EsCertificado}
                       onChange={e => setEditingProducto({ ...editingProducto, EsCertificado: e.target.checked })}
-                      className="w-5 h-5 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]"
+                      className="w-5 h-5 rounded border-slate-300 text-[#002B67] focus:ring-[#002B67]"
                     />
                     <label htmlFor="esCertificado" className="text-[10px] font-black text-slate-600 uppercase tracking-wider cursor-pointer">
                       ¿Es Certificado de Aportación?
@@ -677,7 +677,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
                 {/* Columna 2: Cuentas Contables */}
                 <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">2. Cuentas Contables (SEPS)</p>
+                  <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em]">2. Cuentas Contables (SEPS)</p>
 
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Cuenta Activa</label>
@@ -687,7 +687,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       value={editingProducto.CuentaActiva || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CuentaActiva: e.target.value })}
                       placeholder="Ej: 21013505"
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -699,7 +699,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       value={editingProducto.CuentaInactiva || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CuentaInactiva: e.target.value })}
                       placeholder="Ej: 21013505"
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -710,7 +710,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       value={editingProducto.CuentaGasto || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CuentaGasto: e.target.value })}
                       placeholder="Ej: 41019001"
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -721,7 +721,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       value={editingProducto.CuentaProvision || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CuentaProvision: e.target.value })}
                       placeholder="Ej: 25019001"
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -732,14 +732,14 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       value={editingProducto.CuentaDepositosConfirmar || ''}
                       onChange={e => setEditingProducto({ ...editingProducto, CuentaDepositosConfirmar: e.target.value })}
                       placeholder="Ej: 21015015"
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
                 </div>
 
                 {/* Columna 3: Transacciones y Parámetros Operativos */}
                 <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">3. Operatividad y Tasas</p>
+                  <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em]">3. Operatividad y Tasas</p>
 
                   <div className="space-y-2">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Transacciones Permitidas</span>
@@ -757,7 +757,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                             id={tx.key}
                             checked={!!editingProducto[tx.key]}
                             onChange={e => setEditingProducto({ ...editingProducto, [tx.key]: e.target.checked })}
-                            className="w-4 h-4 rounded border-slate-300 text-[#14532D] focus:ring-[#14532D]"
+                            className="w-4 h-4 rounded border-slate-300 text-[#002B67] focus:ring-[#002B67]"
                           />
                           <label htmlFor={tx.key} className="text-[9px] font-black text-slate-500 uppercase tracking-wider cursor-pointer">
                             {tx.label}
@@ -773,7 +773,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="number"
                       value={editingProducto.NumCtas4Dig || 28}
                       onChange={e => setEditingProducto({ ...editingProducto, NumCtas4Dig: parseInt(e.target.value) })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -783,7 +783,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="text"
                       value={editingProducto.Tasa || 'TASA NOMINAL'}
                       onChange={e => setEditingProducto({ ...editingProducto, Tasa: e.target.value.toUpperCase() })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -793,7 +793,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="text"
                       value={editingProducto.FormaPago || 'MOVIMIENTO HISTORICO PONDERADO BASE'}
                       onChange={e => setEditingProducto({ ...editingProducto, FormaPago: e.target.value.toUpperCase() })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
 
@@ -803,7 +803,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       type="text"
                       value={editingProducto.MesesAcreditacion || 'Diciembre'}
                       onChange={e => setEditingProducto({ ...editingProducto, MesesAcreditacion: e.target.value })}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#14532D] shadow-inner outline-none focus:border-[#14532D]"
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-black text-[#002B67] shadow-inner outline-none focus:border-[#002B67]"
                     />
                   </div>
                 </div>
@@ -813,7 +813,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-10 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-75"
+                  className="px-10 py-5 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-75"
                 >
                   {isSaving ? 'Guardando...' : 'Guardar Parámetros'}
                 </button>
@@ -847,7 +847,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     FormaPago: 'MOVIMIENTO HISTORICO PONDERADO BASE',
                     MesesAcreditacion: 'Diciembre'
                   })}
-                  className="px-6 py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
+                  className="px-6 py-4 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
                 >
                   Nuevo Producto
                 </button>
@@ -869,12 +869,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   <tbody>
                     {productos.map(prod => (
                       <tr key={prod.ProductoId} className="border-b border-slate-200/50 bg-white hover:bg-slate-50/50 transition-colors">
-                        <td className="p-6 text-sm font-black text-[#14532D]">#{prod.CodigoProducto}</td>
+                        <td className="p-6 text-sm font-black text-[#002B67]">#{prod.CodigoProducto}</td>
                         <td className="p-6 text-sm font-bold text-slate-800 uppercase">{prod.Nombre}</td>
                         <td className="p-6 text-sm font-mono font-black text-slate-600">{prod.CuentaActiva}</td>
                         <td className="p-6 text-xs font-bold text-slate-500 uppercase">{prod.TipoDeposito}</td>
                         <td className="p-6">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${prod.EsCertificado ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${prod.EsCertificado ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'}`}>
                             {prod.EsCertificado ? 'SÍ' : 'NO'}
                           </span>
                         </td>
@@ -886,7 +886,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         <td className="p-6 text-right">
                           <button
                             onClick={() => setEditingProducto(prod)}
-                            className="px-4 py-2 bg-slate-100 hover:bg-[#14532D] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all"
+                            className="px-4 py-2 bg-slate-100 hover:bg-[#002B67] hover:text-white text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all"
                           >
                             Editar
                           </button>
@@ -908,14 +908,14 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <div className="relative w-full max-w-5xl bg-white rounded-[4rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-500 border border-slate-100">
             <div className="p-10 flex justify-between items-center bg-white sticky top-0 z-10 border-b border-slate-50">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-emerald-50 text-[#14532D] rounded-3xl flex items-center justify-center shadow-inner">
+                <div className="w-16 h-16 bg-brand-50 text-[#002B67] rounded-3xl flex items-center justify-center shadow-inner">
                   <UserIcon size={32} />
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-none">
-                    FICHA SOCIO #<span className="text-[#14532D]">{editingUser.memberNumber || 'S/N'}</span>
+                    FICHA SOCIO #<span className="text-[#002B67]">{editingUser.memberNumber || 'S/N'}</span>
                   </h3>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mt-1">NÚCLEO SEPS S01</p>
+                  <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-1">NÚCLEO SEPS S01</p>
                 </div>
               </div>
               <button onClick={() => setEditingUser(null)} className="p-4 hover:bg-slate-50 text-slate-300 hover:text-slate-600 rounded-full transition-all">
@@ -928,7 +928,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 <button 
                   key={st} 
                   onClick={() => setEditorSubTab(st as any)} 
-                  className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${editorSubTab === st ? 'bg-white text-[#14532D] shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${editorSubTab === st ? 'bg-white text-[#002B67] shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   {st}
                 </button>
@@ -940,31 +940,31 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="col-span-full space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primer Nombre</label>
-                    <input required type="text" value={editingUser.firstName || ''} onChange={e => setEditingUser({...editingUser, firstName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] uppercase text-lg focus:ring-4 focus:ring-[#14532D]/10 outline-none" />
+                    <input required type="text" value={editingUser.firstName || ''} onChange={e => setEditingUser({...editingUser, firstName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] uppercase text-lg focus:ring-4 focus:ring-[#002B67]/10 outline-none" />
                   </div>
                   {!editingUser.onlyOneName && (
                     <div className="space-y-4">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Segundo Nombre</label>
-                      <input type="text" value={editingUser.middleName || ''} onChange={e => setEditingUser({...editingUser, middleName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] uppercase text-lg focus:ring-4 focus:ring-[#14532D]/10 outline-none" />
+                      <input type="text" value={editingUser.middleName || ''} onChange={e => setEditingUser({...editingUser, middleName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] uppercase text-lg focus:ring-4 focus:ring-[#002B67]/10 outline-none" />
                     </div>
                   )}
                   <div className="col-span-full flex items-center gap-3">
-                    <input type="checkbox" id="onlyOneEdit" checked={editingUser.onlyOneName} onChange={e => setEditingUser({...editingUser, onlyOneName: e.target.checked, middleName: e.target.checked ? '' : editingUser.middleName})} className="w-5 h-5 accent-[#14532D]" />
+                    <input type="checkbox" id="onlyOneEdit" checked={editingUser.onlyOneName} onChange={e => setEditingUser({...editingUser, onlyOneName: e.target.checked, middleName: e.target.checked ? '' : editingUser.middleName})} className="w-5 h-5 accent-[#002B67]" />
                     <label htmlFor="onlyOneEdit" className="text-[10px] font-black text-slate-600 uppercase">POSEE UN SOLO NOMBRE LEGAL</label>
                   </div>
                   <div className="col-span-full space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Apellidos Completos</label>
-                    <input required type="text" value={editingUser.lastName || ''} onChange={e => setEditingUser({...editingUser, lastName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] uppercase text-lg focus:ring-4 focus:ring-[#14532D]/10 outline-none" />
+                    <input required type="text" value={editingUser.lastName || ''} onChange={e => setEditingUser({...editingUser, lastName: e.target.value.toUpperCase()})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] uppercase text-lg focus:ring-4 focus:ring-[#002B67]/10 outline-none" />
                   </div>
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado Civil</label>
-                    <select value={editingUser.maritalStatus || 'SOLTERO'} onChange={e => setEditingUser({...editingUser, maritalStatus: e.target.value as any})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] uppercase outline-none focus:ring-4 focus:ring-[#14532D]/10">
+                    <select value={editingUser.maritalStatus || 'SOLTERO'} onChange={e => setEditingUser({...editingUser, maritalStatus: e.target.value as any})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] uppercase outline-none focus:ring-4 focus:ring-[#002B67]/10">
                       {SEPS_CATALOGS.MARITAL_STATUS.map(ms => <option key={ms} value={ms}>{ms}</option>)}
                     </select>
                   </div>
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Género</label>
-                    <select value={editingUser.gender || 'MASCULINO'} onChange={e => setEditingUser({...editingUser, gender: e.target.value as any})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] uppercase outline-none focus:ring-4 focus:ring-[#14532D]/10">
+                    <select value={editingUser.gender || 'MASCULINO'} onChange={e => setEditingUser({...editingUser, gender: e.target.value as any})} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] uppercase outline-none focus:ring-4 focus:ring-[#002B67]/10">
                       {SEPS_CATALOGS.GENDER.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
@@ -979,7 +979,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   </div>
                   <div className="space-y-4 col-span-full">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta Domicilio</label>
-                    <textarea value={editingUser.address || ''} onChange={e => setEditingUser({ ...editingUser, address: e.target.value.toUpperCase() })} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] h-24 outline-none resize-none focus:ring-4 focus:ring-blue-500/10" />
+                    <textarea value={editingUser.address || ''} onChange={e => setEditingUser({ ...editingUser, address: e.target.value.toUpperCase() })} className="w-full px-8 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] h-24 outline-none resize-none focus:ring-4 focus:ring-blue-500/10" />
                   </div>
                   <div className="col-span-full space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2"><ImageIcon size={14}/> Croquis Digitalizados</label>
@@ -1065,8 +1065,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
               )}
 
               <div className="sticky bottom-0 bg-white py-10 border-t flex gap-6 mt-10">
-                <button type="submit" disabled={isSaving} className="flex-[2] py-6 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-1 active:border-b-0 transition-all uppercase tracking-tighter flex items-center justify-center gap-3 group">
-                  {isSaving ? <Loader2 className="animate-spin" /> : <><Save size={24} className="group-hover:scale-125 transition-transform" /> SINCRONIZAR CORE PATATE</>}
+                <button type="submit" disabled={isSaving} className="flex-[2] py-6 bg-[#002B67] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#03CED4] active:translate-y-1 active:border-b-0 transition-all uppercase tracking-tighter flex items-center justify-center gap-3 group">
+                  {isSaving ? <Loader2 className="animate-spin" /> : <><Save size={24} className="group-hover:scale-125 transition-transform" /> SINCRONIZAR CORE</>}
                 </button>
                 <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-6 bg-slate-100 text-slate-500 rounded-full font-black text-xl uppercase tracking-tighter hover:bg-slate-200 transition-colors">
                   CANCELAR

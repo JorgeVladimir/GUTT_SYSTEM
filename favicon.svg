@@ -2,16 +2,16 @@
   <!-- Gradient definitions for premium look -->
   <defs>
     <linearGradient id="bg-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#064E3B" />
-      <stop offset="100%" stop-color="#14532D" />
+      <stop offset="0%" stop-color="#094B4E" />
+      <stop offset="100%" stop-color="#002B67" />
     </linearGradient>
     <linearGradient id="gold-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FACC15" />
-      <stop offset="100%" stop-color="#CA8A04" />
+      <stop offset="0%" stop-color="#03CED4" />
+      <stop offset="100%" stop-color="#05AFB5" />
     </linearGradient>
     <linearGradient id="glow-grad" x1="0" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#34D399" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#059669" stop-opacity="0.1" />
+      <stop offset="0%" stop-color="#4FDEE3" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#068E93" stop-opacity="0.1" />
     </linearGradient>
   </defs>
 

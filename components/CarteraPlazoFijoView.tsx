@@ -30,7 +30,7 @@ import { User, UserRole } from '../types';
 import { DataService } from '../services/dataService';
 
 // Misma paleta que CarteraCreditoView.tsx / ReportsView.tsx (identidad visual única)
-const COLORS = ['#14532D', '#FACC15', '#94A3B8', '#EF4444'];
+const COLORS = ['#002B67', '#03CED4', '#94A3B8', '#EF4444'];
 
 // Forma exacta de fila devuelta por PlazoFijoJsonRunner (jdbc-informix), sin
 // aritmética adicional: los montos se pasan tal cual llegan de Informix (DECIMAL) y
@@ -138,8 +138,8 @@ const bucketDeEstado = (estado: string): 'vigente' | 'vencida' | 'cancelada' | '
 };
 
 const ESTADO_STYLES: Record<string, string> = {
-  ACTIVO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  PACTADO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  ACTIVO: 'bg-brand-50 text-brand-700 border-brand-200',
+  PACTADO: 'bg-brand-50 text-brand-700 border-brand-200',
   RENOVADO: 'bg-blue-50 text-blue-700 border-blue-200',
   VENCIDO: 'bg-amber-50 text-amber-700 border-amber-200',
   CANCELADO: 'bg-slate-100 text-slate-500 border-slate-200',
@@ -276,7 +276,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
         <button
           onClick={() => void loadCartera()}
           disabled={loading}
-          className="px-6 py-3 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
+          className="px-6 py-3 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'Consultando...' : 'Actualizar'}
         </button>
@@ -284,7 +284,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
 
       {loading && !hasLoadedOnce && (
         <div className="bg-white p-8 sm:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="w-12 h-12 border-4 border-[#002B67] border-t-transparent rounded-full animate-spin mb-6"></div>
           <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Consultando Informix en vivo</p>
           <p className="text-[11px] font-bold text-slate-400 mt-2 text-center max-w-md">
             Esta es una consulta real sobre el core bancario legado a través del túnel Tailscale.
@@ -320,7 +320,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-[#14532D] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-12 h-12 bg-[#002B67] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
                   <Landmark size={22} />
                 </div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Total Captado (todas las pólizas)</p>
@@ -329,15 +329,15 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-6">{rows.length} pólizas de depósito a plazo fijo</p>
             </div>
 
-            <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between">
+            <div className="p-8 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-white text-[#14532D] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-12 h-12 bg-white text-[#002B67] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                   <TrendingUp size={22} />
                 </div>
-                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Cartera Vigente</p>
-                <h4 className="text-2xl font-black text-[#14532D]">{money(summary.vigente)}</h4>
+                <p className="text-[9px] font-black text-accent-600 uppercase tracking-wider mb-1">Cartera Vigente</p>
+                <h4 className="text-2xl font-black text-[#002B67]">{money(summary.vigente)}</h4>
               </div>
-              <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">
+              <p className="text-[8px] font-bold text-brand-700/60 uppercase tracking-widest mt-6">
                 {summary.vigenteN} pólizas · tasa prom. ponderada {summary.tasaPromVigente.toFixed(2)}%
               </p>
             </div>
@@ -388,7 +388,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
               ver MANUALES/RECONCILIACION_PLAZO_FIJO.md para la evidencia completa. */}
           {reconciliacion && (
             <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-slate-100 printable-area">
-              <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2 mb-6">
+              <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2 mb-6">
                 <Scale size={16} /> Reconciliación: Inventario vs. Contabilidad
               </h4>
 
@@ -406,11 +406,11 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
                     {money(reconciliacion.familiaAhorroFijo.saldoContable)} + {money(reconciliacion.familiaDepositosPlazo.saldoContable)}
                   </p>
                 </div>
-                <div className={`p-6 rounded-2xl border ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
-                  <p className={`text-[9px] font-black uppercase tracking-wider mb-1 ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <div className={`p-6 rounded-2xl border ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'bg-brand-50 border-brand-100' : 'bg-amber-50 border-amber-100'}`}>
+                  <p className={`text-[9px] font-black uppercase tracking-wider mb-1 ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'text-brand-600' : 'text-amber-600'}`}>
                     Diferencia (Contable − Inventario)
                   </p>
-                  <p className={`text-xl font-black ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'text-emerald-800' : 'text-amber-900'}`}>
+                  <p className={`text-xl font-black ${Math.abs(reconciliacion.diferencia) < 0.01 ? 'text-brand-800' : 'text-amber-900'}`}>
                     {money(reconciliacion.diferencia)}
                     {reconciliacion.diferenciaPct !== null && (
                       <span className="text-xs font-bold ml-2">({reconciliacion.diferenciaPct.toFixed(2)}%)</span>
@@ -501,7 +501,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2">
                   <PieChart size={16} /> Composición de la Cartera
                 </h4>
                 <div className="h-[300px] flex items-center justify-center bg-slate-50 border border-slate-100 rounded-[2.5rem] p-6">
@@ -523,7 +523,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2">
                   <Percent size={16} /> Tasas Promedio Ponderadas por Monto
                 </h4>
                 <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-5">
@@ -544,7 +544,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
                     <span className="text-[10px] font-black text-slate-700 uppercase flex items-center gap-1">
                       <CalendarClock size={14} /> % Vigente sobre Total
                     </span>
-                    <span className="text-lg font-black text-[#14532D]">
+                    <span className="text-lg font-black text-[#002B67]">
                       {summary.total > 0 ? ((summary.vigente / summary.total) * 100).toFixed(1) : '0.0'}%
                     </span>
                   </div>
@@ -570,7 +570,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Buscar socio, cédula o póliza..."
-                    className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#14532D] w-full md:w-64"
+                    className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-[#002B67] w-full md:w-64"
                   />
                 </div>
                 <button onClick={downloadCSV} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all" title="Descargar CSV">
@@ -609,7 +609,7 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
                           <p className="text-[9px] font-bold text-slate-400">Socio #{r.num_socio}</p>
                         </td>
                         <td className="px-5 py-4 font-bold text-slate-600 text-[11px] whitespace-nowrap">{String(r.identificacion || '').trim()}</td>
-                        <td className="px-5 py-4 font-black text-[#14532D] text-[11px] whitespace-nowrap">{r.num_dpf}</td>
+                        <td className="px-5 py-4 font-black text-[#002B67] text-[11px] whitespace-nowrap">{r.num_dpf}</td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex px-2.5 py-1 rounded-lg border font-black text-[9px] whitespace-nowrap ${ESTADO_STYLES[estado] || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                             {estado || 'N/A'}
@@ -636,8 +636,8 @@ export const CarteraPlazoFijoView: React.FC<CarteraPlazoFijoViewProps> = ({ curr
                 </tbody>
                 {filteredRows.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black sticky bottom-0">
-                      <td className="px-5 py-4 text-[#14532D] text-[10px] uppercase" colSpan={8}>Total (todas las pólizas)</td>
+                    <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black sticky bottom-0">
+                      <td className="px-5 py-4 text-[#002B67] text-[10px] uppercase" colSpan={8}>Total (todas las pólizas)</td>
                       <td className="px-5 py-4 text-right text-slate-900 text-[11px]">{money(summary.total)}</td>
                       <td className="px-5 py-4" colSpan={2}></td>
                     </tr>

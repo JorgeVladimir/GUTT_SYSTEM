@@ -8,8 +8,31 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#14532D">
+    <meta name="theme-color" content="#002B67">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        /* Paleta de marca GUTT COMPANY S.A.S. — navy #002B67 + cian #03CED4 (del logo).
+           Punto unico de verdad del color: cambiar aqui cambia todo el sistema.
+           Regla: accent-400 es solo grafico (1.95:1 sobre blanco). Para texto, accent-700. */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#EAF1F9', 100: '#CFE0F2', 200: '#A5C4E6', 300: '#6E9BD1',
+                            400: '#3D72B8', 500: '#17509C', 600: '#0A3D80', 700: '#002B67',
+                            800: '#002253', 900: '#00193D', 950: '#001129'
+                        },
+                        accent: {
+                            50: '#E6FBFC', 100: '#C2F5F7', 200: '#8DEBEE', 300: '#4FDEE3',
+                            400: '#03CED4', 500: '#05AFB5', 600: '#068E93', 700: '#067A80',
+                            800: '#085F63', 900: '#094B4E'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <style>
@@ -36,8 +59,8 @@
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #14532D;
-            /* Verde Institucional */
+            background: #002B67;
+            /* Navy institucional */
         }
 
         @media print {

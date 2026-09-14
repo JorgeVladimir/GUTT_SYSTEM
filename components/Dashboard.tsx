@@ -22,21 +22,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8 animate-in fade-in duration-700">
       {/* Welcome Banner */}
-      <div className="bg-[#14532D] rounded-[2.5rem] p-8 lg:p-12 text-white relative overflow-hidden shadow-2xl border-b-[12px] border-[#FACC15]">
+      <div className="bg-[#002B67] rounded-[2.5rem] p-8 lg:p-12 text-white relative overflow-hidden shadow-2xl border-b-[12px] border-[#03CED4]">
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div>
-            <div className="bg-[#FACC15] text-[#14532D] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block shadow-xl">
+            <div className="bg-[#03CED4] text-[#002B67] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 inline-block shadow-xl">
               Socio Activo
             </div>
             <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter">Bienvenido a tu Caja</h1>
-            <p className="text-emerald-100/70 text-sm max-w-lg font-medium leading-relaxed">
+            <p className="text-brand-100/70 text-sm max-w-lg font-medium leading-relaxed">
               Tu futuro está asegurado. Revisa tus ahorros, realiza transferencias seguras o solicita un crédito inmediato con las mejores tasas del mercado local.
             </p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
             <button 
               onClick={() => onNavigate(AppView.CREDITS)}
-              className="flex-1 md:flex-none bg-[#FACC15] hover:bg-yellow-300 text-[#14532D] px-10 py-4 rounded-2xl font-black text-sm transition-all shadow-2xl hover:-translate-y-1 active:scale-95 whitespace-nowrap"
+              className="flex-1 md:flex-none bg-[#03CED4] hover:bg-accent-400 text-[#002B67] px-10 py-4 rounded-2xl font-black text-sm transition-all shadow-2xl hover:-translate-y-1 active:scale-95 whitespace-nowrap"
             >
               SIMULAR CRÉDITO
             </button>
@@ -45,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
         
         {/* Decorative elements */}
         <div className="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-[100px]"></div>
-        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#FACC15]/10 rounded-full blur-[60px]"></div>
+        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#03CED4]/10 rounded-full blur-[60px]"></div>
         <div className="absolute right-10 bottom-10 opacity-5">
            <PiggyBank size={180} />
         </div>
@@ -57,11 +57,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
             {/* Saldo Card */}
             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 group relative overflow-hidden hover:shadow-xl transition-all duration-300">
               <div className="absolute top-0 right-0 p-6">
-                 <TrendingUp size={32} className="text-emerald-500/10 group-hover:scale-125 transition-transform" />
+                 <TrendingUp size={32} className="text-brand-500/10 group-hover:scale-125 transition-transform" />
               </div>
               <div className="flex flex-col h-full justify-between">
                 <div>
-                  <div className="p-4 rounded-2xl bg-emerald-50 text-[#14532D] inline-block mb-6 shadow-inner">
+                  <div className="p-4 rounded-2xl bg-brand-50 text-[#002B67] inline-block mb-6 shadow-inner">
                     <Wallet size={28} />
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo Disponible Hoy</p>
@@ -72,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                 </div>
                 <div className="mt-8 pt-6 border-t border-slate-50">
                   <p className="text-xs font-bold text-slate-800">Cuenta de Ahorros</p>
-                  <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Generando intereses diarios</p>
+                  <p className="text-[10px] text-brand-600 font-bold mt-1 uppercase tracking-tighter">Generando intereses diarios</p>
                 </div>
               </div>
             </div>
@@ -80,9 +80,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
             {/* Action Card */}
             <div 
               onClick={() => onNavigate(AppView.CREDITS)}
-              className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-[#14532D] hover:text-[#14532D] hover:bg-white hover:shadow-xl transition-all cursor-pointer group"
+              className="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-[#002B67] hover:text-[#002B67] hover:bg-white hover:shadow-xl transition-all cursor-pointer group"
             >
-               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 group-hover:bg-emerald-50 shadow-sm transition-all group-hover:scale-110">
+               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 group-hover:bg-brand-50 shadow-sm transition-all group-hover:scale-110">
                  <Plus size={32} />
                </div>
                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-center">Solicitar Nuevo<br/>Crédito</p>
@@ -97,7 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Resumen de transacciones</p>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl">
-                <RefreshCcw size={20} className="text-[#14532D]" />
+                <RefreshCcw size={20} className="text-[#002B67]" />
               </div>
             </div>
             <div className="h-[250px] w-full" style={{ minWidth: '100%' }}>
@@ -105,18 +105,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                 <AreaChart data={chartData.length > 0 ? chartData : [{name: 'Ene', value: 0}, {name: 'Feb', value: 10}]}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14532D" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#14532D" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#002B67" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#002B67" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} />
                   <YAxis hide />
                   <Tooltip 
-                    cursor={{ stroke: '#14532D', strokeWidth: 1 }}
+                    cursor={{ stroke: '#002B67', strokeWidth: 1 }}
                     contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', fontSize: '12px', fontWeight: 'bold'}} 
                   />
-                  <Area type="monotone" dataKey="value" stroke="#14532D" strokeWidth={5} fillOpacity={1} fill="url(#colorValue)" />
+                  <Area type="monotone" dataKey="value" stroke="#002B67" strokeWidth={5} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -135,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                 {transactions.length > 0 ? transactions.slice(0, 10).map((t) => (
                   <div key={t.id} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-50 p-3 rounded-2xl transition-all border border-transparent hover:border-slate-100">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
-                      t.type === 'CREDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                      t.type === 'CREDIT' ? 'bg-brand-50 text-brand-600' : 'bg-red-50 text-red-600'
                     }`}>
                       {t.type === 'CREDIT' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                     </div>
@@ -144,7 +144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{t.date}</p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm font-black ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                      <p className={`text-sm font-black ${t.type === 'CREDIT' ? 'text-brand-600' : 'text-slate-900'}`}>
                         {t.type === 'CREDIT' ? '+' : '-'}${Math.abs(t.amount).toFixed(2)}
                       </p>
                     </div>
@@ -157,12 +157,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, totalBalance
                 )}
               </div>
               
-              <div className="mt-10 bg-[#14532D] rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl border-b-4 border-[#FACC15]">
+              <div className="mt-10 bg-[#002B67] rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl border-b-4 border-[#03CED4]">
                  <div className="relative z-10">
-                   <p className="text-[#FACC15] font-black text-[10px] uppercase tracking-[0.2em] mb-2">Tu Patrimonio</p>
+                   <p className="text-[#067A80] font-black text-[10px] uppercase tracking-[0.2em] mb-2">Tu Patrimonio</p>
                    <p className="text-white text-[11px] font-medium mb-4 leading-relaxed">Tus aportes están protegidos y respaldados por la caja central.</p>
                    <button className="text-[10px] font-black text-white flex items-center gap-2 group-hover:gap-3 transition-all bg-white/10 px-4 py-2 rounded-full border border-white/5">
-                     VER BENEFICIOS <ChevronRight size={14} className="text-[#FACC15]" />
+                     VER BENEFICIOS <ChevronRight size={14} className="text-[#067A80]" />
                    </button>
                  </div>
                  <div className="absolute -right-8 -bottom-8 text-white/5 w-32 h-32 transform rotate-12">

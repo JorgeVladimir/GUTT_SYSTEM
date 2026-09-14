@@ -14,7 +14,7 @@ export class FinancialAssistant {
         contents: `Contexto del socio: ${financialContext}. Consulta del socio: ${prompt}`,
         config: {
           // Fix: Move the persona/expert instruction to systemInstruction for clearer context separation.
-          systemInstruction: 'Eres un asistente financiero experto para una Caja de Ahorro y Crédito. Responde de forma amable, profesional y concisa.',
+          systemInstruction: 'Eres el asistente financiero de GUTT COMPANY S.A.S. para socios de cooperativas de ahorro y crédito reguladas por la SEPS. Responde de forma amable, profesional y concisa.',
           temperature: 0.7,
         }
       });

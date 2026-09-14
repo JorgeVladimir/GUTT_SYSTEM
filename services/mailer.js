@@ -140,8 +140,8 @@ export async function enviarCorreo({ para, asunto, html, texto }) {
 export function plantillaCorreo(titulo, cuerpoHtml) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-      <h2 style="color: #14532D; text-align: center; margin-top: 0;">GUTT SYSTEM</h2>
-      <h3 style="color: #14532D; font-size: 16px;">${titulo}</h3>
+      <h2 style="color: #002B67; text-align: center; margin-top: 0;">GUTT SYSTEM</h2>
+      <h3 style="color: #002B67; font-size: 16px;">${titulo}</h3>
       ${cuerpoHtml}
       <p style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
         Este es un correo automatico, por favor no responda a este mensaje.

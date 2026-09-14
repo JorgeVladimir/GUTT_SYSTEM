@@ -174,7 +174,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
         <button
           onClick={() => void load()}
           disabled={loading}
-          className="px-6 py-3 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
+          className="px-6 py-3 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'Calculando...' : 'Actualizar'}
         </button>
@@ -182,7 +182,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 
       {loading && !hasLoadedOnce && (
         <div className="bg-white p-8 sm:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="w-12 h-12 border-4 border-[#002B67] border-t-transparent rounded-full animate-spin mb-6"></div>
           <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Calculando sobre Informix en vivo</p>
           <p className="text-[11px] font-bold text-slate-400 mt-2 text-center max-w-md">
             Se está verificando partida doble, calculando ingresos/gastos del ejercicio y cruzando contra el
@@ -210,7 +210,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
         <>
           <div className="flex items-center justify-between px-2 no-print">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <CalendarClock size={14} /> Ejercicio {data.anioCalendario} · datos al <span className="text-[#14532D]">{formatFecha(data.fechaCorte)}</span> · {data.mesesTranscurridos} meses transcurridos
+              <CalendarClock size={14} /> Ejercicio {data.anioCalendario} · datos al <span className="text-[#002B67]">{formatFecha(data.fechaCorte)}</span> · {data.mesesTranscurridos} meses transcurridos
             </p>
           </div>
 
@@ -238,15 +238,15 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 
           {/* Tarjetas de resultado */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between">
+            <div className="p-8 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-white text-[#14532D] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-12 h-12 bg-white text-[#002B67] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                   <TrendingUp size={22} />
                 </div>
-                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Ingresos (Clase 5)</p>
-                <h4 className="text-2xl font-black text-[#14532D]">{money(data.ingresos)}</h4>
+                <p className="text-[9px] font-black text-brand-600 uppercase tracking-wider mb-1">Ingresos (Clase 5)</p>
+                <h4 className="text-2xl font-black text-[#002B67]">{money(data.ingresos)}</h4>
               </div>
-              <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">Acumulado {data.mesesTranscurridos} meses del ejercicio {data.anioCalendario}</p>
+              <p className="text-[8px] font-bold text-brand-700/60 uppercase tracking-widest mt-6">Acumulado {data.mesesTranscurridos} meses del ejercicio {data.anioCalendario}</p>
             </div>
 
             <div className="p-8 bg-red-50 rounded-3xl border border-red-100 shadow-sm flex flex-col justify-between">
@@ -262,7 +262,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 
             <div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-[#14532D] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-12 h-12 bg-[#002B67] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
                   <Wallet size={22} />
                 </div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Utilidad Neta (real, a la fecha)</p>
@@ -289,7 +289,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
               UtilidadRentabilidadQueries.calcular() sección 8 y
               MANUALES/11_UTILIDAD_RENTABILIDAD.md sección 9. */}
           <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-sm border border-slate-100 printable-area">
-            <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2 mb-6">
+            <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2 mb-6">
               <Scale size={16} /> Utilidad Calculada vs. Registrada en Libros (cuenta 3.6.03.05)
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -301,19 +301,19 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Registrada en libros (cta. 3.6.03.05)</p>
                 <p className="text-xl font-black text-slate-800">{money(data.utilidadEnLibros.saldoCuenta360305)}</p>
               </div>
-              <div className={`p-6 rounded-2xl border ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                <p className={`text-[9px] font-black uppercase tracking-wider mb-1 ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-amber-600' : 'text-emerald-600'}`}>Diferencia</p>
-                <p className={`text-xl font-black ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-amber-900' : 'text-emerald-800'}`}>{money(data.utilidadEnLibros.diferencia)}</p>
+              <div className={`p-6 rounded-2xl border ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'bg-amber-50 border-amber-100' : 'bg-brand-50 border-brand-100'}`}>
+                <p className={`text-[9px] font-black uppercase tracking-wider mb-1 ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-amber-600' : 'text-brand-600'}`}>Diferencia</p>
+                <p className={`text-xl font-black ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-amber-900' : 'text-brand-800'}`}>{money(data.utilidadEnLibros.diferencia)}</p>
                 <p className="text-[9px] font-bold text-slate-400 mt-1">
                   {data.utilidadEnLibros.periodosCerrados} de {data.utilidadEnLibros.periodosDelEjercicio} periodos mensuales cerrados
                 </p>
               </div>
             </div>
-            <div className={`p-5 rounded-xl flex items-start gap-3 border ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
+            <div className={`p-5 rounded-xl flex items-start gap-3 border ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'bg-blue-50 border-blue-100' : 'bg-brand-50 border-brand-100'}`}>
               {data.utilidadEnLibros.hayCierreMensualPendiente
                 ? <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                : <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />}
-              <p className={`text-[11px] font-bold leading-relaxed ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-blue-700' : 'text-emerald-700'}`}>
+                : <CheckCircle2 size={16} className="text-brand-500 shrink-0 mt-0.5" />}
+              <p className={`text-[11px] font-bold leading-relaxed ${data.utilidadEnLibros.hayCierreMensualPendiente ? 'text-blue-700' : 'text-brand-700'}`}>
                 {data.utilidadEnLibros.explicacion}
               </p>
             </div>
@@ -353,13 +353,13 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 
           {/* ROA / ROE */}
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-            <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2 mb-6">
+            <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2 mb-6">
               <Percent size={16} /> Rentabilidad Aproximada (anualizada)
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">ROA aproximado</p>
-                <p className="text-2xl font-black text-[#14532D]">{pct(data.roaAnualizadoPct)}</p>
+                <p className="text-2xl font-black text-[#002B67]">{pct(data.roaAnualizadoPct)}</p>
                 <p className="text-[9px] font-bold text-slate-400 mt-2">Utilidad anualizada / Activos totales</p>
               </div>
               <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100">
@@ -390,7 +390,7 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 
           {/* Calidad de datos -- siempre visible, no se oculta */}
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 printable-area">
-            <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 flex items-center gap-2 mb-6">
+            <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 flex items-center gap-2 mb-6">
               <ShieldAlert size={16} /> Hallazgos de Calidad de Datos
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -442,13 +442,13 @@ export const UtilidadRentabilidadView: React.FC<UtilidadRentabilidadViewProps> =
 };
 
 const ValidacionBadge: React.FC<{ ok: boolean; titulo: string; detalleOk: string; detalleFalla: string }> = ({ ok, titulo, detalleOk, detalleFalla }) => (
-  <div className={`p-6 rounded-2xl border shadow-sm flex items-start gap-4 ${ok ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${ok ? 'bg-white text-emerald-600' : 'bg-white text-red-600'}`}>
+  <div className={`p-6 rounded-2xl border shadow-sm flex items-start gap-4 ${ok ? 'bg-brand-50 border-brand-100' : 'bg-red-50 border-red-100'}`}>
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${ok ? 'bg-white text-brand-600' : 'bg-white text-red-600'}`}>
       {ok ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
     </div>
     <div>
-      <p className={`text-[10px] font-black uppercase tracking-widest ${ok ? 'text-emerald-700' : 'text-red-700'}`}>{titulo} {ok ? 'OK' : 'DESCUADRE'}</p>
-      <p className={`text-[10px] font-bold mt-1 ${ok ? 'text-emerald-600/80' : 'text-red-600/80'}`}>{ok ? detalleOk : detalleFalla}</p>
+      <p className={`text-[10px] font-black uppercase tracking-widest ${ok ? 'text-brand-700' : 'text-red-700'}`}>{titulo} {ok ? 'OK' : 'DESCUADRE'}</p>
+      <p className={`text-[10px] font-bold mt-1 ${ok ? 'text-brand-600/80' : 'text-red-600/80'}`}>{ok ? detalleOk : detalleFalla}</p>
     </div>
   </div>
 );

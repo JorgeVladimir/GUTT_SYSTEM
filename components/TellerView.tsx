@@ -514,7 +514,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
           </div>
 
           <div className="flex gap-4 mt-6">
-            <button onClick={() => { window.print(); }} className="flex-1 py-4 bg-[#14532D] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-800 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => { window.print(); }} className="flex-1 py-4 bg-[#002B67] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-800 transition-all flex items-center justify-center gap-2">
               <Printer size={16}/> Imprimir Recibo
             </button>
             <button onClick={() => { setShowReceiptModal(false); setSelectedReceiptTx(null); setSelectedReceiptUser(null); }} className="flex-1 py-4 bg-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-300 transition-all">
@@ -1578,12 +1578,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
           
           return (
             <div className="max-w-md mx-auto space-y-8 animate-in fade-in duration-700 pb-20 pt-10">
-              <div className="bg-white rounded-[3.5rem] shadow-2xl p-12 border-t-[12px] border-[#14532D]">
+              <div className="bg-white rounded-[3.5rem] shadow-2xl p-12 border-t-[12px] border-[#002B67]">
                 <div className="flex flex-col items-center mb-10 text-center">
-                  <div className="w-20 h-20 bg-emerald-50 text-[#14532D] rounded-[2.5rem] flex items-center justify-center mb-6 shadow-inner">
+                  <div className="w-20 h-20 bg-brand-50 text-[#002B67] rounded-[2.5rem] flex items-center justify-center mb-6 shadow-inner">
                     <Calculator size={40} />
                   </div>
-                  <h2 className="text-3xl font-black text-[#14532D] tracking-tight uppercase leading-none">Inicio de Caja</h2>
+                  <h2 className="text-3xl font-black text-[#002B67] tracking-tight uppercase leading-none">Inicio de Caja</h2>
                   <p className="text-slate-400 font-bold text-xs mt-2 uppercase tracking-widest leading-relaxed">
                     Declare su saldo de apertura
                   </p>
@@ -1597,13 +1597,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
                     <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                       <div className="space-y-1">
                         <span className="text-[9px] text-slate-400">Total del Cierre:</span>
-                        <p className="text-lg font-black text-[#14532D]">${lastCloseTotal.toFixed(2)} USD</p>
+                        <p className="text-lg font-black text-[#002B67]">${lastCloseTotal.toFixed(2)} USD</p>
                       </div>
                       <div className="space-y-1 text-right flex items-center justify-end">
                         <button
                           type="button"
                           onClick={() => setShowPrevCloseDetail(!showPrevCloseDetail)}
-                          className="text-[9px] bg-emerald-50 hover:bg-emerald-100 text-[#14532D] px-3 py-1.5 rounded-lg border border-emerald-200/30 transition-colors uppercase tracking-wider font-black"
+                          className="text-[9px] bg-brand-50 hover:bg-brand-100 text-[#002B67] px-3 py-1.5 rounded-lg border border-brand-200/30 transition-colors uppercase tracking-wider font-black"
                         >
                           {showPrevCloseDetail ? 'Ocultar Detalle' : 'Ver Detalle'}
                         </button>
@@ -1682,11 +1682,11 @@ export const TellerView: React.FC<TellerViewProps> = ({
                           value={balanceInput}
                           onChange={e => setBalanceInput(e.target.value)}
                           placeholder="0.00"
-                          className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#14532D] outline-none font-black text-[#14532D] text-2xl shadow-inner"
+                          className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-[#002B67] outline-none font-black text-[#002B67] text-2xl shadow-inner"
                         />
                       </div>
                       {lastCloseTotal !== null && (
-                        <p className={`text-[10px] font-black ml-1 ${Math.abs((parseFloat(balanceInput) || 0) - lastCloseTotal) < 0.009 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        <p className={`text-[10px] font-black ml-1 ${Math.abs((parseFloat(balanceInput) || 0) - lastCloseTotal) < 0.009 ? 'text-brand-600' : 'text-rose-500'}`}>
                           {Math.abs((parseFloat(balanceInput) || 0) - lastCloseTotal) < 0.009
                             ? '✓ El saldo coincide con el cierre anterior.'
                             : `✗ Debe ingresar exactamente $${lastCloseTotal.toFixed(2)} USD.`}
@@ -1701,9 +1701,9 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   <button
                     type="submit"
                     disabled={lastCloseTotal !== null && Math.abs((parseFloat(balanceInput) || 0) - lastCloseTotal) > 0.009}
-                    className="w-full py-5 bg-[#14532D] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-[#1b5e20] transition-all flex items-center justify-center gap-4 group mt-8 uppercase tracking-wider"
+                    className="w-full py-5 bg-[#002B67] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-[#0A3D80] transition-all flex items-center justify-center gap-4 group mt-8 uppercase tracking-wider"
                   >
-                    ABRIR CAJA VENTANILLA <ArrowRightLeft size={20} className="text-[#FACC15]" />
+                    ABRIR CAJA VENTANILLA <ArrowRightLeft size={20} className="text-[#067A80]" />
                   </button>
                 </form>
               </div>
@@ -1732,22 +1732,22 @@ export const TellerView: React.FC<TellerViewProps> = ({
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-1 space-y-6">
               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                 <h3 className="text-xl font-black text-[#14532D] mb-6 uppercase tracking-tighter">Buscar Socio</h3>
+                 <h3 className="text-xl font-black text-[#002B67] mb-6 uppercase tracking-tighter">Buscar Socio</h3>
                  <div className="flex gap-2">
-                   <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="ID o Nombre..." className="flex-1 px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-black text-[#14532D] shadow-inner" />
-                   <button onClick={handleSearch} className="p-4 bg-[#14532D] text-white rounded-2xl shadow-lg active:scale-95 transition-all"><Search size={20}/></button>
+                   <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="ID o Nombre..." className="flex-1 px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-black text-[#002B67] shadow-inner" />
+                   <button onClick={handleSearch} className="p-4 bg-[#002B67] text-white rounded-2xl shadow-lg active:scale-95 transition-all"><Search size={20}/></button>
                  </div>
               </div>
               {selectedUser && (
-                <div className="bg-[#14532D] p-8 rounded-[2.5rem] text-white shadow-2xl animate-in zoom-in-95 duration-500 border-b-[8px] border-[#FACC15]">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300 mb-2">Socio Seleccionado</p>
+                <div className="bg-[#002B67] p-8 rounded-[2.5rem] text-white shadow-2xl animate-in zoom-in-95 duration-500 border-b-[8px] border-[#03CED4]">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-300 mb-2">Socio Seleccionado</p>
                   <h4 className="text-2xl font-black uppercase tracking-tighter mb-4">{selectedUser.name}</h4>
                   <div className="space-y-4 pt-4 border-t border-white/10">
                     {selectedUser.accounts.map(acc => (
                       <div key={acc.id} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer" onClick={() => setSelectedAccountId(acc.id)}>
                         <div>
-                          <p className="text-[9px] font-black text-emerald-300 uppercase">{acc.type.replace('_', ' ')}</p>
-                          <p className={`font-bold text-xs ${selectedAccountId === acc.id ? 'text-[#FACC15]' : 'opacity-70'}`}>#{acc.number}</p>
+                          <p className="text-[9px] font-black text-brand-300 uppercase">{acc.type.replace('_', ' ')}</p>
+                          <p className={`font-bold text-xs ${selectedAccountId === acc.id ? 'text-[#067A80]' : 'opacity-70'}`}>#{acc.number}</p>
                         </div>
                         <p className="text-lg font-black">${acc.balance.toFixed(2)}</p>
                       </div>
@@ -1761,12 +1761,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 <div className="bg-white p-10 rounded-[4rem] shadow-sm border border-slate-100 animate-in slide-in-from-right-4">
                   <form onSubmit={handleOperation} className="space-y-10">
                     <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-[2rem]">
-                      <button type="button" onClick={() => { setOpType('DEPOSIT'); setShowCashDetail(true); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEPOSIT' ? 'bg-[#14532D] text-[#FACC15] shadow-xl border border-[#FACC15]' : 'text-slate-400'}`}>DEPÓSITO</button>
-                      <button type="button" onClick={() => { setOpType('WITHDRAW'); setShowCashDetail(true); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'WITHDRAW' ? 'bg-[#14532D] text-[#FACC15] shadow-xl border border-[#FACC15]' : 'text-slate-400'}`}>RETIRO</button>
-                      <button type="button" onClick={() => { setOpType('CREDIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'CREDIT_NOTE' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>NOTA CRÉDITO</button>
-                      <button type="button" onClick={() => { setOpType('DEBIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEBIT_NOTE' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>NOTA DÉBITO</button>
-                      <button type="button" onClick={() => { setOpType('ACCOUNT_TRANSFER'); setShowCashDetail(false); setDestAccountId(''); setDestMemberUser(null); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'ACCOUNT_TRANSFER' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>TRANS. INTERNA</button>
-                      <button type="button" onClick={() => { setOpType('INTERBANK_TRANSFER'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'INTERBANK_TRANSFER' ? 'bg-[#14532D] text-white shadow-xl' : 'text-slate-400'}`}>TRANS. INTERBANCARIA</button>
+                      <button type="button" onClick={() => { setOpType('DEPOSIT'); setShowCashDetail(true); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEPOSIT' ? 'bg-[#002B67] text-[#067A80] shadow-xl border border-[#03CED4]' : 'text-slate-400'}`}>DEPÓSITO</button>
+                      <button type="button" onClick={() => { setOpType('WITHDRAW'); setShowCashDetail(true); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'WITHDRAW' ? 'bg-[#002B67] text-[#067A80] shadow-xl border border-[#03CED4]' : 'text-slate-400'}`}>RETIRO</button>
+                      <button type="button" onClick={() => { setOpType('CREDIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'CREDIT_NOTE' ? 'bg-[#002B67] text-white shadow-xl' : 'text-slate-400'}`}>NOTA CRÉDITO</button>
+                      <button type="button" onClick={() => { setOpType('DEBIT_NOTE'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'DEBIT_NOTE' ? 'bg-[#002B67] text-white shadow-xl' : 'text-slate-400'}`}>NOTA DÉBITO</button>
+                      <button type="button" onClick={() => { setOpType('ACCOUNT_TRANSFER'); setShowCashDetail(false); setDestAccountId(''); setDestMemberUser(null); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'ACCOUNT_TRANSFER' ? 'bg-[#002B67] text-white shadow-xl' : 'text-slate-400'}`}>TRANS. INTERNA</button>
+                      <button type="button" onClick={() => { setOpType('INTERBANK_TRANSFER'); setShowCashDetail(false); }} className={`flex-1 min-w-[120px] py-4 rounded-[1.5rem] font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${opType === 'INTERBANK_TRANSFER' ? 'bg-[#002B67] text-white shadow-xl' : 'text-slate-400'}`}>TRANS. INTERBANCARIA</button>
                     </div>
 
                     {opType === 'ACCOUNT_TRANSFER' && (
@@ -1777,14 +1777,14 @@ export const TellerView: React.FC<TellerViewProps> = ({
                             <button
                               type="button"
                               onClick={() => { setTransferType('OWN'); setDestMemberUser(null); setDestAccountId(''); }}
-                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${transferType === 'OWN' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}
+                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${transferType === 'OWN' ? 'bg-[#002B67] text-white shadow-md' : 'text-slate-400'}`}
                             >
                               Cuentas Propias
                             </button>
                             <button
                               type="button"
                               onClick={() => { setTransferType('OTHER'); setDestAccountId(''); }}
-                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${transferType === 'OTHER' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}
+                              className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase transition-all ${transferType === 'OTHER' ? 'bg-[#002B67] text-white shadow-md' : 'text-slate-400'}`}
                             >
                               Otro Socio (Interna)
                             </button>
@@ -1802,7 +1802,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                 setDestMemberUser(found || null);
                                 setDestAccountId(found?.accounts[0]?.id || '');
                               }}
-                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none"
+                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none"
                             >
                               <option value="">Seleccione Socio Destinatario...</option>
                               {users.filter(u => u.id !== selectedUser.id && u.role === UserRole.MEMBER).map(u => (
@@ -1819,7 +1819,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                               required
                               value={destAccountId}
                               onChange={e => setDestAccountId(e.target.value)}
-                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none"
+                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none"
                             >
                               <option value="">Seleccione Cuenta Destino...</option>
                               {selectedUser.accounts.filter(acc => acc.id !== selectedAccountId).map(acc => (
@@ -1838,7 +1838,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                               required
                               value={destAccountId}
                               onChange={e => setDestAccountId(e.target.value)}
-                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none"
+                              className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none"
                             >
                               <option value="">Seleccione Cuenta Destino...</option>
                               {destMemberUser.accounts.map(acc => (
@@ -1857,7 +1857,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Banco Destino</label>
-                            <select required value={interbankTransfer.toBank} onChange={e => setInterbankTransfer({...interbankTransfer, toBank: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                            <select required value={interbankTransfer.toBank} onChange={e => setInterbankTransfer({...interbankTransfer, toBank: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none">
                               <option value="">Seleccione...</option>
                               <option value="BANCO PICHINCHA">BANCO PICHINCHA</option>
                               <option value="BANCO GUAYAQUIL">BANCO GUAYAQUIL</option>
@@ -1871,16 +1871,16 @@ export const TellerView: React.FC<TellerViewProps> = ({
                           </div>
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cuenta Destino</label>
-                            <input required type="text" value={interbankTransfer.toAccount} onChange={e => setInterbankTransfer({...interbankTransfer, toAccount: e.target.value})} placeholder="Número de cuenta" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                            <input required type="text" value={interbankTransfer.toAccount} onChange={e => setInterbankTransfer({...interbankTransfer, toAccount: e.target.value})} placeholder="Número de cuenta" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Beneficiario</label>
-                          <input required type="text" value={interbankTransfer.toAccountName} onChange={e => setInterbankTransfer({...interbankTransfer, toAccountName: e.target.value.toUpperCase()})} placeholder="Nombre completo" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                          <input required type="text" value={interbankTransfer.toAccountName} onChange={e => setInterbankTransfer({...interbankTransfer, toAccountName: e.target.value.toUpperCase()})} placeholder="Nombre completo" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Referencia</label>
-                          <input type="text" value={interbankTransfer.reference} onChange={e => setInterbankTransfer({...interbankTransfer, reference: e.target.value})} placeholder="Referencia opcional" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                          <input type="text" value={interbankTransfer.reference} onChange={e => setInterbankTransfer({...interbankTransfer, reference: e.target.value})} placeholder="Referencia opcional" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                         </div>
                       </div>
                     )}
@@ -1889,19 +1889,19 @@ export const TellerView: React.FC<TellerViewProps> = ({
                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto de Operación ($)</label>
                        <div className="relative">
                          <DollarSign size={24} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-                         <input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full pl-16 pr-8 py-5 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] text-2xl focus:ring-4 focus:ring-[#14532D]/10 outline-none shadow-inner" />
+                         <input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="w-full pl-16 pr-8 py-5 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] text-2xl focus:ring-4 focus:ring-[#002B67]/10 outline-none shadow-inner" />
                        </div>
                     </div>
 
                     {(opType === 'DEPOSIT' || opType === 'WITHDRAW') && (
                       <div className="space-y-4">
-                        <button type="button" onClick={() => setShowCashDetail(!showCashDetail)} className="flex items-center gap-2 text-[10px] font-black text-[#14532D] uppercase tracking-widest hover:underline">
+                        <button type="button" onClick={() => setShowCashDetail(!showCashDetail)} className="flex items-center gap-2 text-[10px] font-black text-[#002B67] uppercase tracking-widest hover:underline">
                           <Calculator size={16} /> {showCashDetail ? 'Ocultar' : 'Mostrar'} detalle de billetes y monedas
                         </button>
 
                         {showCashDetail && (
-                          <div className="space-y-6 animate-in slide-in-from-top-4 p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
-                            <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest">Detalle de Billetes</h4>
+                          <div className="space-y-6 animate-in slide-in-from-top-4 p-6 bg-brand-50 rounded-3xl border border-brand-100">
+                            <h4 className="text-sm font-black text-[#002B67] uppercase tracking-widest">Detalle de Billetes</h4>
                             <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                               {cashDetail.bills.map((bill, i) => (
                                 <div key={i} className="space-y-2">
@@ -1911,14 +1911,14 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     min="0"
                                     value={bill.count}
                                     onChange={e => updateCashDetail('bills', i, parseInt(e.target.value) || 0)}
-                                    className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                                    className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#002B67] focus:border-[#002B67] outline-none"
                                   />
                                   <p className="text-[9px] font-bold text-center text-slate-400">${bill.total.toFixed(2)}</p>
                                 </div>
                               ))}
                             </div>
 
-                            <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest pt-4 border-t border-emerald-200">Detalle de Monedas</h4>
+                            <h4 className="text-sm font-black text-[#002B67] uppercase tracking-widest pt-4 border-t border-brand-200">Detalle de Monedas</h4>
                             <div className="grid grid-cols-5 gap-4">
                               {cashDetail.coins.map((coin, i) => (
                                 <div key={i} className="space-y-2">
@@ -1928,16 +1928,16 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     min="0"
                                     value={coin.count}
                                     onChange={e => updateCashDetail('coins', i, parseInt(e.target.value) || 0)}
-                                    className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                                    className="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-center text-[#002B67] focus:border-[#002B67] outline-none"
                                   />
                                   <p className="text-[9px] font-bold text-center text-slate-400">${coin.total.toFixed(2)}</p>
                                 </div>
                               ))}
                             </div>
 
-                            <div className="flex justify-between items-center pt-4 border-t border-emerald-200 bg-emerald-100 p-4 rounded-2xl">
-                              <span className="text-sm font-black text-[#14532D] uppercase">Total Efectivo:</span>
-                              <span className="text-2xl font-black text-[#14532D]">${cashDetail.total.toFixed(2)}</span>
+                            <div className="flex justify-between items-center pt-4 border-t border-brand-200 bg-brand-100 p-4 rounded-2xl">
+                              <span className="text-sm font-black text-[#002B67] uppercase">Total Efectivo:</span>
+                              <span className="text-2xl font-black text-[#002B67]">${cashDetail.total.toFixed(2)}</span>
                             </div>
 
                             {(() => {
@@ -1946,7 +1946,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                               if (isNaN(opAmt) || opAmt <= 0) return null;
                               if (Math.abs(diff) < 0.009) {
                                 return (
-                                  <div className="mt-4 p-3 bg-emerald-500 text-white font-black text-[10px] rounded-xl text-center uppercase tracking-widest">
+                                  <div className="mt-4 p-3 bg-brand-500 text-white font-black text-[10px] rounded-xl text-center uppercase tracking-widest">
                                     ✓ El detalle de efectivo coincide exactamente con el monto de operación
                                   </div>
                                 );
@@ -1981,7 +1981,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                           className={`w-full py-7 font-black text-2xl shadow-2xl border-b-[6px] transition-all uppercase tracking-tighter rounded-full ${
                             isConfirmDisabled
                               ? 'bg-slate-300 border-slate-400 text-slate-400 cursor-not-allowed opacity-50 border-b-[6px]'
-                              : 'bg-[#14532D] text-white border-[#FACC15] active:translate-y-2 hover:bg-emerald-800'
+                              : 'bg-[#002B67] text-white border-[#03CED4] active:translate-y-2 hover:bg-brand-800'
                           }`}
                         >
                           CONFIRMAR TRANSACCIÓN
@@ -2024,7 +2024,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                           <td className="px-6 py-4 font-mono text-xs">{tx.id}</td>
                           <td className="px-6 py-4 font-bold text-slate-600 text-xs">{tx.accountId}</td>
                           <td className="px-6 py-4 text-xs font-bold">{tx.description}</td>
-                          <td className={`px-6 py-4 text-right font-black text-xs ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <td className={`px-6 py-4 text-right font-black text-xs ${tx.amount > 0 ? 'text-brand-600' : 'text-red-600'}`}>
                             {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 text-center space-x-2 whitespace-nowrap">
@@ -2064,7 +2064,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
       {activeTab === 'REGISTER' && !hasChosenType && (
         <div className="bg-white rounded-[4rem] shadow-xl border border-slate-100 p-12 space-y-10 animate-in fade-in duration-500 text-center">
           <div className="space-y-4">
-            <div className="w-20 h-20 bg-emerald-50 text-[#14532D] rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
+            <div className="w-20 h-20 bg-brand-50 text-[#002B67] rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
               <UserPlus size={40} />
             </div>
             <h3 className="text-3xl font-black text-slate-800 tracking-tight uppercase leading-none">Apertura de Socio / Cliente</h3>
@@ -2078,22 +2078,22 @@ export const TellerView: React.FC<TellerViewProps> = ({
             <button
               type="button"
               onClick={() => handleChooseType('SOCIO')}
-              className="bg-white hover:bg-emerald-50/30 border-2 border-slate-100 hover:border-[#14532D] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
+              className="bg-white hover:bg-brand-50/30 border-2 border-slate-100 hover:border-[#002B67] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
             >
               <div className="space-y-4">
-                <div className="w-12 h-12 bg-emerald-50 text-[#14532D] group-hover:bg-[#14532D] group-hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300">
+                <div className="w-12 h-12 bg-brand-50 text-[#002B67] group-hover:bg-[#002B67] group-hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300">
                   <UserIcon size={24} />
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-[#14532D] uppercase tracking-tight">Socio Coac</h4>
+                  <h4 className="text-lg font-black text-[#002B67] uppercase tracking-tight">Socio Coac</h4>
                   <p className="text-xs text-slate-400 font-bold mt-2 leading-relaxed">
                     Apertura de cuenta de ahorros, certificados de aportación obligatorios y acceso completo a créditos.
                   </p>
                 </div>
               </div>
               <div className="pt-4 border-t border-slate-100 w-full flex justify-between items-center">
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-100 px-3 py-1 rounded-full">Prefijo S-00</span>
-                <span className="text-xs font-black text-slate-300 group-hover:text-[#14532D] transition-colors">Iniciar →</span>
+                <span className="text-[10px] font-black text-brand-600 uppercase tracking-wider bg-brand-100 px-3 py-1 rounded-full">Prefijo S-00</span>
+                <span className="text-xs font-black text-slate-300 group-hover:text-[#002B67] transition-colors">Iniciar →</span>
               </div>
             </button>
 
@@ -2101,7 +2101,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
             <button
               type="button"
               onClick={() => handleChooseType('CLIENTE')}
-              className="bg-white hover:bg-emerald-50/30 border-2 border-slate-100 hover:border-[#14532D] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
+              className="bg-white hover:bg-brand-50/30 border-2 border-slate-100 hover:border-[#002B67] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300">
@@ -2124,7 +2124,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
             <button
               type="button"
               onClick={() => handleChooseType('CLIENTE_EXTERNO')}
-              className="bg-white hover:bg-emerald-50/30 border-2 border-slate-100 hover:border-[#14532D] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
+              className="bg-white hover:bg-brand-50/30 border-2 border-slate-100 hover:border-[#002B67] p-8 rounded-[3rem] text-left transition-all duration-300 shadow-sm hover:shadow-xl group flex flex-col justify-between h-80 relative overflow-hidden"
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300">
@@ -2152,7 +2152,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
           <div className="p-8 bg-slate-50 border-b flex justify-between items-center flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${
-                personType === 'SOCIO' ? 'bg-[#14532D]' : personType === 'CLIENTE' ? 'bg-blue-600' : 'bg-purple-600'
+                personType === 'SOCIO' ? 'bg-[#002B67]' : personType === 'CLIENTE' ? 'bg-blue-600' : 'bg-purple-600'
               }`}>
                 <UserPlus size={24} />
               </div>
@@ -2168,7 +2168,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
             <div className="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-right shadow-sm">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">ID Socio Asignado Estimado</span>
               <span className={`text-lg font-black ${
-                personType === 'SOCIO' ? 'text-[#14532D]' : personType === 'CLIENTE' ? 'text-blue-600' : 'text-purple-600'
+                personType === 'SOCIO' ? 'text-[#002B67]' : personType === 'CLIENTE' ? 'text-blue-600' : 'text-purple-600'
               }`}>
                 {siguienteNumero || 'Calculando...'}
               </span>
@@ -2178,8 +2178,8 @@ export const TellerView: React.FC<TellerViewProps> = ({
           <form className="p-12 space-y-10" onSubmit={handleRegisterSocioSQL}>
             {/* Sección 1: Identidad */}
             <div className="space-y-6">
-              <div className="flex items-center gap-2 border-l-4 border-[#14532D] pl-4">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest">Información Personal y de Identidad</h4>
+              <div className="flex items-center gap-2 border-l-4 border-[#002B67] pl-4">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest">Información Personal y de Identidad</h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                  <div className="space-y-2">
@@ -2187,7 +2187,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                     <select
                       value={newMember.idType}
                       onChange={e => setNewMember({...newMember, idType: e.target.value as any, id: ''})}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none"
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none"
                     >
                       <option value="CÉDULA">CÉDULA</option>
                       <option value="RUC">RUC</option>
@@ -2203,11 +2203,11 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         maxLength={newMember.idType === 'CÉDULA' ? 10 : newMember.idType === 'RUC' ? 13 : 20}
                         value={newMember.id}
                         onChange={e => setNewMember({...newMember, id: e.target.value.replace(/\D/g, '')})}
-                        className={`w-full px-6 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none transition-all ${idStatus === 'valid' ? 'bg-emerald-50' : idStatus === 'invalid' ? 'bg-red-50' : ''}`}
+                        className={`w-full px-6 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none transition-all ${idStatus === 'valid' ? 'bg-accent-50' : idStatus === 'invalid' ? 'bg-red-50' : ''}`}
                       />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        {isValidating && <Loader2 size={16} className="animate-spin text-[#14532D]" />}
-                        {idStatus === 'valid' && <CheckCircle2 size={16} className="text-emerald-500" />}
+                        {isValidating && <Loader2 size={16} className="animate-spin text-[#002B67]" />}
+                        {idStatus === 'valid' && <CheckCircle2 size={16} className="text-accent-500" />}
                         {idStatus === 'invalid' && <X size={16} className="text-rose-500" />}
                       </div>
                     </div>
@@ -2227,7 +2227,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                 setImgPosteriorBase64('');
                               }
                             }}
-                            className="rounded text-[#14532D] focus:ring-[#14532D] w-4 h-4"
+                            className="rounded text-[#002B67] focus:ring-[#002B67] w-4 h-4"
                           />
                           <span className="text-[9px] font-black text-slate-600 uppercase tracking-wider">
                             CEDULAS REALES PERO NO VALIDAS
@@ -2238,7 +2238,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setShowDocUploadModal(true)}
-                              className="w-full py-2 bg-[#14532D]/10 hover:bg-[#14532D]/20 text-[#14532D] text-[9px] font-black rounded-xl border border-[#14532D]/20 uppercase tracking-widest transition-all text-center"
+                              className="w-full py-2 bg-[#002B67]/10 hover:bg-[#002B67]/20 text-[#002B67] text-[9px] font-black rounded-xl border border-[#002B67]/20 uppercase tracking-widest transition-all text-center"
                             >
                               {imgFrontalBase64 && imgPosteriorBase64 ? '✓ Ver Documentos Cargados' : '⚠️ Subir Fotos del Documento'}
                             </button>
@@ -2254,41 +2254,41 @@ export const TellerView: React.FC<TellerViewProps> = ({
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Primer Nombre</label>
-                    <input required type="text" value={newMember.firstName} onChange={e => setNewMember({...newMember, firstName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                    <input required type="text" value={newMember.firstName} onChange={e => setNewMember({...newMember, firstName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                  </div>
                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Segundo Nombre</label>
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={newMember.onlyOneName} onChange={e => setNewMember({...newMember, onlyOneName: e.target.checked, middleName: e.target.checked ? '' : newMember.middleName})} className="rounded text-[#14532D] focus:ring-[#14532D]" />
+                        <input type="checkbox" checked={newMember.onlyOneName} onChange={e => setNewMember({...newMember, onlyOneName: e.target.checked, middleName: e.target.checked ? '' : newMember.middleName})} className="rounded text-[#002B67] focus:ring-[#002B67]" />
                         Un solo nombre
                       </label>
                     </div>
-                    <input disabled={newMember.onlyOneName} required={!newMember.onlyOneName} type="text" value={newMember.onlyOneName ? '' : newMember.middleName} onChange={e => setNewMember({...newMember, middleName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50 disabled:bg-slate-100" />
+                    <input disabled={newMember.onlyOneName} required={!newMember.onlyOneName} type="text" value={newMember.onlyOneName ? '' : newMember.middleName} onChange={e => setNewMember({...newMember, middleName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50 disabled:bg-slate-100" />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Primer Apellido</label>
-                    <input required type="text" value={newMember.firstLastName} onChange={e => setNewMember({...newMember, firstLastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                    <input required type="text" value={newMember.firstLastName} onChange={e => setNewMember({...newMember, firstLastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                  </div>
                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Segundo Apellido</label>
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={newMember.onlyOneLastName} onChange={e => setNewMember({...newMember, onlyOneLastName: e.target.checked, secondLastName: e.target.checked ? '' : newMember.secondLastName})} className="rounded text-[#14532D] focus:ring-[#14532D]" />
+                        <input type="checkbox" checked={newMember.onlyOneLastName} onChange={e => setNewMember({...newMember, onlyOneLastName: e.target.checked, secondLastName: e.target.checked ? '' : newMember.secondLastName})} className="rounded text-[#002B67] focus:ring-[#002B67]" />
                         Un solo apellido
                       </label>
                     </div>
-                    <input disabled={newMember.onlyOneLastName} required={!newMember.onlyOneLastName} type="text" value={newMember.onlyOneLastName ? '' : newMember.secondLastName} onChange={e => setNewMember({...newMember, secondLastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50 disabled:bg-slate-100" />
+                    <input disabled={newMember.onlyOneLastName} required={!newMember.onlyOneLastName} type="text" value={newMember.onlyOneLastName ? '' : newMember.secondLastName} onChange={e => setNewMember({...newMember, secondLastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50 disabled:bg-slate-100" />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <Mail size={14} className="text-[#14532D]" /> Correo Electrónico
+                      <Mail size={14} className="text-[#002B67]" /> Correo Electrónico
                     </label>
-                    <input required type="email" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                    <input required type="email" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                      <CalendarIcon size={14} className="text-[#14532D]" /> Fecha de Nacimiento
+                      <CalendarIcon size={14} className="text-[#002B67]" /> Fecha de Nacimiento
                     </label>
                     <div className="flex items-center gap-2">
                       <input 
@@ -2296,12 +2296,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         type="date" 
                         value={newMember.birthDate} 
                         onChange={e => setNewMember({...newMember, birthDate: e.target.value})} 
-                        className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none cursor-pointer appearance-none relative" 
+                        className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none cursor-pointer appearance-none relative" 
                         style={{ colorScheme: 'light', minHeight: '3rem' }}
                       />
                       {calculatedAge !== null && (
                         <span className={`px-3 py-2.5 rounded-xl text-xs font-black shrink-0 ${
-                          calculatedAge < 18 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                          calculatedAge < 18 ? 'bg-amber-100 text-amber-800' : 'bg-brand-100 text-brand-800'
                         }`}>
                           {calculatedAge} AÑOS
                         </span>
@@ -2323,14 +2323,14 @@ export const TellerView: React.FC<TellerViewProps> = ({
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado Civil</label>
-                    <select value={newMember.maritalStatus} onChange={e => setNewMember({...newMember, maritalStatus: e.target.value as any})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                    <select value={newMember.maritalStatus} onChange={e => setNewMember({...newMember, maritalStatus: e.target.value as any})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none">
                       {CATALOGS.MARITAL_STATUS.map(ms => <option key={ms} value={ms}>{ms}</option>)}
                     </select>
                  </div>
                  <div className="space-y-2">
                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2"><Lock size={14}/> PIN Inicial (Debe ser modificado)</label>
                      <div className="relative">
-                        <input required type={showPin ? "text" : "password"} maxLength={4} value={newMember.pin} onChange={e => setNewMember({...newMember, pin: e.target.value.replace(/\D/g, '')})} className="w-full pl-6 pr-12 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-center text-xl tracking-[0.3em]" />
+                        <input required type={showPin ? "text" : "password"} maxLength={4} value={newMember.pin} onChange={e => setNewMember({...newMember, pin: e.target.value.replace(/\D/g, '')})} className="w-full pl-6 pr-12 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-center text-xl tracking-[0.3em]" />
                         <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                      </div>
                      {newMember.pin === '1234' && (
@@ -2368,8 +2368,8 @@ export const TellerView: React.FC<TellerViewProps> = ({
 
             {/* Sección 3: Lugar de Nacimiento (S01 Requerido) */}
             <div className="space-y-6">
-              <div className="flex items-center gap-2 border-l-4 border-[#FACC15] pl-4">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest">Lugar de Nacimiento (S01)</h4>
+              <div className="flex items-center gap-2 border-l-4 border-[#03CED4] pl-4">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest">Lugar de Nacimiento (S01)</h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div className="space-y-2">
@@ -2383,27 +2383,27 @@ export const TellerView: React.FC<TellerViewProps> = ({
                       birthCity: country.includes('593') ? newMember.birthCity : '',
                       birthParish: country.includes('593') ? newMember.birthParish : ''
                     });
-                  }} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                  }} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none">
                     {CATALOGS.COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Provincia (Nac.)</label>
-                  <select disabled={!newMember.birthCountry?.includes('593')} value={newMember.birthProvince} onChange={e => setNewMember({...newMember, birthProvince: e.target.value, birthCity: '', birthParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.birthCountry?.includes('593')} value={newMember.birthProvince} onChange={e => setNewMember({...newMember, birthProvince: e.target.value, birthCity: '', birthParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Seleccione...</option>
                     {CATALOGS.PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cantón (Nac.)</label>
-                  <select disabled={!newMember.birthProvince || !newMember.birthCountry?.includes('593')} value={newMember.birthCity} onChange={e => setNewMember({...newMember, birthCity: e.target.value, birthParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.birthProvince || !newMember.birthCountry?.includes('593')} value={newMember.birthCity} onChange={e => setNewMember({...newMember, birthCity: e.target.value, birthParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Seleccione...</option>
                     {birthCities.map((c: string) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Parroquia (Nac.)</label>
-                  <select disabled={!newMember.birthCity || !newMember.birthCountry?.includes('593')} value={newMember.birthParish} onChange={e => setNewMember({...newMember, birthParish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.birthCity || !newMember.birthCountry?.includes('593')} value={newMember.birthParish} onChange={e => setNewMember({...newMember, birthParish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Seleccione...</option>
                     {birthParishes.map((p: string) => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -2414,26 +2414,26 @@ export const TellerView: React.FC<TellerViewProps> = ({
             {/* Sección 4: Ubicación de Residencia y Croquis */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 border-l-4 border-blue-500 pl-4">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest">Ubicación de Residencia y Croquis</h4>
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest">Ubicación de Residencia y Croquis</h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Provincia Residencia</label>
-                  <select value={newMember.province} onChange={e => setNewMember({...newMember, province: e.target.value, city: '', parish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                  <select value={newMember.province} onChange={e => setNewMember({...newMember, province: e.target.value, city: '', parish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none">
                     <option value="">Seleccione...</option>
                     {CATALOGS.PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cantón Residencia</label>
-                  <select disabled={!newMember.province} value={newMember.city} onChange={e => setNewMember({...newMember, city: e.target.value, parish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.province} value={newMember.city} onChange={e => setNewMember({...newMember, city: e.target.value, parish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Seleccione...</option>
                     {resCities.map((c: string) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Parroquia Residencia</label>
-                  <select disabled={!newMember.city} value={newMember.parish} onChange={e => setNewMember({...newMember, parish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.city} value={newMember.parish} onChange={e => setNewMember({...newMember, parish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Seleccione...</option>
                     {resParishes.map((p: string) => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -2442,7 +2442,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
               <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Exacta (Domicilio)</label>
                   <div className="flex gap-2">
-                    <input required type="text" value={newMember.address} onChange={e => setNewMember({...newMember, address: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
+                    <input required type="text" value={newMember.address} onChange={e => setNewMember({...newMember, address: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
                     <button type="button" onClick={() => openRealMapSelector('home')} className="p-4 bg-white border-2 border-slate-100 text-blue-600 rounded-2xl shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2">
                        <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                     </button>
@@ -2450,13 +2450,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
               </div>
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <ImageIcon size={14} className="text-[#14532D]" /> Croquis del Domicilio (Previsualización de Captura)
+                  <ImageIcon size={14} className="text-[#002B67]" /> Croquis del Domicilio (Previsualización de Captura)
                 </label>
                 <div className="flex flex-wrap gap-4">
                   {capturedMapImage ? (
-                    <div className="relative w-64 h-48 rounded-2xl overflow-hidden border-2 border-[#14532D] shadow-lg group">
+                    <div className="relative w-64 h-48 rounded-2xl overflow-hidden border-2 border-[#002B67] shadow-lg group">
                       <img src={capturedMapImage} alt="Captura del Mapa" className="w-full h-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 bg-[#14532D]/90 px-3 py-2 text-center">
+                      <div className="absolute inset-x-0 bottom-0 bg-[#002B67]/90 px-3 py-2 text-center">
                         <span className="text-[9px] font-black text-white uppercase tracking-wider">Captura del Domicilio</span>
                       </div>
                       <button 
@@ -2483,29 +2483,29 @@ export const TellerView: React.FC<TellerViewProps> = ({
 
             {/* Sección 5: Dirección de Trabajo */}
             <div className="space-y-6">
-              <div className="flex items-center gap-2 border-l-4 border-emerald-550 pl-4">
-                <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest">Información Laboral</h4>
+              <div className="flex items-center gap-2 border-l-4 border-brand-500 pl-4">
+                <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest">Información Laboral</h4>
               </div>
               
               {/* Fila 1: Selección geográfica */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Provincia (Trabajo)</label>
-                  <select value={newMember.workProvince} onChange={e => setNewMember({...newMember, workProvince: e.target.value, workCity: '', workParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none">
+                  <select value={newMember.workProvince} onChange={e => setNewMember({...newMember, workProvince: e.target.value, workCity: '', workParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none">
                     <option value="">Provincia...</option>
                     {CATALOGS.PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cantón (Trabajo)</label>
-                  <select disabled={!newMember.workProvince} value={newMember.workCity} onChange={e => setNewMember({...newMember, workCity: e.target.value, workParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.workProvince} value={newMember.workCity} onChange={e => setNewMember({...newMember, workCity: e.target.value, workParish: ''})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Cantón...</option>
                     {workCities.map((c: string) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Parroquia (Trabajo)</label>
-                  <select disabled={!newMember.workCity} value={newMember.workParish} onChange={e => setNewMember({...newMember, workParish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none disabled:opacity-50">
+                  <select disabled={!newMember.workCity} value={newMember.workParish} onChange={e => setNewMember({...newMember, workParish: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none disabled:opacity-50">
                     <option value="">Parroquia...</option>
                     {workParishes.map((p: string) => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -2516,8 +2516,8 @@ export const TellerView: React.FC<TellerViewProps> = ({
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lugar de Trabajo / Nombre Empresa (Dirección)</label>
                 <div className="flex gap-2">
-                  <input type="text" value={newMember.workAddress} onChange={e => setNewMember({...newMember, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none" />
-                  <button type="button" onClick={() => openRealMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
+                  <input type="text" value={newMember.workAddress} onChange={e => setNewMember({...newMember, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none" />
+                  <button type="button" onClick={() => openRealMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-brand-600 rounded-2xl shadow-sm hover:bg-brand-50 transition-all flex items-center gap-2">
                      <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                   </button>
                 </div>
@@ -2526,13 +2526,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
               {/* Croquis de Trabajo Preview */}
               <div className="space-y-4 pt-4">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <ImageIcon size={14} className="text-[#14532D]" /> Croquis del Lugar de Trabajo (Previsualización de Captura)
+                  <ImageIcon size={14} className="text-[#002B67]" /> Croquis del Lugar de Trabajo (Previsualización de Captura)
                 </label>
                 <div className="flex flex-wrap gap-4">
                   {capturedWorkMapImage ? (
-                    <div className="relative w-64 h-48 rounded-2xl overflow-hidden border-2 border-[#14532D] shadow-lg group">
+                    <div className="relative w-64 h-48 rounded-2xl overflow-hidden border-2 border-[#002B67] shadow-lg group">
                       <img src={capturedWorkMapImage} alt="Croquis de Trabajo" className="w-full h-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 bg-[#14532D]/90 px-3 py-2 text-center">
+                      <div className="absolute inset-x-0 bottom-0 bg-[#002B67]/90 px-3 py-2 text-center">
                         <span className="text-[9px] font-black text-white uppercase tracking-wider">Croquis de Trabajo</span>
                       </div>
                       <button 
@@ -2591,7 +2591,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                 const refs = [...(newMember.references || [])];
                                 refs[i].name = e.target.value.toUpperCase();
                                 setNewMember({...newMember, references: refs});
-                              }} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#14532D] focus:border-[#14532D] outline-none" />
+                              }} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#002B67] focus:border-[#002B67] outline-none" />
                             </div>
                             <div className="space-y-1">
                               <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Teléfono de Contacto</label>
@@ -2599,7 +2599,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                 const refs = [...(newMember.references || [])];
                                 refs[i].phone = e.target.value.replace(/\D/g, '');
                                 setNewMember({...newMember, references: refs});
-                              }} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-[#14532D] focus:border-[#14532D] outline-none" />
+                              }} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-[#002B67] focus:border-[#002B67] outline-none" />
                             </div>
                           </div>
                        </div>
@@ -2645,7 +2645,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     deps[i].name = computeDependentFullName(deps[i]);
                                     setNewMember({...newMember, dependents: deps});
                                   }} 
-                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#14532D] focus:border-[#14532D] outline-none" 
+                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#002B67] focus:border-[#002B67] outline-none" 
                                 />
                               </div>
 
@@ -2666,7 +2666,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                         deps[i].name = computeDependentFullName(deps[i]);
                                         setNewMember({...newMember, dependents: deps});
                                       }} 
-                                      className="rounded text-[#14532D] focus:ring-[#14532D] w-3 h-3" 
+                                      className="rounded text-[#002B67] focus:ring-[#002B67] w-3 h-3" 
                                     />
                                     Un solo nombre
                                   </label>
@@ -2683,7 +2683,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     deps[i].name = computeDependentFullName(deps[i]);
                                     setNewMember({...newMember, dependents: deps});
                                   }} 
-                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#14532D] focus:border-[#14532D] outline-none disabled:opacity-50 disabled:bg-slate-100" 
+                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#002B67] focus:border-[#002B67] outline-none disabled:opacity-50 disabled:bg-slate-100" 
                                 />
                               </div>
 
@@ -2700,7 +2700,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     deps[i].name = computeDependentFullName(deps[i]);
                                     setNewMember({...newMember, dependents: deps});
                                   }} 
-                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#14532D] focus:border-[#14532D] outline-none" 
+                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#002B67] focus:border-[#002B67] outline-none" 
                                 />
                               </div>
 
@@ -2721,7 +2721,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                         deps[i].name = computeDependentFullName(deps[i]);
                                         setNewMember({...newMember, dependents: deps});
                                       }} 
-                                      className="rounded text-[#14532D] focus:ring-[#14532D] w-3 h-3" 
+                                      className="rounded text-[#002B67] focus:ring-[#002B67] w-3 h-3" 
                                     />
                                     Un solo apellido
                                   </label>
@@ -2738,7 +2738,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     deps[i].name = computeDependentFullName(deps[i]);
                                     setNewMember({...newMember, dependents: deps});
                                   }} 
-                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#14532D] focus:border-[#14532D] outline-none disabled:opacity-50 disabled:bg-slate-100" 
+                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs uppercase text-[#002B67] focus:border-[#002B67] outline-none disabled:opacity-50 disabled:bg-slate-100" 
                                 />
                               </div>
 
@@ -2751,7 +2751,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                     deps[i] = { ...deps[i], relationship: e.target.value };
                                     setNewMember({...newMember, dependents: deps});
                                   }} 
-                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-[#14532D] focus:border-[#14532D] outline-none"
+                                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-[#002B67] focus:border-[#002B67] outline-none"
                                 >
                                   <option value="HIJO/A">HIJO/A</option>
                                   <option value="CÓNYUGE">CÓNYUGE</option>
@@ -2778,7 +2778,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
               <button
                 type="submit"
                 disabled={!isFormValid || isSaving}
-                className="flex-1 py-7 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 py-7 bg-[#002B67] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#03CED4] active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSaving ? (
                   <>
@@ -2798,12 +2798,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in duration-500 font-sans">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg flex-shrink-0">
+              <div className="w-16 h-16 bg-[#002B67] text-[#067A80] rounded-[2rem] flex items-center justify-center shadow-lg flex-shrink-0">
                 <Users2 size={32} />
               </div>
               <div>
                 <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Directorio de Socios</h3>
-                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Registros de Clientes y Fichas SQL Server SQLGUTPATATE</p>
+                <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest mt-1">Registros de Clientes y Fichas · Base de datos del sistema</p>
               </div>
             </div>
             <div className="relative w-full md:w-96">
@@ -2813,14 +2813,14 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 value={generalFilter} 
                 onChange={e => setGeneralFilter(e.target.value)} 
                 placeholder="Nombre o Cédula..." 
-                className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-[#14532D] focus:border-[#14532D] focus:bg-white transition-all shadow-sm" 
+                className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-[#002B67] focus:border-[#002B67] focus:bg-white transition-all shadow-sm" 
               />
             </div>
           </div>
            
            {loadingConsultas ? (
              <div className="flex items-center justify-center py-20">
-               <Loader2 size={32} className="animate-spin text-[#14532D]" />
+               <Loader2 size={32} className="animate-spin text-[#002B67]" />
                <span className="ml-4 text-[10px] font-black text-slate-400 uppercase">Cargando datos de SQL Server...</span>
              </div>
            ) : (
@@ -2847,13 +2847,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
                      .map(s => (
                      <tr key={s.SOCIOID} className="hover:bg-slate-50/50 transition-colors group">
                        <td className="px-8 py-5">
-                         <span className="font-mono font-black text-[#14532D] bg-emerald-50 border border-emerald-100/30 px-3 py-1.5 rounded-xl text-xs">
+                         <span className="font-mono font-black text-[#002B67] bg-brand-50 border border-brand-100/30 px-3 py-1.5 rounded-xl text-xs">
                            {s.NumeroSocio || 'S/N'}
                          </span>
                        </td>
                        <td className="px-8 py-5">
                          <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
-                           s.TipoPersona === 'SOCIO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
+                           s.TipoPersona === 'SOCIO' ? 'bg-brand-50 text-brand-700 border-brand-100' : 
                            s.TipoPersona === 'CLIENTE' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
                            'bg-purple-50 text-purple-700 border-purple-100'
                          }`}>
@@ -2867,7 +2867,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                        </td>
                        <td className="px-8 py-5 text-center">
                          {s.TieneMapaUbicacion ? (
-                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100/50">
+                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-brand-600 uppercase bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100/50">
                              <CheckCircle2 size={12} /> Ubicado
                            </span>
                          ) : (
@@ -2876,7 +2876,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                        </td>
                        <td className="px-8 py-5 text-center">
                          {s.TieneCroquisTrabajo ? (
-                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#14532D] uppercase bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100/50">
+                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#002B67] uppercase bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100/50">
                              <CheckCircle2 size={12} /> Croquis
                            </span>
                          ) : (
@@ -2885,7 +2885,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                        </td>
                        <td className="px-8 py-5 text-center">
                          <span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
-                           s.Estado === 'ACTIVO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
+                           s.Estado === 'ACTIVO' ? 'bg-accent-50 text-accent-700 border-accent-100' : 'bg-red-50 text-red-700 border-red-100'
                          }`}>
                            {s.Estado}
                          </span>
@@ -2915,12 +2915,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
       {activeTab === 'CASH_CLOSE' && (
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in duration-500 font-sans">
           <div className="flex items-center gap-6 mb-10">
-            <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-[#002B67] text-[#067A80] rounded-[2rem] flex items-center justify-center shadow-lg">
               <Calculator size={32} />
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Cierre de Caja</h3>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Arqueo de efectivo y consolidación de operaciones</p>
+              <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest mt-1">Arqueo de efectivo y consolidación de operaciones</p>
             </div>
           </div>
 
@@ -2928,7 +2928,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
             {/* Lado Izquierdo: Desglose Físico */}
             <div className="space-y-6">
               <div className="bg-slate-50/50 p-6 rounded-[2.5rem] border border-slate-100">
-                <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-black text-[#002B67] uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Banknote size={16} /> Detalle de Billetes en Gaveta
                 </h4>
                 <div className="grid grid-cols-3 gap-4">
@@ -2941,7 +2941,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         value={bill.count === 0 ? '' : bill.count}
                         onChange={e => updateCashDetail('bills', i, parseInt(e.target.value) || 0)}
                         placeholder="0"
-                        className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-center text-[#14532D] focus:border-[#14532D] outline-none"
+                        className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-center text-[#002B67] focus:border-[#002B67] outline-none"
                       />
                       <p className="text-[10px] font-bold text-center text-slate-400">${bill.total.toFixed(2)}</p>
                     </div>
@@ -2950,7 +2950,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
               </div>
 
               <div className="bg-slate-50/50 p-6 rounded-[2.5rem] border border-slate-100">
-                <h4 className="text-sm font-black text-[#14532D] uppercase tracking-widest mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-black text-[#002B67] uppercase tracking-widest mb-4 flex items-center gap-2">
                   <DollarSign size={16} /> Detalle de Monedas en Gaveta
                 </h4>
                 <div className="grid grid-cols-5 gap-3">
@@ -2963,7 +2963,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         value={coin.count === 0 ? '' : coin.count}
                         onChange={e => updateCashDetail('coins', i, parseInt(e.target.value) || 0)}
                         placeholder="0"
-                        className="w-full px-1 py-2 bg-slate-50 border border-slate-200 rounded-lg font-black text-center text-[#14532D] focus:border-[#14532D] outline-none text-xs"
+                        className="w-full px-1 py-2 bg-slate-50 border border-slate-200 rounded-lg font-black text-center text-[#002B67] focus:border-[#002B67] outline-none text-xs"
                       />
                       <p className="text-[9px] font-bold text-center text-slate-400">${coin.total.toFixed(2)}</p>
                     </div>
@@ -2977,7 +2977,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
               {/* Resumen Diario por Papeletas */}
               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
                 <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest border-b pb-3 flex items-center gap-2">
-                  <FileText size={18} className="text-[#14532D]" /> Resumen Diario por Papeletas
+                  <FileText size={18} className="text-[#002B67]" /> Resumen Diario por Papeletas
                 </h4>
                 
                 <div className="overflow-x-auto">
@@ -2993,7 +2993,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                       <tr>
                         <td className="py-3 text-slate-800 font-black">PAPELETAS DE DEPÓSITO</td>
                         <td className="py-3 text-center">{totals.depositsCount}</td>
-                        <td className="py-3 text-right text-emerald-600 font-black">${totals.deposits.toFixed(2)}</td>
+                        <td className="py-3 text-right text-brand-600 font-black">${totals.deposits.toFixed(2)}</td>
                       </tr>
                       <tr>
                         <td className="py-3 text-slate-800 font-black">PAPELETAS DE RETIRO</td>
@@ -3003,7 +3003,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                       <tr>
                         <td className="py-3 text-slate-800 font-black">NOTAS DE CRÉDITO</td>
                         <td className="py-3 text-center">{totals.creditNotesCount}</td>
-                        <td className="py-3 text-right text-emerald-600">${totals.creditNotes.toFixed(2)}</td>
+                        <td className="py-3 text-right text-brand-600">${totals.creditNotes.toFixed(2)}</td>
                       </tr>
                       <tr>
                         <td className="py-3 text-slate-800 font-black">NOTAS DE DÉBITO</td>
@@ -3023,17 +3023,17 @@ export const TellerView: React.FC<TellerViewProps> = ({
               {/* Resumen de Movimiento de Caja (Comparación Contable vs Físico) */}
               <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/60 space-y-6">
                 <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-3 flex items-center gap-2">
-                  <ArrowRightLeft size={18} className="text-[#14532D]" /> Resumen de Movimiento de Caja
+                  <ArrowRightLeft size={18} className="text-[#002B67]" /> Resumen de Movimiento de Caja
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-600">
                   <div className="space-y-1">
                     <span>Saldo de Apertura:</span>
-                    <p className="text-sm font-black text-[#14532D]">${openingBalance.toFixed(2)}</p>
+                    <p className="text-sm font-black text-[#002B67]">${openingBalance.toFixed(2)}</p>
                   </div>
                   <div className="space-y-1 text-right">
                     <span>Usuario Cajero:</span>
-                    <p className="text-sm font-black text-[#14532D]">{currentUser?.name || 'Cajero Matriz'} ({currentUser?.id})</p>
+                    <p className="text-sm font-black text-[#002B67]">{currentUser?.name || 'Cajero Matriz'} ({currentUser?.id})</p>
                   </div>
                 </div>
 
@@ -3044,7 +3044,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   </div>
                   <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Saldo Físico Contado</span>
-                    <span className="text-xl font-black text-[#14532D] block mt-1">${cashDetail.total.toFixed(2)}</span>
+                    <span className="text-xl font-black text-[#002B67] block mt-1">${cashDetail.total.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -3055,11 +3055,11 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   
                   if (Math.abs(difference) < 0.009) {
                     return (
-                      <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 flex items-start gap-3 text-xs font-bold">
-                        <CheckCircle2 size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <div className="p-4 bg-brand-50 text-brand-800 rounded-2xl border border-brand-200 flex items-start gap-3 text-xs font-bold">
+                        <CheckCircle2 size={18} className="text-brand-600 shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-black text-emerald-950 uppercase tracking-wide">Caja Cuadrada (OK)</p>
-                          <p className="mt-1 text-emerald-700/90 font-normal leading-relaxed">
+                          <p className="font-black text-brand-950 uppercase tracking-wide">Caja Cuadrada (OK)</p>
+                          <p className="mt-1 text-brand-700/90 font-normal leading-relaxed">
                             El arqueo físico coincide perfectamente con la contabilidad del sistema. No se registran descuadres.
                           </p>
                         </div>
@@ -3097,7 +3097,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 <button
                   type="button"
                   onClick={handleConfirmClose}
-                  className="w-full py-6 bg-[#14532D] text-white rounded-2xl font-black text-xl shadow-2xl border-b-[4px] border-[#FACC15] active:translate-y-1 transition-all uppercase tracking-tighter flex items-center justify-center gap-3 hover:bg-emerald-800"
+                  className="w-full py-6 bg-[#002B67] text-white rounded-2xl font-black text-xl shadow-2xl border-b-[4px] border-[#03CED4] active:translate-y-1 transition-all uppercase tracking-tighter flex items-center justify-center gap-3 hover:bg-brand-800"
                 >
                   <Printer size={22} /> CONFIRMAR Y CERRAR JORNADA
                 </button>
@@ -3110,12 +3110,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
       {activeTab === 'TX_SEARCH' && (
         <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-in fade-in duration-500 font-sans space-y-8">
           <div className="flex items-center gap-6 mb-2">
-            <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-[2rem] flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-[#002B67] text-[#067A80] rounded-[2rem] flex items-center justify-center shadow-lg">
               <FileText size={32} />
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase leading-none">Consulta Transacciones</h3>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Búsqueda histórica de transacciones y reimpresión de recibos</p>
+              <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest mt-1">Búsqueda histórica de transacciones y reimpresión de recibos</p>
             </div>
           </div>
 
@@ -3128,12 +3128,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 value={txSearchInput}
                 onChange={e => setTxSearchInput(e.target.value)}
                 placeholder="ID o Cédula..."
-                className="flex-1 px-6 py-4 bg-white border-none rounded-2xl outline-none font-black text-[#14532D] shadow-inner text-sm"
+                className="flex-1 px-6 py-4 bg-white border-none rounded-2xl outline-none font-black text-[#002B67] shadow-inner text-sm"
               />
               <button
                 type="submit"
                 disabled={txIsSearching}
-                className="p-4 bg-[#14532D] text-white rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                className="p-4 bg-[#002B67] text-white rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
               >
                 {txIsSearching ? <Search size={20} className="animate-spin" /> : <Search size={20} />}
               </button>
@@ -3144,13 +3144,13 @@ export const TellerView: React.FC<TellerViewProps> = ({
           {txSearchSocio ? (
             <div className="space-y-8 animate-in slide-in-from-top-4 duration-300">
               {/* Información del Socio */}
-              <div className="bg-[#14532D] p-8 rounded-[2.5rem] text-white shadow-xl border-b-[8px] border-[#FACC15] grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#002B67] p-8 rounded-[2.5rem] text-white shadow-xl border-b-[8px] border-[#03CED4] grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300 mb-1">Cédula / Identificación</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-brand-300 mb-1">Cédula / Identificación</p>
                   <p className="text-lg font-black">{txSearchSocio.id}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300 mb-1">Nombres Completos</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-brand-300 mb-1">Nombres Completos</p>
                   <p className="text-xl font-black uppercase">{txSearchSocio.name}</p>
                 </div>
               </div>
@@ -3171,14 +3171,14 @@ export const TellerView: React.FC<TellerViewProps> = ({
                         {/* Cabecera de la Cuenta */}
                         <div className="bg-slate-50 px-8 py-5 border-b flex justify-between items-center flex-wrap gap-4">
                           <div>
-                            <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full uppercase tracking-wider">
+                            <span className="text-[10px] font-black bg-brand-100 text-brand-800 px-3 py-1 rounded-full uppercase tracking-wider">
                               {acc.type.replace('_', ' ')}
                             </span>
                             <span className="ml-3 font-bold text-slate-700 text-sm">#{acc.number}</span>
                           </div>
                           <div className="text-right">
                             <span className="text-[10px] font-black text-slate-400 uppercase block tracking-wider">Saldo</span>
-                            <span className="text-lg font-black text-[#14532D]">${acc.balance.toFixed(2)}</span>
+                            <span className="text-lg font-black text-[#002B67]">${acc.balance.toFixed(2)}</span>
                           </div>
                         </div>
 
@@ -3206,7 +3206,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                         <td className="py-4 pl-4 font-mono text-xs font-bold text-slate-600">{tx.id}</td>
                                         <td className="py-4 text-xs font-bold text-slate-500">{tx.date}</td>
                                         <td className="py-4 text-xs font-bold text-slate-700">{tx.description}</td>
-                                        <td className={`py-4 text-right font-black ${isCredit ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        <td className={`py-4 text-right font-black ${isCredit ? 'text-brand-600' : 'text-red-600'}`}>
                                           {isCredit ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
                                         </td>
                                         <td className="py-4 text-center pr-4">
@@ -3217,7 +3217,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                                               setSelectedReceiptUser(txSearchSocio);
                                               setShowReceiptModal(true);
                                             }}
-                                            className="p-2 bg-slate-100 hover:bg-[#14532D] hover:text-white rounded-lg transition-all text-[#14532D]"
+                                            className="p-2 bg-slate-100 hover:bg-[#002B67] hover:text-white rounded-lg transition-all text-[#002B67]"
                                             title="Reimprimir Recibo"
                                           >
                                             <Printer size={14} />
@@ -3257,10 +3257,10 @@ export const TellerView: React.FC<TellerViewProps> = ({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[3rem] p-10 max-w-lg w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
+              <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center shadow-inner">
                 <CheckCircle2 size={32} />
               </div>
-              <h3 className="text-2xl font-black text-[#14532D] tracking-tight uppercase">Socio Registrado con Éxito</h3>
+              <h3 className="text-2xl font-black text-[#002B67] tracking-tight uppercase">Socio Registrado con Éxito</h3>
               <p className="text-sm font-bold text-slate-500 max-w-sm leading-relaxed">
                 Por favor, valide los datos del socio para continuar con la apertura de su cuenta y primer depósito:
               </p>
@@ -3269,7 +3269,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
             <div className="mt-8 space-y-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 font-sans">
               <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Número de Socio</span>
-                <span className="text-sm font-black text-[#14532D]">{registrationSuccessModal.numeroSocio}</span>
+                <span className="text-sm font-black text-[#002B67]">{registrationSuccessModal.numeroSocio}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Identificación / Cédula</span>
@@ -3305,7 +3305,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                     setActiveTab('OPERATIONS');
                   }
                 }}
-                className="w-full py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-[0.98] transition-all"
               >
                 Aceptar y Proceder al Primer Depósito
               </button>
@@ -3318,19 +3318,19 @@ export const TellerView: React.FC<TellerViewProps> = ({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
           <div className="bg-white rounded-[3rem] p-10 max-w-md w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
+              <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center shadow-inner">
                 <Mail size={32} />
               </div>
-              <h3 className="text-2xl font-black text-[#14532D] tracking-tight uppercase">Confirmación de Correo</h3>
+              <h3 className="text-2xl font-black text-[#002B67] tracking-tight uppercase">Confirmación de Correo</h3>
               <p className="text-sm font-bold text-slate-500 leading-relaxed">
                 Se ha enviado un código de activación de 6 dígitos al correo electrónico del socio:
               </p>
               <p className="text-sm font-black text-slate-800 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                 {emailVerifyModal.email}
               </p>
-              <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 w-full">
-                <span className="text-[10px] font-black text-emerald-800 tracking-wider block uppercase">Caja Demo - Código de Activación Generado</span>
-                <span className="text-2xl font-black text-emerald-600 block mt-1 tracking-widest">{emailVerifyModal.expectedCode}</span>
+              <div className="bg-brand-50/50 border border-brand-100 rounded-2xl p-4 w-full">
+                <span className="text-[10px] font-black text-accent-800 tracking-wider block uppercase">Caja Demo - Código de Activación Generado</span>
+                <span className="text-2xl font-black text-brand-600 block mt-1 tracking-widest">{emailVerifyModal.expectedCode}</span>
               </div>
             </div>
 
@@ -3344,7 +3344,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   value={verificationInput}
                   onChange={e => setVerificationInput(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000"
-                  className="w-full py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#14532D] outline-none font-black text-[#14532D] text-center text-2xl tracking-[0.3em] shadow-inner"
+                  className="w-full py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#002B67] outline-none font-black text-[#002B67] text-center text-2xl tracking-[0.3em] shadow-inner"
                 />
               </div>
 
@@ -3358,7 +3358,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-colors"
+                  className="flex-1 py-4 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-colors"
                 >
                   Confirmar Código
                 </button>
@@ -3505,7 +3505,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
                 onClick={() => {
                   setShowDocUploadModal(false);
                 }}
-                className="flex-1 py-3 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-50 hover:bg-emerald-800 transition-colors"
+                className="flex-1 py-3 bg-[#002B67] text-white rounded-xl font-black text-xs uppercase tracking-widest disabled:opacity-50 hover:bg-brand-800 transition-colors"
               >
                 Aceptar y Confirmar
               </button>
@@ -3519,7 +3519,7 @@ export const TellerView: React.FC<TellerViewProps> = ({
           <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-inner ${
-                alertConfig.type === 'success' ? 'bg-emerald-50 text-emerald-600' :
+                alertConfig.type === 'success' ? 'bg-accent-50 text-accent-600' :
                 alertConfig.type === 'error' ? 'bg-red-50 text-red-600' :
                 alertConfig.type === 'warning' ? 'bg-amber-50 text-amber-600' :
                 'bg-blue-50 text-blue-600'
@@ -3538,12 +3538,12 @@ export const TellerView: React.FC<TellerViewProps> = ({
                   <button onClick={() => alertConfig.onCancel?.()} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
                     Cancelar
                   </button>
-                  <button onClick={() => alertConfig.onConfirm()} className="flex-1 py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                  <button onClick={() => alertConfig.onConfirm()} className="flex-1 py-4 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
                     Aceptar
                   </button>
                 </>
               ) : (
-                <button onClick={() => alertConfig.onConfirm()} className="w-full py-4 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                <button onClick={() => alertConfig.onConfirm()} className="w-full py-4 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
                   Aceptar
                 </button>
               )}

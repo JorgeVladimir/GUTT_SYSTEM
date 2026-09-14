@@ -112,13 +112,13 @@ const corteSugerido = () => {
 };
 
 const COLOR_ESTADO: Record<string, string> = {
-  'POR VENCER': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'POR VENCER': 'bg-brand-50 text-brand-700 border-brand-200',
   'NO DEVENGA INTERESES': 'bg-amber-50 text-amber-700 border-amber-200',
   'VENCIDA': 'bg-red-50 text-red-700 border-red-200',
 };
 
 const COLOR_CALIFICACION: Record<string, string> = {
-  A1: 'bg-emerald-100 text-emerald-800', A2: 'bg-emerald-100 text-emerald-800', A3: 'bg-emerald-100 text-emerald-800',
+  A1: 'bg-brand-100 text-brand-800', A2: 'bg-brand-100 text-brand-800', A3: 'bg-brand-100 text-brand-800',
   B1: 'bg-amber-100 text-amber-800', B2: 'bg-amber-100 text-amber-800',
   C1: 'bg-orange-100 text-orange-800', C2: 'bg-orange-100 text-orange-800',
   D: 'bg-red-100 text-red-800', E: 'bg-red-200 text-red-900',
@@ -279,12 +279,12 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
             type="date"
             value={fechaCorte}
             onChange={e => setFechaCorte(e.target.value)}
-            className="px-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#14532D] text-xs outline-none focus:border-[#14532D] shadow-sm"
+            className="px-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#002B67] text-xs outline-none focus:border-[#002B67] shadow-sm"
           />
           <button
             onClick={simular}
             disabled={cargando || aplicando}
-            className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-[#14532D] text-[#14532D] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#14532D] hover:text-white transition disabled:opacity-40"
+            className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-[#002B67] text-[#002B67] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#002B67] hover:text-white transition disabled:opacity-40"
           >
             {cargando ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
             Simular
@@ -294,7 +294,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
               onClick={() => (confirmando ? void aplicar() : setConfirmando(true))}
               disabled={!resultado || !resultado.aplicable || aplicado || aplicando || cargando}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition disabled:opacity-30 ${
-                confirmando ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-[#14532D] text-white hover:bg-[#0f3d21]'
+                confirmando ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-[#002B67] text-white hover:bg-[#002253]'
               }`}
             >
               {aplicando ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
@@ -323,9 +323,9 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
         </div>
       )}
       {aviso && (
-        <div className="bg-emerald-50 border-2 border-emerald-200 rounded-3xl p-5 flex items-start gap-3">
-          <CheckCircle2 size={18} className="text-emerald-600 mt-0.5 shrink-0" />
-          <p className="text-xs font-bold text-emerald-800">{aviso}</p>
+        <div className="bg-brand-50 border-2 border-brand-200 rounded-3xl p-5 flex items-start gap-3">
+          <CheckCircle2 size={18} className="text-brand-600 mt-0.5 shrink-0" />
+          <p className="text-xs font-bold text-brand-800">{aviso}</p>
         </div>
       )}
       {resultado && !resultado.aplicable && (resultado.bloqueos || []).length > 0 && (
@@ -341,11 +341,11 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
       {resultado?.totales && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <Tarjeta titulo="Cartera bruta" valor={money(resultado.totales.carteraBruta)} sub={`${resultado.totales.operaciones} operación(es)`} />
-          <Tarjeta titulo="Por vencer" valor={money(resultado.totales.porVencer)} tono="text-emerald-700" />
+          <Tarjeta titulo="Por vencer" valor={money(resultado.totales.porVencer)} tono="text-brand-700" />
           <Tarjeta titulo="No devenga" valor={money(resultado.totales.noDevenga)} tono="text-amber-600" />
           <Tarjeta titulo="Vencida" valor={money(resultado.totales.vencida)} tono="text-red-600" />
           <Tarjeta titulo="Morosidad ampliada" valor={pct(resultado.totales.morosidadPct)}
-            tono={resultado.totales.morosidadPct > 5 ? 'text-red-600' : 'text-[#14532D]'} sub="(vencida + no devenga) / bruta" />
+            tono={resultado.totales.morosidadPct > 5 ? 'text-red-600' : 'text-[#002B67]'} sub="(vencida + no devenga) / bruta" />
           <Tarjeta titulo="Provisión requerida" valor={money(resultado.totales.provisionRequerida)}
             sub={resultado.provisiones ? `constituida ${money(resultado.provisiones.totalConstituida)}` : undefined} />
         </div>
@@ -365,7 +365,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
             <div><p className="text-[9px] font-black text-slate-400 uppercase">Total debe</p><p className="font-black text-slate-900">{money(resultado.control.totalDebe)}</p></div>
             <div>
               <p className="text-[9px] font-black text-slate-400 uppercase">Asiento</p>
-              <p className={`font-black ${resultado.control.cuadrado ? 'text-emerald-700' : 'text-red-600'}`}>
+              <p className={`font-black ${resultado.control.cuadrado ? 'text-brand-700' : 'text-red-600'}`}>
                 {resultado.control.cuadrado ? 'Cuadrado' : 'Descuadrado'}
               </p>
             </div>
@@ -386,7 +386,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
             key={id}
             onClick={() => setPestana(id as typeof pestana)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition ${
-              pestana === id ? 'bg-[#14532D] text-white' : 'bg-white text-slate-500 border border-slate-100 hover:border-[#14532D]'
+              pestana === id ? 'bg-[#002B67] text-white' : 'bg-white text-slate-500 border border-slate-100 hover:border-[#002B67]'
             }`}
           >
             {icon}{label}
@@ -428,7 +428,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-500">{money(m.saldoActual)}</td>
                       <td className="px-4 py-3 text-right font-black text-slate-900">{money(m.saldoObjetivo)}</td>
-                      <td className="px-4 py-3 text-right font-black text-[#14532D]">{m.debe > 0 ? money(m.debe) : ''}</td>
+                      <td className="px-4 py-3 text-right font-black text-[#002B67]">{m.debe > 0 ? money(m.debe) : ''}</td>
                       <td className="px-4 py-3 text-right font-black text-red-600">{m.haber > 0 ? money(m.haber) : ''}</td>
                     </tr>
                   ))}
@@ -445,7 +445,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-400">—</td>
                       <td className="px-4 py-3 text-right font-black text-slate-900">{money(a.requerida)}</td>
-                      <td className="px-4 py-3 text-right font-black text-[#14532D]">{a.ajuste > 0 ? money(a.ajuste) : ''}</td>
+                      <td className="px-4 py-3 text-right font-black text-[#002B67]">{a.ajuste > 0 ? money(a.ajuste) : ''}</td>
                       <td className="px-4 py-3 text-right font-black text-red-600">{a.ajuste < 0 ? money(-a.ajuste) : ''}</td>
                     </tr>
                   ))}
@@ -569,7 +569,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
                         <td className="px-4 py-3 font-bold text-slate-600">{o.socioId}</td>
                         <td className="px-4 py-3 font-bold text-slate-600">{o.segmento}</td>
                         <td className="px-4 py-3 text-right font-black text-slate-900">{money(o.saldo)}</td>
-                        <td className={`px-4 py-3 text-right font-black ${o.diasMora > 0 ? 'text-red-600' : 'text-emerald-700'}`}>{o.diasMora}</td>
+                        <td className={`px-4 py-3 text-right font-black ${o.diasMora > 0 ? 'text-red-600' : 'text-brand-700'}`}>{o.diasMora}</td>
                         <td className="px-4 py-3 text-center">
                           <span className={`inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black ${COLOR_CALIFICACION[o.calificacion || ''] || 'bg-slate-100 text-slate-700'}`}>{o.calificacion || '—'}</span>
                         </td>
@@ -594,7 +594,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Tarjeta titulo="Índice de solvencia" valor={pct(solvencia.solvencia.indicePct)}
-                  tono={solvencia.solvencia.cumple ? 'text-[#14532D]' : 'text-red-600'}
+                  tono={solvencia.solvencia.cumple ? 'text-[#002B67]' : 'text-red-600'}
                   sub={`mínimo ${pct(solvencia.solvencia.minimoPct)}`} />
                 <Tarjeta titulo="Patrimonio técnico" valor={money(solvencia.patrimonioTecnico.constituido)}
                   sub={`primario ${money(solvencia.patrimonioTecnico.primario)} · secundario ${money(solvencia.patrimonioTecnico.secundarioComputable)}`} />
@@ -602,7 +602,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
                   sub={`activo contable ${money(solvencia.apr.activoContable)}`} />
                 <Tarjeta titulo={solvencia.solvencia.cumple ? 'Excedente' : 'Déficit'}
                   valor={money(Math.abs(solvencia.solvencia.excedenteDeficit ?? 0))}
-                  tono={solvencia.solvencia.cumple ? 'text-[#14532D]' : 'text-red-600'} />
+                  tono={solvencia.solvencia.cumple ? 'text-[#002B67]' : 'text-red-600'} />
               </div>
 
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -684,7 +684,7 @@ export const ReclasificacionCarteraView: React.FC<Props> = ({ currentUser }) => 
                       <td className="px-4 py-3 font-bold text-slate-600">{p.fechaCorte}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
-                          p.estado === 'APLICADO' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                          p.estado === 'APLICADO' ? 'bg-accent-100 text-accent-800' : 'bg-slate-100 text-slate-600'
                         }`}>{p.estado}</span>
                       </td>
                       <td className="px-4 py-3 font-bold text-slate-600">{p.usuarioId}<span className="block text-[9px] text-slate-400">{p.fechaEjecucion}</span></td>

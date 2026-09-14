@@ -5,15 +5,16 @@ import {
   ChevronDown, Printer, RotateCcw, Info, X, Banknote, Shield, UserCheck
 } from 'lucide-react';
 import { UserRole } from '../types';
+import { COMPANY_NAME, AUTHORSHIP } from '../constants';
 
 // ─── Paleta: Rojo vitalidad · Dorado claridad · Naranja prosperidad ───────────
 const P = {
-  crimson:   '#8B1A1A',  // vitalidad, fuerza
-  crimsonHov:'#A52020',
-  gold:      '#C9921A',  // claridad, iluminación
-  goldLight: '#E8B040',
-  orange:    '#D4620A',  // abundancia, prosperidad
-  amber:     '#C8960A',  // sabiduría, claridad mental
+  crimson:   '#0A3D80',  // vitalidad, fuerza
+  crimsonHov:'#17509C',
+  gold:      '#067A80',  // claridad, iluminación
+  goldLight: '#4FDEE3',
+  orange:    '#03CED4',  // abundancia, prosperidad
+  amber:     '#067A80',  // sabiduría, claridad mental
 };
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
@@ -525,7 +526,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
             <div className="space-y-6">
 
               {/* PASO 1: Búsqueda de socio */}
-              <div className="rounded-2xl border p-5 space-y-4" style={{ borderColor: socioSeleccionado ? '#C9921A' : '#e2e8f0', background: socioSeleccionado ? '#FEF3C7' : '#ffffff' }}>
+              <div className="rounded-2xl border p-5 space-y-4" style={{ borderColor: socioSeleccionado ? '#067A80' : '#e2e8f0', background: socioSeleccionado ? '#FEF3C7' : '#ffffff' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: P.crimson }}>1</div>
                   <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">Buscar Socio Inversionista</h3>
@@ -579,7 +580,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                   </>
                 ) : (
                   /* Socio seleccionado */
-                  <div className="rounded-xl border p-4 flex items-center gap-4" style={{ borderColor: '#C9921A', background: '#FEF9EC' }}>
+                  <div className="rounded-xl border p-4 flex items-center gap-4" style={{ borderColor: '#067A80', background: '#FEF9EC' }}>
                     <div className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg text-white shrink-0 shadow-lg"
                       style={{ background: `linear-gradient(135deg, ${P.crimson}, ${P.gold})` }}>
                       {socioSeleccionado.NombreCompleto.charAt(0)}
@@ -698,7 +699,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
 
                     <button onClick={abrirConfirm} disabled={!preview || loading}
                       className="w-full py-4 text-white rounded-2xl font-black text-sm transition-all disabled:opacity-30 flex items-center justify-center gap-3 shadow-xl"
-                      style={{ background: `linear-gradient(135deg, ${P.crimson}, #6B1010)` }}>
+                      style={{ background: `linear-gradient(135deg, ${P.crimson}, #001129)` }}>
                       <PiggyBank size={18} /> APERTURAR DEPÓSITO A PLAZO FIJO
                     </button>
                   </div>
@@ -1115,8 +1116,8 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-white/95 backdrop-blur-sm rounded-t-3xl border-b border-slate-100 px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                  <CheckCircle2 size={22} className="text-emerald-600" />
+                <div className="w-11 h-11 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center">
+                  <CheckCircle2 size={22} className="text-brand-600" />
                 </div>
                 <div>
                   <p className="font-black text-slate-800 text-base uppercase tracking-tight">Depósito Registrado</p>
@@ -1178,14 +1179,14 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
           `}</style>
           <div id="contrato-dpf-print" className="hidden print:block text-black">
             <div className="text-center border-b-2 border-black pb-3 mb-5">
-              <p className="font-black text-lg uppercase">Caja de Ahorro y Crédito Patate Ltda.</p>
+              <p className="font-black text-lg uppercase">{COMPANY_NAME}</p>
               <p className="text-xs">Cooperativa de Ahorro y Crédito regulada por la Superintendencia de Economía Popular y Solidaria (SEPS)</p>
               <p className="font-black text-base uppercase mt-3">Contrato de Depósito a Plazo Fijo</p>
               <p className="text-xs">Certificado N° {comprobanteDPF.depositoID}</p>
             </div>
 
             <p className="text-sm mb-4">
-              Comparecen, por una parte, <strong>Caja de Ahorro y Crédito Patate Ltda.</strong>, en adelante "la Cooperativa"; y por otra
+              Comparecen, por una parte, <strong>{COMPANY_NAME}</strong>, en adelante "la Cooperativa"; y por otra
               parte <strong>{comprobanteDPF.nombreSocio}</strong>, portador de la cédula N° <strong>{comprobanteDPF.identificacion}</strong>,
               socio N° <strong>{comprobanteDPF.numeroSocio || '—'}</strong>, en adelante "el Depositante"; quienes libre y voluntariamente
               acuerdan celebrar el presente contrato de depósito a plazo fijo, al tenor de las siguientes cláusulas:
@@ -1231,6 +1232,11 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                 <div style={{ borderTop: '1px solid #000' }} className="pt-2">{comprobanteDPF.usuario}<br />POR LA COOPERATIVA</div>
               </div>
             </div>
+
+            <p style={{ marginTop: '18mm', paddingTop: '2mm', borderTop: '1px solid #E2E8F0',
+                        textAlign: 'center', fontSize: '8px', color: '#94A3B8' }}>
+              {AUTHORSHIP}
+            </p>
           </div>
         </>
       )}

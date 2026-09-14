@@ -9,11 +9,11 @@ import { DataService } from '../services/dataService';
 
 // ─── Paleta: verde marca (ahorro/crecimiento) · dorado (valor) ────────────────
 const P = {
-  green:     '#14532D',
-  greenHov:  '#1b5e20',
-  greenLite: '#166534',
-  gold:      '#B8860B',   // dorado sobre fondo blanco (contraste)
-  goldBright:'#FACC15',
+  green:     '#002B67',
+  greenHov:  '#0A3D80',
+  greenLite: '#17509C',
+  gold:      '#067A80',   // dorado sobre fondo blanco (contraste)
+  goldBright:'#03CED4',
 };
 
 // ─── Interfaces ─────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ const mapSocioFromApi = (s: any): SocioResult => {
 };
 
 const ESTADO_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
-  ACTIVA:   { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  ACTIVA:   { bg: 'bg-accent-50', text: 'text-accent-700', dot: 'bg-accent-500' },
   INACTIVA: { bg: 'bg-slate-100',  text: 'text-slate-500',   dot: 'bg-slate-400'  },
 };
 
@@ -261,7 +261,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
       {/* ── Alerta global ── */}
       {alerta && (
         <div className={`rounded-2xl p-4 flex items-start gap-3 border ${
-          alerta.tipo === 'ok'   ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+          alerta.tipo === 'ok'   ? 'bg-brand-50 border-brand-200 text-brand-700' :
           alerta.tipo === 'warn' ? 'bg-amber-50 border-amber-200 text-amber-700' :
                                    'bg-red-50 border-red-200 text-red-700'}`}>
           {alerta.tipo === 'ok' ? <CheckCircle2 size={18} className="shrink-0 mt-0.5" /> : alerta.tipo === 'warn' ? <AlertTriangle size={18} className="shrink-0 mt-0.5" /> : <XCircle size={18} className="shrink-0 mt-0.5" />}
@@ -278,7 +278,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
               <button key={t.id} onClick={() => onActiveTabChange(t.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border-b-2 ${
                   tab === t.id
-                    ? 'border-[#14532D] text-[#14532D] bg-emerald-50'
+                    ? 'border-[#002B67] text-[#002B67] bg-brand-50'
                     : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50'
                 }`}>
                 {t.icon}{t.label}
@@ -294,7 +294,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2">
-                  <PiggyBank size={16} className="text-[#14532D]" />Ahorro a la Vista — Indicadores
+                  <PiggyBank size={16} className="text-[#002B67]" />Ahorro a la Vista — Indicadores
                 </h3>
                 <button onClick={cargarResumen}
                   className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-500 text-xs font-black rounded-xl hover:bg-slate-200 transition-all">
@@ -304,14 +304,14 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
               {resumen ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: 'Total Captado',      value: fmtUSD(resumen.totalCaptado || 0),  icon: <Banknote size={18} />,   color: 'text-[#14532D]', bg: 'bg-emerald-50 border-emerald-200' },
-                    { label: 'Cuentas Activas',    value: resumen.cuentasActivas || 0,          icon: <PiggyBank size={18} />,  color: 'text-[#14532D]', bg: 'bg-emerald-50 border-emerald-200' },
+                    { label: 'Total Captado',      value: fmtUSD(resumen.totalCaptado || 0),  icon: <Banknote size={18} />,   color: 'text-[#002B67]', bg: 'bg-brand-50 border-brand-200' },
+                    { label: 'Cuentas Activas',    value: resumen.cuentasActivas || 0,          icon: <PiggyBank size={18} />,  color: 'text-[#002B67]', bg: 'bg-brand-50 border-brand-200' },
                     { label: 'Socios con Cuenta',  value: resumen.sociosConCuenta || 0,         icon: <Users size={18} />,      color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
                     { label: 'Movimientos Hoy',    value: resumen.movimientosHoy || 0,          icon: <Clock size={18} />,      color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-                    { label: 'Depósitos Hoy',      value: fmtUSD(resumen.depositosHoy || 0),    icon: <ArrowDownCircle size={18} />, color: 'text-[#14532D]', bg: 'bg-emerald-50 border-emerald-200' },
+                    { label: 'Depósitos Hoy',      value: fmtUSD(resumen.depositosHoy || 0),    icon: <ArrowDownCircle size={18} />, color: 'text-[#002B67]', bg: 'bg-brand-50 border-brand-200' },
                     { label: 'Retiros Hoy',        value: fmtUSD(resumen.retirosHoy || 0),      icon: <ArrowUpCircle size={18} />,   color: 'text-red-600',   bg: 'bg-red-50 border-red-200' },
                     { label: 'Cuentas Inactivas',  value: resumen.cuentasInactivas || 0,        icon: <XCircle size={18} />,    color: 'text-slate-400', bg: 'bg-slate-50 border-slate-100' },
-                    { label: 'Total de Cuentas',   value: resumen.totalCuentas || 0,            icon: <Wallet size={18} />,     color: 'text-[#14532D]', bg: 'bg-emerald-50 border-emerald-200' },
+                    { label: 'Total de Cuentas',   value: resumen.totalCuentas || 0,            icon: <Wallet size={18} />,     color: 'text-[#002B67]', bg: 'bg-brand-50 border-brand-200' },
                   ].map((k, i) => (
                     <div key={i} className={`rounded-2xl border p-4 flex items-center gap-3 ${k.bg}`}>
                       <div className={`p-2 rounded-xl bg-white/70 shadow-sm ${k.color}`}>{k.icon}</div>
@@ -323,7 +323,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center py-16"><RefreshCw size={24} className="animate-spin text-[#14532D]" /></div>
+                <div className="flex items-center justify-center py-16"><RefreshCw size={24} className="animate-spin text-[#002B67]" /></div>
               )}
             </div>
           )}
@@ -348,7 +348,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                         onChange={e => setTerminoBusqueda(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && buscarSocio()}
                         placeholder="Ej: 1720884012 · TUQUINGA · P1000"
-                        className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 text-sm font-bold focus:outline-none focus:border-[#14532D]"
+                        className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 text-sm font-bold focus:outline-none focus:border-[#002B67]"
                       />
                       <button onClick={buscarSocio} disabled={buscandoSocio || !terminoBusqueda.trim()}
                         className="px-5 py-3 text-white rounded-xl font-black text-sm transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg"
@@ -363,7 +363,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{resultadosSocio.length} resultado(s) — seleccione el socio:</p>
                         {resultadosSocio.map((s, i) => (
                           <button key={i} onClick={() => seleccionarSocio(s)}
-                            className="w-full rounded-xl border border-slate-200 bg-white hover:border-[#14532D] hover:bg-emerald-50 transition-all p-4 text-left shadow-sm">
+                            className="w-full rounded-xl border border-slate-200 bg-white hover:border-[#002B67] hover:bg-brand-50 transition-all p-4 text-left shadow-sm">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shrink-0"
                                 style={{ background: P.green }}>
@@ -375,13 +375,13 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                                   <span className="text-[10px] text-slate-500 font-bold">CI: {s.Identificacion}</span>
                                   {s.NumeroSocio && <span className="text-[10px] text-amber-700 font-bold">N° Socio: {s.NumeroSocio}</span>}
                                   {s.cuentaAhorro ? (
-                                    <span className="text-[10px] text-[#14532D] font-bold">Saldo Ahorros: {fmtUSD(s.cuentaAhorro.Saldo)}</span>
+                                    <span className="text-[10px] text-[#002B67] font-bold">Saldo Ahorros: {fmtUSD(s.cuentaAhorro.Saldo)}</span>
                                   ) : (
                                     <span className="text-[10px] text-red-500 font-bold">Sin cuenta de ahorros</span>
                                   )}
                                 </div>
                               </div>
-                              <UserCheck size={16} className="text-[#14532D] shrink-0 opacity-70" />
+                              <UserCheck size={16} className="text-[#002B67] shrink-0 opacity-70" />
                             </div>
                           </button>
                         ))}
@@ -395,7 +395,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                       {socioSeleccionado.NombreCompleto.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-[#14532D] text-base truncate">{socioSeleccionado.NombreCompleto}</p>
+                      <p className="font-black text-[#002B67] text-base truncate">{socioSeleccionado.NombreCompleto}</p>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
                         <span className="text-xs text-slate-600 font-bold">Cédula: <span className="text-slate-800">{socioSeleccionado.Identificacion}</span></span>
                         {socioSeleccionado.NumeroSocio && (
@@ -425,7 +425,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                   <div className="space-y-5">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: P.gold }}>2</div>
-                      <h3 className="font-black text-[#14532D] text-sm uppercase tracking-wide">Cuenta de Ahorros</h3>
+                      <h3 className="font-black text-[#002B67] text-sm uppercase tracking-wide">Cuenta de Ahorros</h3>
                     </div>
 
                     <div className="rounded-2xl border-2 p-5 bg-white space-y-1" style={{ borderColor: P.green }}>
@@ -458,7 +458,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
                           <input type="number" min="0" step="0.01" value={montoOp} onChange={e => setMontoOp(e.target.value)}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 text-sm font-bold focus:outline-none focus:border-[#14532D]" />
+                            className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 text-sm font-bold focus:outline-none focus:border-[#002B67]" />
                         </div>
                       </div>
 
@@ -466,7 +466,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Descripción *</label>
                         <input value={descripcionOp} onChange={e => setDescripcionOp(e.target.value)}
                           placeholder={opType === 'DEPOSIT' ? 'Ej: Depósito ventanilla' : 'Ej: Retiro ventanilla'}
-                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder-slate-400 text-sm font-medium focus:outline-none focus:border-[#14532D]" />
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 placeholder-slate-400 text-sm font-medium focus:outline-none focus:border-[#002B67]" />
                       </div>
 
                       <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-[10px] font-bold text-slate-500 flex items-start gap-2">
@@ -487,10 +487,10 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-black text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2">
-                        <FileText size={15} className="text-[#14532D]" />Últimos Movimientos
+                        <FileText size={15} className="text-[#002B67]" />Últimos Movimientos
                       </h3>
                       <button onClick={() => onActiveTabChange('MOVIMIENTOS')}
-                        className="text-[10px] font-black text-[#14532D] uppercase tracking-widest hover:underline">
+                        className="text-[10px] font-black text-[#002B67] uppercase tracking-widest hover:underline">
                         Ver todo
                       </button>
                     </div>
@@ -506,7 +506,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2">
-                  <FileText size={16} className="text-[#14532D]" />Historial de Movimientos
+                  <FileText size={16} className="text-[#002B67]" />Historial de Movimientos
                 </h3>
                 {cuentaEnFoco && (
                   <button onClick={() => cargarMovimientos(cuentaEnFoco.id)}
@@ -570,7 +570,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo Disponible</p>
                       <p className="text-4xl font-black tabular-nums" style={{ color: P.green }}>{fmtUSD(miSaldo)}</p>
                     </div>
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] font-bold text-emerald-700 flex items-start gap-2">
+                    <div className="bg-brand-50 border border-brand-100 rounded-xl p-3 text-[11px] font-bold text-brand-700 flex items-start gap-2">
                       <Info size={14} className="shrink-0 mt-0.5" />
                       <p>Esta es una vista de consulta. Para depósitos o retiros en efectivo, acérquese a ventanilla con su cédula.</p>
                     </div>
@@ -579,7 +579,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-black text-slate-700 text-sm uppercase tracking-wide flex items-center gap-2">
-                        <FileText size={15} className="text-[#14532D]" />Movimientos Recientes
+                        <FileText size={15} className="text-[#002B67]" />Movimientos Recientes
                       </h3>
                       <button onClick={() => miCuentaProp && cargarMovimientos(miCuentaProp.id)}
                         className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-500 text-xs font-black rounded-xl hover:bg-slate-200 transition-all">
@@ -601,8 +601,8 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-inner bg-emerald-50 border border-emerald-200">
-                <AlertTriangle size={28} className="text-[#14532D]" />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-inner bg-brand-50 border border-brand-200">
+                <AlertTriangle size={28} className="text-[#002B67]" />
               </div>
               <h3 className="font-black text-slate-800 text-base uppercase tracking-tight">
                 Confirmar {opType === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
@@ -630,7 +630,7 @@ export const SavingsView: React.FC<Props> = ({ currentUser, activeTab, onActiveT
 // ─── Subcomponente: tabla de movimientos ───────────────────────────────────────
 const MovimientosTable: React.FC<{ movimientos: Movimiento[]; loading: boolean }> = ({ movimientos, loading }) => {
   if (loading) {
-    return <div className="flex items-center justify-center py-12"><RefreshCw size={22} className="animate-spin text-[#14532D]" /></div>;
+    return <div className="flex items-center justify-center py-12"><RefreshCw size={22} className="animate-spin text-[#002B67]" /></div>;
   }
   if (movimientos.length === 0) {
     return (
@@ -655,7 +655,7 @@ const MovimientosTable: React.FC<{ movimientos: Movimiento[]; loading: boolean }
             <tr key={m.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
               <td className="px-3 py-3 text-xs text-slate-500 font-bold whitespace-nowrap">{m.fecha}</td>
               <td className="px-3 py-3 text-xs text-slate-700 font-medium max-w-[220px] truncate">{m.descripcion}</td>
-              <td className={`px-3 py-3 text-right font-black tabular-nums text-xs ${m.tipo === 'CREDIT' ? 'text-[#14532D]' : 'text-red-600'}`}>
+              <td className={`px-3 py-3 text-right font-black tabular-nums text-xs ${m.tipo === 'CREDIT' ? 'text-[#002B67]' : 'text-red-600'}`}>
                 {m.tipo === 'CREDIT' ? '+' : '−'}{fmtUSD(Math.abs(m.monto))}
               </td>
               <td className="px-3 py-3 text-[10px] text-slate-400 font-bold">{m.usuarioId}</td>

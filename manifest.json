@@ -4,8 +4,8 @@
   "description": "Plataforma oficial de Gutt System, diseñada para el manejo eficiente de aportaciones, créditos y asesoría financiera inteligente.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#14532D",
-  "theme_color": "#14532D",
+  "background_color": "#002B67",
+  "theme_color": "#002B67",
   "icons": [
     {
       "src": "/favicon.svg",

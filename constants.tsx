@@ -21,12 +21,46 @@ import {
 } from 'lucide-react';
 import { UserRole, GlobalConfig } from './types';
 
+// Paleta de marca GUTT COMPANY S.A.S. — navy + cian, tomados del logo oficial.
+// Lo que no puede leer clases de Tailwind (plantillas de impresion, Recharts,
+// estilos en linea) lee de aqui. El espejo en clases vive en index.html.
+export const BRAND = {
+  navy:      '#002B67',  // primario
+  navyHover: '#0A3D80',
+  navyDeep:  '#002253',
+  cyan:      '#03CED4',  // acento: solo grafico, nunca texto pequeno sobre blanco
+  cyanText:  '#067A80',  // acento legible sobre blanco (5.12:1)
+  cyanBg:    '#E6FBFC',
+};
+
 export const COLORS = {
-  primary: '#14532D', 
-  secondary: '#FACC15',
+  primary: BRAND.navy,
+  secondary: BRAND.cyan,
   background: '#F8FAFC',
   text: '#1E293B'
 };
+
+// Secuencia categorica para graficos: tiene que distinguirse serie a serie,
+// no bastan los dos colores de marca.
+export const CHART_COLORS = [
+  '#002B67', '#03CED4', '#F59E0B', '#7C3AED',
+  '#EC4899', '#94A3B8', '#3D72B8', '#B45309',
+];
+
+// Semaforo de estados. El verde salio del sistema con el cambio de marca:
+// lo positivo pasa a la familia cian.
+export const STATUS_COLORS = {
+  ok:        { text: '#067A80', bg: '#E6FBFC', bar: '#05AFB5' },  // aprobado, vigente, pagado
+  pending:   { text: '#B45309', bg: '#FFFBEB', bar: '#F59E0B' },  // solicitado, en tramite
+  error:     { text: '#B91C1C', bg: '#FEF2F2', bar: '#EF4444' },  // rechazado, vencido
+  inactive:  { text: '#475569', bg: '#F1F5F9', bar: '#94A3B8' },  // anulado, cerrado
+  info:      { text: '#0A3D80', bg: '#EAF1F9', bar: '#17509C' },  // seleccionado, informativo
+};
+
+// Autoria del desarrollo. La propiedad intelectual es de la empresa (clausula 11
+// del contrato de socios), pero el credito del desarrollo queda registrado.
+export const AUTHORSHIP = 'Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.';
+export const COMPANY_NAME = 'GUTT COMPANY S.A.S.';
 
 export const SEPS_CATALOGS = {
   ID_TYPES: ["CÉDULA", "PASAPORTE", "RUC"],

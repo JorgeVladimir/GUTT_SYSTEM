@@ -117,7 +117,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ user, currentBalan
 
   return (
     <div className={`fixed bottom-6 left-6 lg:left-72 w-[350px] max-w-[90vw] bg-white rounded-3xl shadow-2xl flex flex-col border border-slate-200 overflow-hidden z-50 transition-all duration-300 ${isMinimized ? 'h-16' : 'h-[500px]'}`}>
-      <div className="bg-[#14532D] p-4 text-white flex items-center justify-between shrink-0">
+      <div className="bg-[#002B67] p-4 text-white flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 text-left">
           <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-slate-900 shrink-0">
             <Bot size={18} />
@@ -159,7 +159,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ user, currentBalan
                     }}
                     className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
                       activeConvId === conv.id 
-                        ? 'border-[#14532D] bg-emerald-50 text-[#14532D] shadow-sm' 
+                        ? 'border-[#002B67] bg-brand-50 text-[#002B67] shadow-sm' 
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
@@ -187,15 +187,15 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ user, currentBalan
                   setActiveConvId(newId);
                   setShowHistory(false);
                 }}
-                className="w-full py-3 border-2 border-dashed border-slate-300 text-slate-500 rounded-2xl font-black text-xs uppercase hover:border-[#14532D] hover:text-[#14532D] hover:bg-white flex items-center justify-center gap-2 transition-all mt-4 shrink-0"
+                className="w-full py-3 border-2 border-dashed border-slate-300 text-slate-500 rounded-2xl font-black text-xs uppercase hover:border-[#002B67] hover:text-[#002B67] hover:bg-white flex items-center justify-center gap-2 transition-all mt-4 shrink-0"
               >
                 <Plus size={16} /> Nueva Consulta
               </button>
             </div>
           ) : (
             <>
-              <div className="bg-emerald-50 px-4 py-2 border-b border-slate-100 flex items-center justify-between shrink-0">
-                <span className="text-[9px] font-black text-[#14532D] uppercase tracking-widest truncate">{activeConv.title}</span>
+              <div className="bg-brand-50 px-4 py-2 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <span className="text-[9px] font-black text-[#002B67] uppercase tracking-widest truncate">{activeConv.title}</span>
                 {activeConvId !== 'conv-active' && activeConvId !== 'conv-1' && activeConvId !== 'conv-2' && (
                   <button 
                     onClick={() => {
@@ -239,12 +239,12 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ user, currentBalan
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder="Escribe tu consulta..."
-                    className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#14532D] transition-all"
+                    className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#002B67] transition-all"
                   />
                   <button 
                     onClick={handleSend}
                     disabled={isLoading}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#14532D] text-white rounded-lg disabled:opacity-50"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#002B67] text-white rounded-lg disabled:opacity-50"
                   >
                     <Send size={18} />
                   </button>

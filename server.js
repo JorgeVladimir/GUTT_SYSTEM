@@ -527,8 +527,8 @@ async function sendVerificationEmail(email, code, name) {
     html: plantillaCorreo('Código de activación', `
       <p>Estimado(a) <strong>${cleanName}</strong>,</p>
       <p>Para ingresar a su banca en línea debe validar su correo electrónico ingresando el código de confirmación de 6 dígitos:</p>
-      <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-        <span style="font-size: 28px; font-weight: bold; color: #047857; letter-spacing: 5px;">${code}</span>
+      <div style="background-color: #E6FBFC; border: 1px solid #C2F5F7; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <span style="font-size: 28px; font-weight: bold; color: #067A80; letter-spacing: 5px;">${code}</span>
       </div>
       <p>De la misma manera, recuerde que su PIN temporal de ingreso registrado es de 4 dígitos.</p>
     `),
@@ -565,13 +565,13 @@ async function sendPasswordResetEmail(usuarioId, nombre, token) {
     texto: `Se solicitó restablecer la contraseña de ${usuarioId} (${nombre}). Autorizar en: ${resetLink}`,
     html: plantillaCorreo('Solicitud de recuperación de contraseña', `
       <p>Se solicitó restablecer la contraseña del usuario:</p>
-      <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <div style="background-color: #E6FBFC; border: 1px solid #C2F5F7; padding: 15px; border-radius: 8px; margin: 20px 0;">
         <p style="margin: 0;"><strong>Usuario:</strong> ${usuarioId}</p>
         <p style="margin: 0;"><strong>Nombre:</strong> ${nombre}</p>
       </div>
       <p>Para autorizar y definir la nueva contraseña, ingrese al siguiente enlace (válido por 1 hora):</p>
       <div style="text-align: center; margin: 25px 0;">
-        <a href="${resetLink}" style="background-color: #14532D; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold;">Restablecer Contraseña</a>
+        <a href="${resetLink}" style="background-color: #002B67; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: bold;">Restablecer Contraseña</a>
       </div>
       <p>Si usted no solicitó este cambio, ignore este mensaje.</p>
     `),

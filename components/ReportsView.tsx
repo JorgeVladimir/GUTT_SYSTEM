@@ -29,7 +29,7 @@ import { ProfileView } from './ProfileView';
 import { User, UserRole } from '../types';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const COLORS = ['#14532D', '#FACC15', '#2563EB', '#7C3AED', '#EC4899'];
+const COLORS = ['#002B67', '#03CED4', '#F59E0B', '#7C3AED', '#EC4899'];
 
 interface ReportsViewProps {
   users?: User[];
@@ -440,7 +440,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
           <button 
             key={tab.id}
             onClick={() => setActiveMasterTab(tab.id as any)}
-            className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${activeMasterTab === tab.id ? 'bg-[#14532D] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${activeMasterTab === tab.id ? 'bg-[#002B67] text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
           >
             {tab.icon} {tab.label}
           </button>
@@ -449,7 +449,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
       {(activeMasterTab === 'FICHA' || activeMasterTab === 'SITUACION') && !targetUser && !isMember && (
         <div className="bg-white p-16 rounded-[4rem] shadow-sm border border-slate-100 text-center space-y-8">
-          <div className="w-24 h-24 bg-emerald-50 text-[#14532D] rounded-2.5rem flex items-center justify-center mx-auto shadow-inner">
+          <div className="w-24 h-24 bg-brand-50 text-[#002B67] rounded-2.5rem flex items-center justify-center mx-auto shadow-inner">
             <Search size={48} />
           </div>
           <div className="max-w-md mx-auto space-y-4">
@@ -461,7 +461,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
                  placeholder="Buscar por Nombre o ID..." 
-                 className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl outline-none font-black text-[#14532D] focus:border-[#14532D] shadow-inner" 
+                 className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl outline-none font-black text-[#002B67] focus:border-[#002B67] shadow-inner" 
                />
                {searchingLive && filteredUsers.length === 0 && (
                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 z-20">
@@ -476,7 +476,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                            <p className="font-black text-slate-800 uppercase text-xs">{u.name}</p>
                            <p className="text-[10px] font-bold text-slate-400">{u.id}{(u as any).origen === 'LEGACY_PG' ? ' · Legacy (espejo Postgres)' : ''}</p>
                          </div>
-                         <ChevronRight size={18} className="text-slate-200 group-hover:text-[#14532D] group-hover:translate-x-1 transition-all" />
+                         <ChevronRight size={18} className="text-slate-200 group-hover:text-[#002B67] group-hover:translate-x-1 transition-all" />
                       </button>
                     ))}
                  </div>
@@ -489,7 +489,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
       {activeMasterTab === 'FICHA' && targetUser && editForm && (
         <div className="animate-in slide-in-from-bottom-4 space-y-8">
            {!isMember && !showPrintView && (
-             <button onClick={() => setSelectedS01User(null)} className="mb-2 flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase hover:text-[#14532D] transition-all px-6 no-print">
+             <button onClick={() => setSelectedS01User(null)} className="mb-2 flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase hover:text-[#002B67] transition-all px-6 no-print">
                <Search size={14} /> Nueva Búsqueda
              </button>
            )}
@@ -499,7 +499,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
              <div className="bg-white p-12 rounded-[4rem] shadow-sm border border-slate-100 space-y-8 printable-area relative">
                <div className="flex justify-between items-center pb-6 border-b-2 border-slate-900">
                  <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-[#14532D] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-md border-b-4 border-[#FACC15] overflow-hidden">
+                   <div className="w-12 h-12 bg-[#002B67] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-md border-b-4 border-[#03CED4] overflow-hidden">
                      <span className="text-2xl leading-none">G</span>
                    </div>
                    <div>
@@ -509,13 +509,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  </div>
                  <div className="text-right">
                    <p className="text-[9px] font-black text-slate-400 uppercase">Número de Socio</p>
-                   <p className="text-lg font-black text-[#14532D]">{targetUser.memberNumber || 'N/A'}</p>
+                   <p className="text-lg font-black text-[#002B67]">{targetUser.memberNumber || 'N/A'}</p>
                  </div>
                </div>
 
                <div className="grid grid-cols-2 gap-8 text-xs font-serif leading-relaxed text-slate-800">
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">1. Datos Personales (Fichados)</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">1. Datos Personales (Fichados)</h4>
                    <p><strong>Identificación:</strong> {targetUser.id}</p>
                    <p><strong>Nombres Completos:</strong> {targetUser.name}</p>
                    <p><strong>Fecha Nacimiento:</strong> {targetUser.birthDate || 'N/A'}</p>
@@ -531,7 +531,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  </div>
 
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">2. Información de Contacto y Vivienda</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">2. Información de Contacto y Vivienda</h4>
                    <p><strong>E-mail Principal:</strong> {targetUser.email || 'N/A'}</p>
                    <p><strong>Teléfono Principal:</strong> {targetUser.phone || 'N/A'}</p>
                    <p><strong>Teléfonos Adicionales:</strong> {editForm.telefonos || 'N/A'}</p>
@@ -543,7 +543,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                <div className="grid grid-cols-2 gap-8 text-xs font-serif leading-relaxed text-slate-800">
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">3. Aspectos Profesionales, Sociales y PEPS</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">3. Aspectos Profesionales, Sociales y PEPS</h4>
                    <p><strong>Profesión / Ocupación:</strong> {editForm.profession}</p>
                    <p><strong>Autoidentificación Étnica:</strong> {editForm.autoidentificacion}</p>
                    <p><strong>Persona Políticamente Expuesta (PEPS):</strong> {editForm.peps ? 'SÍ (REQUERIDO CONTROL UAFE)' : 'NO'}</p>
@@ -552,7 +552,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  </div>
 
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">4. Información Laboral y Domiciliaria</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">4. Información Laboral y Domiciliaria</h4>
                    <p><strong>Lugar de Trabajo / Empresa:</strong> {editForm.lugarTrabajo || 'N/A'}</p>
                    <p><strong>Patrimonio / Ingresos Mensuales:</strong></p>
                    <ul className="list-disc list-inside pl-2 space-y-1 text-[11px]">
@@ -566,7 +566,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                <div className="grid grid-cols-2 gap-8 text-xs font-serif leading-relaxed text-slate-800">
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">5. Referencias Personales</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">5. Referencias Personales</h4>
                    {editForm.referenciasPersonales.length > 0 ? (
                      <div className="space-y-1">
                        {editForm.referenciasPersonales.map((ref: any, idx: number) => (
@@ -579,7 +579,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                  </div>
 
                  <div className="space-y-4">
-                   <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">6. Cargas Familiares</h4>
+                   <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">6. Cargas Familiares</h4>
                    {editForm.cargasFamiliares.length > 0 ? (
                      <div className="space-y-1">
                        {editForm.cargasFamiliares.map((dep: any, idx: number) => (
@@ -593,7 +593,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                </div>
 
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <h4 className="font-bold border-b pb-1 text-[#14532D] uppercase tracking-wider text-[10px]">7. Capturas de Pantalla y Croquis Geográficos</h4>
+                  <h4 className="font-bold border-b pb-1 text-[#002B67] uppercase tracking-wider text-[10px]">7. Capturas de Pantalla y Croquis Geográficos</h4>
                   <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <p className="font-bold text-[10.5px] text-slate-700 uppercase">A. Croquis Domiciliario (Mapa de Ubicación):</p>
@@ -633,7 +633,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                <div className="pt-10 border-t border-slate-200 flex gap-4 no-print justify-end">
                  <button onClick={() => setShowPrintView(false)} className="px-6 py-3 bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase tracking-wider hover:bg-slate-300 transition-colors">Volver a Edición</button>
-                 <button onClick={() => window.print()} className="px-8 py-3 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase tracking-wider hover:bg-emerald-800 transition-colors flex items-center gap-2"><Printer size={16} /> Imprimir Ficha Oficial</button>
+                 <button onClick={() => window.print()} className="px-8 py-3 bg-[#002B67] text-white rounded-xl font-black text-xs uppercase tracking-wider hover:bg-brand-800 transition-colors flex items-center gap-2"><Printer size={16} /> Imprimir Ficha Oficial</button>
                </div>
              </div>
            ) : (
@@ -642,9 +642,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                <div className="flex justify-between items-center border-b pb-4">
                  <div>
                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Modificar Socio / Reporte</h3>
-                   <p className="text-[9px] font-black text-[#14532D] uppercase tracking-widest mt-1">Campos restringidos por políticas de seguridad SEPS</p>
+                   <p className="text-[9px] font-black text-[#002B67] uppercase tracking-widest mt-1">Campos restringidos por políticas de seguridad SEPS</p>
                  </div>
-                 <button onClick={() => setShowPrintView(true)} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-[#14532D] rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2"><Printer size={16} /> Ficha de Socio</button>
+                 <button onClick={() => setShowPrintView(true)} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-[#002B67] rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2"><Printer size={16} /> Ficha de Socio</button>
                </div>
 
                {/* SECCIÓN 1: DATOS BÁSICOS BLOQUEADOS */}
@@ -684,17 +684,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-b pb-6">
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Profesión</label>
-                   <input type="text" value={editForm.profesion} onChange={e => setEditForm({...editForm, profesion: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs" />
+                   <input type="text" value={editForm.profesion} onChange={e => setEditForm({...editForm, profesion: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs" />
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Autoidentificación Étnica</label>
-                   <select value={editForm.autoidentificacion} onChange={e => setEditForm({...editForm, autoidentificacion: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs">
+                   <select value={editForm.autoidentificacion} onChange={e => setEditForm({...editForm, autoidentificacion: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs">
                      {['MESTIZO', 'INDÍGENA', 'AFROECUATORIANO', 'BLANCO', 'MONTUBIO', 'MULATO', 'OTRO'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                    </select>
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Teléfonos de Contacto</label>
-                   <input type="text" value={editForm.telefonos} onChange={e => setEditForm({...editForm, telefonos: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs" />
+                   <input type="text" value={editForm.telefonos} onChange={e => setEditForm({...editForm, telefonos: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs" />
                  </div>
                </div>
 
@@ -702,45 +702,45 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b pb-6">
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Domicilio (Modificable)</label>
-                   <input type="text" value={editForm.direccionDomicilio} onChange={e => setEditForm({...editForm, direccionDomicilio: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs" />
+                   <input type="text" value={editForm.direccionDomicilio} onChange={e => setEditForm({...editForm, direccionDomicilio: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs" />
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lugar de Trabajo / Nombre Empresa (Modificable)</label>
-                   <input type="text" value={editForm.lugarTrabajo} onChange={e => setEditForm({...editForm, lugarTrabajo: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs" />
+                   <input type="text" value={editForm.lugarTrabajo} onChange={e => setEditForm({...editForm, lugarTrabajo: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs" />
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Vivienda</label>
-                   <select value={editForm.tipoVivienda} onChange={e => setEditForm({...editForm, tipoVivienda: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs">
+                   <select value={editForm.tipoVivienda} onChange={e => setEditForm({...editForm, tipoVivienda: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs">
                      {['PROPIA', 'ARRENDADA', 'FAMILIAR', 'COMPARTIDA', 'ANTICRESIS', 'OTROS'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                    </select>
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Valor Comercial Vivienda ($)</label>
-                   <input type="number" step="0.01" value={editForm.valorVivienda} onChange={e => setEditForm({...editForm, valorVivienda: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#14532D] shadow-inner outline-none text-xs" />
+                   <input type="number" step="0.01" value={editForm.valorVivienda} onChange={e => setEditForm({...editForm, valorVivienda: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-black text-[#002B67] shadow-inner outline-none text-xs" />
                  </div>
                </div>
 
                {/* SECCIÓN 4: PATRIMONIO E INGRESOS */}
                <div className="space-y-4 border-b pb-6">
-                 <div className="flex items-center gap-2 border-l-4 border-[#14532D] pl-3">
+                 <div className="flex items-center gap-2 border-l-4 border-[#002B67] pl-3">
                    <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Patrimonio y Flujo de Ingresos Mensuales</h4>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                    <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-400 uppercase">Ingresos Sueldo ($)</span>
-                     <input type="number" step="0.01" value={editForm.ingresoSueldo} onChange={e => setEditForm({...editForm, ingresoSueldo: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#14532D]" />
+                     <input type="number" step="0.01" value={editForm.ingresoSueldo} onChange={e => setEditForm({...editForm, ingresoSueldo: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#002B67]" />
                    </div>
                    <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-400 uppercase">Ingresos Comerciales ($)</span>
-                     <input type="number" step="0.01" value={editForm.ingresoComercial} onChange={e => setEditForm({...editForm, ingresoComercial: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#14532D]" />
+                     <input type="number" step="0.01" value={editForm.ingresoComercial} onChange={e => setEditForm({...editForm, ingresoComercial: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#002B67]" />
                    </div>
                    <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-400 uppercase">Otros Ingresos ($)</span>
-                     <input type="number" step="0.01" value={editForm.ingresoOtros} onChange={e => setEditForm({...editForm, ingresoOtros: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#14532D]" />
+                     <input type="number" step="0.01" value={editForm.ingresoOtros} onChange={e => setEditForm({...editForm, ingresoOtros: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none text-[#002B67]" />
                    </div>
                    <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-400 uppercase">Total de Ingresos ($)</span>
-                     <input disabled type="text" value={`$ ${(parseFloat(editForm.ingresoSueldo || '0') + parseFloat(editForm.ingresoComercial || '0') + parseFloat(editForm.ingresoOtros || '0')).toFixed(2)}`} className="w-full px-4 py-3 bg-emerald-50 text-emerald-800 border-none rounded-xl font-black text-xs cursor-not-allowed" />
+                     <input disabled type="text" value={`$ ${(parseFloat(editForm.ingresoSueldo || '0') + parseFloat(editForm.ingresoComercial || '0') + parseFloat(editForm.ingresoOtros || '0')).toFixed(2)}`} className="w-full px-4 py-3 bg-brand-50 text-brand-800 border-none rounded-xl font-black text-xs cursor-not-allowed" />
                    </div>
                  </div>
                </div>
@@ -789,7 +789,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                {/* SECCIÓN 6: DECLARACIONES Y PEPS */}
                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100/60 grid grid-cols-1 md:grid-cols-3 gap-6 font-bold text-xs text-slate-700">
                  <label className="flex items-center gap-3 cursor-pointer">
-                   <input type="checkbox" checked={editForm.discapacidad} onChange={e => setEditForm({...editForm, discapacidad: e.target.checked})} className="w-5 h-5 border-2 border-slate-300 rounded text-[#14532D] focus:ring-0" />
+                   <input type="checkbox" checked={editForm.discapacidad} onChange={e => setEditForm({...editForm, discapacidad: e.target.checked})} className="w-5 h-5 border-2 border-slate-300 rounded text-[#002B67] focus:ring-0" />
                    <span className="uppercase text-[9px] font-black text-slate-600">Persona con Discapacidad</span>
                  </label>
                  <label className="flex items-center gap-3 cursor-pointer">
@@ -797,14 +797,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                    <span className="uppercase text-[9px] font-black text-slate-600 text-red-600">Persona Expuesta (PEPS)</span>
                  </label>
                  <label className="flex items-center gap-3 cursor-pointer">
-                   <input type="checkbox" checked={editForm.consentimientoDatos} onChange={e => setEditForm({...editForm, consentimientoDatos: e.target.checked})} className="w-5 h-5 border-2 border-slate-300 rounded text-[#14532D] focus:ring-0" />
+                   <input type="checkbox" checked={editForm.consentimientoDatos} onChange={e => setEditForm({...editForm, consentimientoDatos: e.target.checked})} className="w-5 h-5 border-2 border-slate-300 rounded text-[#002B67] focus:ring-0" />
                    <span className="uppercase text-[9px] font-black text-slate-600">Consentimiento de Datos</span>
                  </label>
                </div>
 
                 {/* SECCIÓN 7: CROQUIS Y MAPAS GEOGRÁFICOS */}
                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100/60 space-y-6">
-                  <div className="flex items-center gap-2 border-l-4 border-emerald-500 pl-3">
+                  <div className="flex items-center gap-2 border-l-4 border-brand-500 pl-3">
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Croquis y Mapas Registrados</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -833,7 +833,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                {/* CONTROLES FINALES DE EDICIÓN */}
                <div className="flex gap-4 pt-4">
-                 <button onClick={handleSaveReportProfile} disabled={loading} className="flex-1 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                 <button onClick={handleSaveReportProfile} disabled={loading} className="flex-1 py-5 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
                    {loading ? 'Guardando...' : 'Modificar / Guardar Cambios'}
                  </button>
                </div>
@@ -848,7 +848,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
             {/* Cabecera */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b pb-10">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-[#14532D] text-[#FACC15] rounded-2xl flex items-center justify-center font-black italic text-3xl border-b-6 border-[#FACC15] overflow-hidden">
+                <div className="w-16 h-16 bg-[#002B67] text-[#067A80] rounded-2xl flex items-center justify-center font-black italic text-3xl border-b-6 border-[#03CED4] overflow-hidden">
                   <span className="text-white">G</span>
                 </div>
                 <div>
@@ -864,19 +864,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
             {loadingSituacion || !situacionGeneral ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-10 h-10 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-4 border-[#002B67] border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Cargando Indicadores Globales...</p>
               </div>
             ) : (
               <div className="space-y-12">
                 {/* Indicadores Clave en Tarjetas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 flex flex-col justify-between shadow-sm">
+                  <div className="p-8 bg-brand-50 rounded-3xl border border-brand-100 flex flex-col justify-between shadow-sm">
                     <div>
-                      <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-2">Socios Registrados</p>
-                      <h4 className="text-4xl font-black text-[#14532D]">{situacionGeneral.totalSocios}</h4>
+                      <p className="text-[9px] font-black text-brand-600 uppercase tracking-wider mb-2">Socios Registrados</p>
+                      <h4 className="text-4xl font-black text-[#002B67]">{situacionGeneral.totalSocios}</h4>
                     </div>
-                    <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">Cuentas activas en la COAC</p>
+                    <p className="text-[8px] font-bold text-brand-700/60 uppercase tracking-widest mt-6">Cuentas activas en la COAC</p>
                   </div>
 
                   <div className="p-8 bg-blue-50 rounded-3xl border border-blue-100 flex flex-col justify-between shadow-sm">
@@ -908,7 +908,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                   {/* Gráfico de Tarta (Pie Chart) */}
                   <div className="space-y-6">
-                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Distribución de Socios por Tipo</h4>
+                    <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4">Distribución de Socios por Tipo</h4>
                     <div className="h-[300px] flex items-center justify-center bg-slate-50 border border-slate-100 rounded-[2.5rem] p-6">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
@@ -940,7 +940,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                   {/* Detalle y Certificados Financieros */}
                   <div className="space-y-6">
-                    <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4">Resumen de Patrimonio e Integridad</h4>
+                    <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4">Resumen de Patrimonio e Integridad</h4>
                     <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6">
                       <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
                         <span className="text-[10px] font-black text-slate-400 uppercase">Total Certificados Aportación (Patrimonio)</span>
@@ -948,7 +948,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-slate-200/50">
                         <span className="text-[10px] font-black text-slate-400 uppercase">Fondos Totales Custodiados (Global)</span>
-                        <span className="text-xl font-black text-[#14532D]">${(situacionGeneral.saldoAhorroVista + situacionGeneral.saldoCertificados).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span>
+                        <span className="text-xl font-black text-[#002B67]">${(situacionGeneral.saldoAhorroVista + situacionGeneral.saldoCertificados).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span>
                       </div>
                       <div className="flex justify-between items-center py-2">
                         <span className="text-[10px] font-black text-slate-400 uppercase">Promedio Ahorro por Socio</span>
@@ -961,7 +961,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                 </div>
 
                 <div className="pt-10 border-t flex gap-4 no-print">
-                  <button onClick={() => window.print()} className="flex-1 py-5 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl transition-all"><Printer size={20} /> IMPRIMIR ESTADO DE SITUACIÓN GENERAL</button>
+                  <button onClick={() => window.print()} className="flex-1 py-5 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl transition-all"><Printer size={20} /> IMPRIMIR ESTADO DE SITUACIÓN GENERAL</button>
                 </div>
               </div>
             )}
@@ -995,7 +995,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                   <button
                     key={r.id}
                     onClick={() => { setReportType(r.id); setData([]); setEsf(null); setB11(null); setUafe(null); setPerlas(null); }}
-                    className={`w-full p-4 rounded-2xl text-left transition-all ${reportType === r.id ? 'bg-emerald-50 text-[#14532D] border border-emerald-100' : 'text-slate-400 hover:bg-slate-50'}`}
+                    className={`w-full p-4 rounded-2xl text-left transition-all ${reportType === r.id ? 'bg-brand-50 text-[#002B67] border border-brand-100' : 'text-slate-400 hover:bg-slate-50'}`}
                   >
                     <p className="text-[10px] font-black uppercase">{r.label}</p>
                     <p className="text-[9px] font-medium opacity-60 mt-0.5">{r.desc}</p>
@@ -1005,7 +1005,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
               <button
                 onClick={runReport}
                 disabled={loading}
-                className="w-full py-4 bg-[#14532D] text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all disabled:opacity-60"
+                className="w-full py-4 bg-[#002B67] text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all disabled:opacity-60"
               >
                 {loading ? 'GENERANDO...' : 'GENERAR REPORTE'}
               </button>
@@ -1039,7 +1039,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                   <div className="p-8 space-y-8">
                     {[
-                      { titulo: 'ACTIVO',     filas: esf.activo,     total: esf.totalActivo,     color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                      { titulo: 'ACTIVO',     filas: esf.activo,     total: esf.totalActivo,     color: 'text-brand-700', bg: 'bg-brand-50' },
                       { titulo: 'PASIVO',     filas: esf.pasivo,     total: esf.totalPasivo,     color: 'text-red-600',     bg: 'bg-red-50' },
                       { titulo: 'PATRIMONIO', filas: esf.patrimonio, total: esf.totalPatrimonio, color: 'text-blue-700',    bg: 'bg-blue-50', resultado: esf.resultadoEjercicio },
                     ].map(sec => (
@@ -1049,7 +1049,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                           <tbody className="divide-y divide-slate-50">
                             {sec.filas.map((r: any) => (
                               <tr key={r.codigo} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-3 pr-4 font-black text-[#14532D] text-[11px] w-20">{r.codigo}</td>
+                                <td className="py-3 pr-4 font-black text-[#002B67] text-[11px] w-20">{r.codigo}</td>
                                 <td className="py-3 font-bold text-slate-700 text-xs">{r.nombre}</td>
                                 <td className="py-3 text-right font-black text-slate-900 text-[11px]">${r.monto.toFixed(2)}</td>
                               </tr>
@@ -1058,7 +1058,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                               <tr className="hover:bg-slate-50 transition-colors">
                                 <td className="py-3 pr-4 font-black text-slate-300 text-[11px] w-20">—</td>
                                 <td className="py-3 font-bold text-slate-500 text-xs italic">Resultado del ejercicio (ingresos − gastos)</td>
-                                <td className={`py-3 text-right font-black text-[11px] ${sec.resultado >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>${sec.resultado.toFixed(2)}</td>
+                                <td className={`py-3 text-right font-black text-[11px] ${sec.resultado >= 0 ? 'text-brand-700' : 'text-red-600'}`}>${sec.resultado.toFixed(2)}</td>
                               </tr>
                             )}
                           </tbody>
@@ -1072,7 +1072,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       </div>
                     ))}
 
-                    <div className="border-t-2 border-[#14532D] pt-6 space-y-3">
+                    <div className="border-t-2 border-[#002B67] pt-6 space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Activo</span>
                         <span className="text-lg font-black text-slate-900">${esf.totalActivo.toFixed(2)}</span>
@@ -1082,7 +1082,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                         <span className="text-lg font-black text-slate-900">${esf.totalPasivoMasPatrimonio.toFixed(2)}</span>
                       </div>
                       <div className="flex flex-wrap gap-3 pt-2">
-                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${esf.cuadrado ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${esf.cuadrado ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'}`}>
                           {esf.cuadrado ? '✓ Balance Cuadrado (Activo = Pasivo + Patrimonio)' : `⚠ Descuadre: $${esf.diferencia.toFixed(2)}`}
                         </span>
                         {esf.cuentasSinCatalogar?.length > 0 && (
@@ -1103,7 +1103,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-8 pb-2">
                     {[
-                      { label: 'Por Vencer',       val: b11.totales.porVencer, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                      { label: 'Por Vencer',       val: b11.totales.porVencer, color: 'text-brand-700', bg: 'bg-brand-50' },
                       { label: 'No Devenga Int.',  val: b11.totales.noDevenga, color: 'text-amber-700',   bg: 'bg-amber-50' },
                       { label: 'Vencida',          val: b11.totales.vencida,   color: 'text-red-600',     bg: 'bg-red-50' },
                       { label: 'Cartera Bruta',    val: b11.totales.carteraBruta, color: 'text-slate-900', bg: 'bg-slate-50' },
@@ -1116,7 +1116,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                   </div>
 
                   <div className="px-8 pb-4">
-                    <div className={`inline-block px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${b11.totales.morosidadPct > 10 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                    <div className={`inline-block px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${b11.totales.morosidadPct > 10 ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-700'}`}>
                       Morosidad Ampliada: {b11.totales.morosidadPct.toFixed(2)}%
                     </div>
                   </div>
@@ -1136,13 +1136,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       <tbody className="divide-y divide-slate-50">
                         {b11.filas.map((f: any, i: number) => (
                           <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 font-black text-[#14532D] text-[11px]">{f.cuentaSeps ?? '—'}</td>
+                            <td className="px-6 py-4 font-black text-[#002B67] text-[11px]">{f.cuentaSeps ?? '—'}</td>
                             <td className="px-6 py-4 font-bold text-slate-700 text-xs">{f.segmento}</td>
                             <td className="px-6 py-4">
                               <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                                 f.estadoCartera === 'VENCIDA' ? 'bg-red-100 text-red-700'
                                 : f.estadoCartera === 'NO DEVENGA INTERESES' ? 'bg-amber-100 text-amber-700'
-                                : 'bg-emerald-100 text-emerald-700'}`}>{f.estadoCartera}</span>
+                                : 'bg-accent-100 text-accent-700'}`}>{f.estadoCartera}</span>
                             </td>
                             <td className="px-6 py-4 font-bold text-slate-500 text-[11px]">{f.banda}</td>
                             <td className="px-6 py-4 text-right font-bold text-slate-600 text-[11px]">{f.operaciones}</td>
@@ -1151,8 +1151,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black">
-                          <td className="px-6 py-4 text-[#14532D] text-[11px] uppercase" colSpan={5}>Cartera Bruta Total</td>
+                        <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black">
+                          <td className="px-6 py-4 text-[#002B67] text-[11px] uppercase" colSpan={5}>Cartera Bruta Total</td>
                           <td className="px-6 py-4 text-right text-slate-900 text-[11px]">${b11.totales.carteraBruta.toFixed(2)}</td>
                         </tr>
                       </tfoot>
@@ -1176,8 +1176,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                       <div key={sec.titulo}>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 text-slate-500">{sec.titulo}</p>
                         {sec.filas.length === 0 ? (
-                          <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
-                            <p className="text-xs font-bold text-emerald-800">
+                          <div className="p-6 bg-brand-50 rounded-3xl border border-brand-100">
+                            <p className="text-xs font-bold text-brand-800">
                               Sin operaciones que superen el umbral en el período. No hay reporte obligatorio pendiente por esta vía.
                             </p>
                           </div>
@@ -1199,7 +1199,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                                 {sec.filas.map((r: any, i: number) => (
                                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-3 font-bold text-slate-600 text-[11px]">{sec.tipo === 'ind' ? r.fecha : r.periodo}</td>
-                                    <td className="px-4 py-3 font-black text-[#14532D] text-[11px]">{r.identificacion ?? '—'}</td>
+                                    <td className="px-4 py-3 font-black text-[#002B67] text-[11px]">{r.identificacion ?? '—'}</td>
                                     <td className="px-4 py-3 font-bold text-slate-700 text-xs">{r.socio ?? '—'}</td>
                                     {sec.tipo === 'ind'
                                       ? <><td className="px-4 py-3 text-slate-500 text-[11px]">{r.concepto}</td>
@@ -1241,7 +1241,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                                     <span className="shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-100 text-amber-700">Aprox.</span>
                                   )}
                                 </div>
-                                <p className={`text-2xl font-black mt-2 ${i.valor === null ? 'text-slate-300' : 'text-[#14532D]'}`}>
+                                <p className={`text-2xl font-black mt-2 ${i.valor === null ? 'text-slate-300' : 'text-[#002B67]'}`}>
                                   {i.valor === null ? 'N/D' : `${i.valor.toFixed(2)}${i.unidad}`}
                                 </p>
                                 <p className="text-[9px] font-medium text-slate-400 mt-2 leading-snug">{i.formula}</p>
@@ -1267,7 +1267,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                         ))}
                       </div>
                       {perlas.reconciliacion.alertas.length === 0 ? (
-                        <div className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 inline-block">
+                        <div className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-brand-50 text-brand-700 inline-block">
                           ✓ Cartera contable reconciliada con cartera operativa
                         </div>
                       ) : (
@@ -1307,7 +1307,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                     <tbody className="divide-y divide-slate-50">
                       {data.map((row: any, i: number) => (
                         <tr key={i} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 font-black text-[#14532D] text-[11px]">{row.code ?? i + 1}</td>
+                          <td className="px-6 py-4 font-black text-[#002B67] text-[11px]">{row.code ?? i + 1}</td>
                           <td className="px-6 py-4 font-bold text-slate-700 text-xs">
                             {row.name}
                             {reportType === 'sp_r_bal_compro' && row.tipoCuenta && (
@@ -1318,7 +1318,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                             )}
                           </td>
                           {reportType === 'sp_r_bal_compro' && <>
-                            <td className="px-6 py-4 text-right font-bold text-emerald-700 text-[11px]">${(row.debe || 0).toFixed(2)}</td>
+                            <td className="px-6 py-4 text-right font-bold text-brand-700 text-[11px]">${(row.debe || 0).toFixed(2)}</td>
                             <td className="px-6 py-4 text-right font-bold text-red-600 text-[11px]">${(row.haber || 0).toFixed(2)}</td>
                           </>}
                           <td className="px-6 py-4 text-right font-black text-slate-900 text-[11px]">
@@ -1331,9 +1331,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                     </tbody>
                     {reportType === 'sp_r_bal_compro' && data.length > 0 && (
                       <tfoot>
-                        <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black">
-                          <td className="px-6 py-4 text-[#14532D] text-[11px]" colSpan={2}>TOTALES</td>
-                          <td className="px-6 py-4 text-right text-emerald-700 text-[11px]">${data.reduce((s: number, r: any) => s + (r.debe || 0), 0).toFixed(2)}</td>
+                        <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black">
+                          <td className="px-6 py-4 text-[#002B67] text-[11px]" colSpan={2}>TOTALES</td>
+                          <td className="px-6 py-4 text-right text-brand-700 text-[11px]">${data.reduce((s: number, r: any) => s + (r.debe || 0), 0).toFixed(2)}</td>
                           <td className="px-6 py-4 text-right text-red-600 text-[11px]">${data.reduce((s: number, r: any) => s + (r.haber || 0), 0).toFixed(2)}</td>
                           <td className="px-6 py-4 text-right text-slate-900 text-[11px]">${data.reduce((s: number, r: any) => s + (r.balance || 0), 0).toFixed(2)}</td>
                         </tr>
@@ -1348,7 +1348,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ users = [], onUpdateUs
                     const sinCatalogarCount = data.filter((r: any) => r.sinCatalogar).length;
                     return (
                       <div className="px-8 py-5 border-t border-slate-100 flex flex-wrap items-center gap-4">
-                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${cuadrado ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                        <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${cuadrado ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'}`}>
                           {cuadrado ? '✓ Partida Doble Cuadrada' : `⚠ Descuadre: $${descuadre.toFixed(2)}`}
                         </span>
                         {sinCatalogarCount > 0 && (

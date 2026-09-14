@@ -157,7 +157,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
 
   const tasaColor = (t: number | null | undefined) => {
     if (t === null || t === undefined) return 'text-slate-400';
-    if (t >= 95) return 'text-[#14532D]';
+    if (t >= 95) return 'text-[#002B67]';
     if (t >= 80) return 'text-amber-600';
     return 'text-red-600';
   };
@@ -188,7 +188,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
             <select
               value={mesInput}
               onChange={e => setMesInput(Number(e.target.value))}
-              className="pl-11 pr-8 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#14532D] text-xs outline-none focus:border-[#14532D] shadow-sm appearance-none cursor-pointer"
+              className="pl-11 pr-8 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#002B67] text-xs outline-none focus:border-[#002B67] shadow-sm appearance-none cursor-pointer"
             >
               {MESES.map((nombre, i) => (
                 <option key={nombre} value={i + 1}>{nombre}</option>
@@ -198,7 +198,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
           <select
             value={anioInput}
             onChange={e => setAnioInput(Number(e.target.value))}
-            className="px-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#14532D] text-xs outline-none focus:border-[#14532D] shadow-sm appearance-none cursor-pointer"
+            className="px-4 py-3 bg-white border-2 border-slate-100 rounded-2xl font-black text-[#002B67] text-xs outline-none focus:border-[#002B67] shadow-sm appearance-none cursor-pointer"
           >
             {anios.map(a => (
               <option key={a} value={a}>{a}</option>
@@ -207,7 +207,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
           <button
             onClick={() => void loadCarteraMensual(anioInput, mesInput)}
             disabled={loading}
-            className="px-6 py-3 bg-[#14532D] hover:bg-emerald-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
+            className="px-6 py-3 bg-[#002B67] hover:bg-brand-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all disabled:opacity-60"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'Consultando...' : 'Consultar'}
           </button>
@@ -216,7 +216,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
 
       {loading && !hasLoadedOnce && (
         <div className="bg-white p-8 sm:p-16 rounded-[2rem] sm:rounded-[4rem] shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 border-4 border-[#14532D] border-t-transparent rounded-full animate-spin mb-6"></div>
+          <div className="w-12 h-12 border-4 border-[#002B67] border-t-transparent rounded-full animate-spin mb-6"></div>
           <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Consultando Informix en vivo</p>
           <p className="text-[11px] font-bold text-slate-400 mt-2 text-center max-w-md">
             Esta es una consulta real sobre el core bancario legado a través del túnel Tailscale.
@@ -244,7 +244,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
         <>
           <div className="flex items-center justify-between px-2 no-print">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Periodo: <span className="text-[#14532D]">{MESES[data.mes - 1]} {data.anio}</span> ({data.fechaInicioMes} a {data.fechaFinMes}) · {data.resumen.numCuotasVencidas} cuotas vencieron ese mes
+              Periodo: <span className="text-[#002B67]">{MESES[data.mes - 1]} {data.anio}</span> ({data.fechaInicioMes} a {data.fechaFinMes}) · {data.resumen.numCuotasVencidas} cuotas vencieron ese mes
             </p>
           </div>
 
@@ -252,7 +252,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="p-8 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-[#14532D] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
+                <div className="w-12 h-12 bg-[#002B67] text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
                   <Target size={22} />
                 </div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Esperado del Mes</p>
@@ -261,22 +261,22 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-6">Capital + interés programado de cuotas que vencían este mes</p>
             </div>
 
-            <div className="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm flex flex-col justify-between">
+            <div className="p-8 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 bg-white text-[#14532D] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <div className="w-12 h-12 bg-white text-[#002B67] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                   <Wallet size={22} />
                 </div>
-                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Recuperado del Mes</p>
-                <h4 className="text-2xl font-black text-[#14532D]">{money(data.resumen.totalRecuperadoConMora)}</h4>
+                <p className="text-[9px] font-black text-brand-600 uppercase tracking-wider mb-1">Recuperado del Mes</p>
+                <h4 className="text-2xl font-black text-[#002B67]">{money(data.resumen.totalRecuperadoConMora)}</h4>
               </div>
-              <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-widest mt-6">Capital + interés + mora efectivamente cobrados este mes</p>
+              <p className="text-[8px] font-bold text-brand-700/60 uppercase tracking-widest mt-6">Capital + interés + mora efectivamente cobrados este mes</p>
             </div>
 
-            <div className={`p-8 rounded-3xl border shadow-sm flex flex-col justify-between ${(data.resumen.tasaRecuperacionConMoraPct ?? 0) >= 95 ? 'bg-emerald-50 border-emerald-100' : (data.resumen.tasaRecuperacionConMoraPct ?? 0) >= 80 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'}`}>
+            <div className={`p-8 rounded-3xl border shadow-sm flex flex-col justify-between ${(data.resumen.tasaRecuperacionConMoraPct ?? 0) >= 95 ? 'bg-brand-50 border-brand-100' : (data.resumen.tasaRecuperacionConMoraPct ?? 0) >= 80 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'}`}>
               <div>
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
                   {(data.resumen.tasaRecuperacionConMoraPct ?? 0) >= 95 ? (
-                    <TrendingUp size={22} className="text-[#14532D]" />
+                    <TrendingUp size={22} className="text-[#002B67]" />
                   ) : (
                     <TrendingDown size={22} className="text-amber-600" />
                   )}
@@ -308,7 +308,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
 
           {/* Gráfico comparativo */}
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-            <h4 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-4 mb-6">Esperado vs. Recuperado por Rubro</h4>
+            <h4 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-4 mb-6">Esperado vs. Recuperado por Rubro</h4>
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsBarChart data={chartData}>
@@ -318,7 +318,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
                   <Tooltip formatter={(value: any) => [money(value), '']} contentStyle={{ borderRadius: '1rem', border: '1px solid #e2e8f0', fontFamily: 'sans-serif', fontWeight: 'bold' }} />
                   <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase', fontFamily: 'sans-serif' }} />
                   <Bar dataKey="Esperado" fill="#94A3B8" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="Recuperado" fill="#14532D" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="Recuperado" fill="#002B67" radius={[8, 8, 0, 0]} />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </div>
@@ -348,7 +348,7 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
                       <td className="px-5 py-4 font-black text-slate-800 text-[11px] uppercase whitespace-nowrap">{l.lineaNombre}</td>
                       <td className="px-5 py-4 text-right font-bold text-slate-500 text-[11px]">{l.numCuotasEsperadas}</td>
                       <td className="px-5 py-4 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">{money(l.totalEsperado)}</td>
-                      <td className="px-5 py-4 text-right font-black text-[#14532D] text-[11px] whitespace-nowrap">{money(l.totalRecuperado)}</td>
+                      <td className="px-5 py-4 text-right font-black text-[#002B67] text-[11px] whitespace-nowrap">{money(l.totalRecuperado)}</td>
                       <td className="px-5 py-4 text-right font-bold text-amber-700 text-[11px] whitespace-nowrap">{money(l.moraRecuperada)}</td>
                       <td className={`px-5 py-4 text-right font-black text-[11px] ${tasaColor(l.tasaRecuperacionPct)}`}>{pct(l.tasaRecuperacionPct)}</td>
                     </tr>
@@ -364,10 +364,10 @@ export const CarteraMensualView: React.FC<CarteraMensualViewProps> = ({ currentU
                 </tbody>
                 {data.porLinea.length > 0 && (
                   <tfoot>
-                    <tr className="border-t-2 border-[#14532D] bg-emerald-50 font-black sticky bottom-0">
-                      <td className="px-5 py-4 text-[#14532D] text-[10px] uppercase" colSpan={2}>Total ({data.resumen.numCuotasVencidas} cuotas)</td>
+                    <tr className="border-t-2 border-[#002B67] bg-brand-50 font-black sticky bottom-0">
+                      <td className="px-5 py-4 text-[#002B67] text-[10px] uppercase" colSpan={2}>Total ({data.resumen.numCuotasVencidas} cuotas)</td>
                       <td className="px-5 py-4 text-right text-slate-900 text-[11px]">{money(data.resumen.totalEsperado)}</td>
-                      <td className="px-5 py-4 text-right text-[#14532D] text-[11px]">{money(data.resumen.totalRecuperadoConMora)}</td>
+                      <td className="px-5 py-4 text-right text-[#002B67] text-[11px]">{money(data.resumen.totalRecuperadoConMora)}</td>
                       <td className="px-5 py-4 text-right text-amber-700 text-[11px]">{money(data.resumen.moraRecuperada)}</td>
                       <td className={`px-5 py-4 text-right text-[11px] ${tasaColor(data.resumen.tasaRecuperacionConMoraPct)}`}>{pct(data.resumen.tasaRecuperacionConMoraPct)}</td>
                     </tr>

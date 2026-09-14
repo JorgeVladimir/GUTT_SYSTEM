@@ -13,8 +13,8 @@ const CAPLogo = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
   const radius = size === "sm" ? "rounded-xl" : size === "lg" ? "rounded-[2rem]" : "rounded-2xl";
   const borderBottom = size === "sm" ? "border-b-4" : size === "lg" ? "border-b-8" : "border-b-6";
   return (
-    <div className={`${dimensions} bg-[#14532D] flex items-center justify-center relative ${radius} shadow-2xl shrink-0 ${borderBottom} border-[#FACC15] overflow-hidden group`}>
-      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    <div className={`${dimensions} bg-[#002B67] flex items-center justify-center relative ${radius} shadow-2xl shrink-0 ${borderBottom} border-[#03CED4] overflow-hidden group`}>
+      <div className="absolute inset-0 bg-gradient-to-tr from-brand-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       <span className={`font-black text-white ${textSize} italic pr-0.5 relative z-10`}>G</span>
     </div>
   );
@@ -102,23 +102,23 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-[#14532D] flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="min-h-screen bg-[#002B67] flex items-center justify-center p-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#ffffff_2px,transparent_2px)] [background-size:24px_24px]"></div>
         </div>
 
         <div className="max-w-[420px] w-full bg-white rounded-[3.5rem] p-12 text-center space-y-10 animate-in zoom-in-95 fade-in duration-1000 ease-out shadow-2xl">
           <div className="flex justify-center">
-            <div className="w-28 h-28 bg-emerald-50 rounded-full flex items-center justify-center relative">
-               <div className="absolute inset-0 bg-[#14532D]/5 animate-ping rounded-full"></div>
-               <BadgeCheck size={56} className="text-[#14532D]" />
+            <div className="w-28 h-28 bg-brand-50 rounded-full flex items-center justify-center relative">
+               <div className="absolute inset-0 bg-[#002B67]/5 animate-ping rounded-full"></div>
+               <BadgeCheck size={56} className="text-[#002B67]" />
             </div>
           </div>
 
           <div className="space-y-3">
             <h2 className="text-3xl font-black tracking-tighter text-slate-900 leading-tight">
               ¡Bienvenido,<br/>
-              <span className="text-[#14532D] lowercase italic">{firstName}!</span>
+              <span className="text-[#002B67] lowercase italic">{firstName}!</span>
             </h2>
             <p className="text-slate-400 font-bold text-sm leading-relaxed px-4">
               Tu acceso a la banca digital de Gutt System ha sido configurado con éxito.
@@ -128,11 +128,11 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
           <div className="space-y-4 pt-4">
             <div className="flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">
                <span>Sincronizando Core Bancario</span>
-               <span className="text-[#14532D]">{progress}%</span>
+               <span className="text-[#002B67]">{progress}%</span>
             </div>
             <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#14532D] transition-all duration-75 ease-linear"
+                className="h-full bg-[#002B67] transition-all duration-75 ease-linear"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
@@ -146,7 +146,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative overflow-y-auto">
       <div className="w-full max-w-xl my-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] border border-slate-200 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#14532D] via-[#FACC15] to-[#14532D]"></div>
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#002B67] via-[#03CED4] to-[#002B67]"></div>
           
           <div className="p-8 md:p-10">
             <div className="flex justify-between items-start mb-10">
@@ -166,7 +166,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
               {/* Bloque Identidad */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-1.5 h-4 bg-[#14532D] rounded-full"></span>
+                  <span className="w-1.5 h-4 bg-[#002B67] rounded-full"></span>
                   <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Identificación y Nombres</h3>
                 </div>
                 
@@ -175,25 +175,25 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
                   <input 
                     required type="text" maxLength={10} value={userId}
                     onChange={(e) => setUserId(e.target.value.replace(/\D/g, ''))}
-                    className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border rounded-xl focus:outline-none transition-all font-black text-[#14532D] ${idStatus === 'valid' ? 'border-emerald-500 bg-emerald-50/20' : idStatus === 'invalid' ? 'border-red-500 bg-red-50/20' : 'border-slate-200 focus:border-[#14532D]'}`}
+                    className={`w-full pl-12 pr-12 py-3.5 bg-slate-50 border rounded-xl focus:outline-none transition-all font-black text-[#002B67] ${idStatus === 'valid' ? 'border-brand-500 bg-brand-50/20' : idStatus === 'invalid' ? 'border-red-500 bg-red-50/20' : 'border-slate-200 focus:border-[#002B67]'}`}
                     placeholder="Cédula (10 dígitos)"
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    {isValidating && <Loader2 size={16} className="animate-spin text-[#14532D]" />}
-                    {idStatus === 'valid' && <CheckCircle2 size={18} className="text-emerald-500" />}
+                    {isValidating && <Loader2 size={16} className="animate-spin text-[#002B67]" />}
+                    {idStatus === 'valid' && <CheckCircle2 size={18} className="text-brand-500" />}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-black text-xs text-[#14532D]" placeholder="PRIMER NOMBRE" />
+                  <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#002B67] outline-none font-black text-xs text-[#002B67]" placeholder="PRIMER NOMBRE" />
                   {!onlyOneName && (
-                    <input type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-black text-xs text-[#14532D]" placeholder="SEGUNDO NOMBRE" />
+                    <input type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value.toUpperCase())} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#002B67] outline-none font-black text-xs text-[#002B67]" placeholder="SEGUNDO NOMBRE" />
                   )}
                   <div className="col-span-full flex items-center gap-2 ml-1">
-                    <input type="checkbox" id="onlyOne" checked={onlyOneName} onChange={(e) => { setOnlyOneName(e.target.checked); if (e.target.checked) setMiddleName(''); }} className="w-4 h-4 accent-[#14532D] cursor-pointer" />
+                    <input type="checkbox" id="onlyOne" checked={onlyOneName} onChange={(e) => { setOnlyOneName(e.target.checked); if (e.target.checked) setMiddleName(''); }} className="w-4 h-4 accent-[#002B67] cursor-pointer" />
                     <label htmlFor="onlyOne" className="text-[9px] font-black text-slate-400 cursor-pointer uppercase tracking-tight">Poseo un solo nombre legal</label>
                   </div>
-                  <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value.toUpperCase())} className="col-span-full w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-black text-xs text-[#14532D]" placeholder="APELLIDOS COMPLETOS" />
+                  <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value.toUpperCase())} className="col-span-full w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#002B67] outline-none font-black text-xs text-[#002B67]" placeholder="APELLIDOS COMPLETOS" />
                 </div>
               </div>
 
@@ -201,23 +201,23 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="w-1.5 h-4 bg-[#14532D] rounded-full"></span>
+                    <span className="w-1.5 h-4 bg-[#002B67] rounded-full"></span>
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contacto</h3>
                   </div>
                   <div className="relative">
                     <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                    <input required type="email" value={email} onChange={(e) => setEmail(e.target.value.toLowerCase())} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-bold text-xs text-[#14532D]" placeholder="Email personal" />
+                    <input required type="email" value={email} onChange={(e) => setEmail(e.target.value.toLowerCase())} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#002B67] outline-none font-bold text-xs text-[#002B67]" placeholder="Email personal" />
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="w-1.5 h-4 bg-[#14532D] rounded-full"></span>
+                    <span className="w-1.5 h-4 bg-[#002B67] rounded-full"></span>
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">PIN Digital</h3>
                   </div>
                   <div className="relative">
                     <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
-                    <input required type={showPin ? "text" : "password"} maxLength={4} inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#14532D] outline-none font-black text-center text-lg tracking-[0.4em] text-[#14532D]" placeholder="****" />
+                    <input required type={showPin ? "text" : "password"} maxLength={4} inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#002B67] outline-none font-black text-center text-lg tracking-[0.4em] text-[#002B67]" placeholder="****" />
                     <button type="button" onClick={() => setShowPin(!showPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">{showPin ? <EyeOff size={16} /> : <Eye size={16} />}</button>
                   </div>
                 </div>
@@ -226,9 +226,9 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
               {/* Bloque Legal */}
               <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <div className="flex gap-4">
-                  <input required type="checkbox" id="auth_v5" checked={authorize} onChange={(e) => setAuthorize(e.target.checked)} className="w-5 h-5 accent-[#14532D] cursor-pointer mt-0.5" />
+                  <input required type="checkbox" id="auth_v5" checked={authorize} onChange={(e) => setAuthorize(e.target.checked)} className="w-5 h-5 accent-[#002B67] cursor-pointer mt-0.5" />
                   <label htmlFor="auth_v5" className="text-[10px] font-bold text-slate-600 cursor-pointer leading-snug">
-                    Autorizo el débito automático de <span className="text-[#14532D] font-black underline">$5.00</span> para la activación de mi cuenta y emisión de Certificados de Aportación iniciales conforme a los estatutos institucionales.
+                    Autorizo el débito automático de <span className="text-[#002B67] font-black underline">$5.00</span> para la activación de mi cuenta y emisión de Certificados de Aportación iniciales conforme a los estatutos institucionales.
                   </label>
                 </div>
               </div>
@@ -236,9 +236,9 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onBack }) => {
               <button 
                 type="submit" 
                 disabled={idStatus !== 'valid' || !authorize || !email || pin.length < 4} 
-                className="w-full py-4 bg-[#14532D] text-white rounded-xl font-black text-sm shadow-xl hover:bg-[#0a2f1a] transition-all flex items-center justify-center gap-3 disabled:opacity-30 uppercase tracking-widest"
+                className="w-full py-4 bg-[#002B67] text-white rounded-xl font-black text-sm shadow-xl hover:bg-[#001129] transition-all flex items-center justify-center gap-3 disabled:opacity-30 uppercase tracking-widest"
               >
-                SOLICITAR ACTIVACIÓN <Check size={18} className="text-[#FACC15]" />
+                SOLICITAR ACTIVACIÓN <Check size={18} className="text-[#067A80]" />
               </button>
             </form>
           </div>

@@ -138,9 +138,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
 
   const FichaDeSocio = () => (
     <div id="ficha-printable" className="bg-white p-12 space-y-10 text-slate-900 printable-area border-2 border-slate-200 rounded-[3rem]">
-      <div className="flex justify-between items-start border-b-4 border-[#14532D] pb-8">
+      <div className="flex justify-between items-start border-b-4 border-[#002B67] pb-8">
         <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-[#14532D] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-lg relative border-b-4 border-[#FACC15] overflow-hidden">
+          <div className="w-16 h-16 bg-[#002B67] rounded-xl flex flex-col items-center justify-center text-white font-black italic shadow-lg relative border-b-4 border-[#03CED4] overflow-hidden">
              <span className="text-3xl leading-none">G</span>
           </div>
           <div>
@@ -149,14 +149,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
           </div>
         </div>
         <div className="text-right">
-           <p className="text-2xl font-black text-[#14532D]">#{editingUser.memberNumber || 'PROV-001'}</p>
+           <p className="text-2xl font-black text-[#002B67]">#{editingUser.memberNumber || 'PROV-001'}</p>
            <p className="text-[10px] font-bold text-slate-400">REGISTRO: {editingUser.registrationDate}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-12">
         <section className="space-y-4">
-          <h3 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-3">Identidad</h3>
+          <h3 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-3">Identidad</h3>
           <div className="space-y-2">
              <div className="flex justify-between border-b pb-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Nombres:</span> <span className="text-sm font-black uppercase">{editingUser.name}</span></div>
              <div className="flex justify-between border-b pb-1"><span className="text-[10px] font-bold text-slate-400 uppercase">ID:</span> <span className="text-sm font-black uppercase">{editingUser.idType} {editingUser.id}</span></div>
@@ -165,7 +165,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
           </div>
         </section>
         <section className="space-y-4">
-          <h3 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-3">Residencia y Trabajo</h3>
+          <h3 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-3">Residencia y Trabajo</h3>
           <div className="space-y-2">
              <div className="flex justify-between border-b pb-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Provincia:</span> <span className="text-sm font-black uppercase">{editingUser.province}</span></div>
              <div className="flex justify-between border-b pb-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Dirección Domicilio:</span> <span className="text-[10px] font-black uppercase">{editingUser.address}</span></div>
@@ -176,7 +176,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
 
       <div className="grid grid-cols-1 gap-8">
         <section className="space-y-4">
-          <h3 className="text-xs font-black text-[#14532D] uppercase tracking-widest border-l-4 border-[#FACC15] pl-3">Referencias y Cargas</h3>
+          <h3 className="text-xs font-black text-[#002B67] uppercase tracking-widest border-l-4 border-[#03CED4] pl-3">Referencias y Cargas</h3>
           <div className="grid grid-cols-2 gap-4">
              <div className="p-4 bg-slate-50 rounded-2xl">
                 <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Cargas Familiares: {editingUser.dependents?.length || 0}</p>
@@ -198,7 +198,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
       {mapModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
            <div className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl">
-              <div className="p-6 bg-[#14532D] text-white flex justify-between items-center">
+              <div className="p-6 bg-[#002B67] text-white flex justify-between items-center">
                  <h4 className="font-black uppercase text-xs tracking-widest flex items-center gap-2"><MapIcon size={16}/> Localizador {mapModal.type === 'home' ? 'Domicilio' : 'Trabajo'}</h4>
                  <button onClick={() => setMapModal({isOpen: false, type: 'home'})}><X size={20}/></button>
               </div>
@@ -213,7 +213,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
                  <button onClick={() => {
                    const val = (document.getElementById('profMapInput') as HTMLInputElement).value;
                    handleMapSelect(val || "Dirección editada");
-                 }} className="w-full py-4 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase shadow-xl">Confirmar y Actualizar</button>
+                 }} className="w-full py-4 bg-[#002B67] text-white rounded-xl font-black text-xs uppercase shadow-xl">Confirmar y Actualizar</button>
               </div>
            </div>
         </div>
@@ -221,19 +221,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
 
       <div className="bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
         {/* Header Perfil */}
-        <div className="p-10 flex flex-col md:flex-row justify-between items-center bg-[#14532D] text-white border-b-[12px] border-[#FACC15] no-print">
+        <div className="p-10 flex flex-col md:flex-row justify-between items-center bg-[#002B67] text-white border-b-[12px] border-[#03CED4] no-print">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-md shadow-inner border border-white/20">
-              <UserIcon size={40} className="text-[#FACC15]" />
+              <UserIcon size={40} className="text-[#067A80]" />
             </div>
             <div>
               <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{editingUser.name}</h2>
-              <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] mt-2">Socio #<span className="text-white">{editingUser.memberNumber || 'S/N'}</span></p>
+              <p className="text-[10px] font-black text-brand-300 uppercase tracking-[0.3em] mt-2">Socio #<span className="text-white">{editingUser.memberNumber || 'S/N'}</span></p>
             </div>
           </div>
           <div className="flex items-center gap-4 mt-6 md:mt-0">
              <div className="px-5 py-2 bg-white/10 rounded-full border border-white/20 text-[10px] font-black uppercase flex items-center gap-2">
-                <Fingerprint size={14} className="text-[#FACC15]" /> Verificado S01
+                <Fingerprint size={14} className="text-[#067A80]" /> Verificado S01
              </div>
           </div>
         </div>
@@ -245,7 +245,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
               key={tab}
               onClick={() => setActiveTab(tab as any)}
               className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 shrink-0 ${
-                activeTab === tab ? 'bg-[#14532D] text-white shadow-lg scale-105' : 'text-slate-400 hover:text-slate-600'
+                activeTab === tab ? 'bg-[#002B67] text-white shadow-lg scale-105' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               {tab === 'REPORTE' && <FileText size={14} className="inline mr-2" />}
@@ -258,26 +258,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
           <form onSubmit={handleUpdate} className="p-10 space-y-12 no-print">
             {activeTab === 'IDENTIDAD' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="col-span-full p-6 bg-emerald-50 rounded-2xl border border-emerald-100 flex gap-4">
-                  <Info size={24} className="text-[#14532D] shrink-0" />
-                  <p className="text-xs font-bold text-emerald-900 leading-tight">Campos mandatorios conforme Manual de Tablas 28.0 SEPS.</p>
+                <div className="col-span-full p-6 bg-brand-50 rounded-2xl border border-brand-100 flex gap-4">
+                  <Info size={24} className="text-[#002B67] shrink-0" />
+                  <p className="text-xs font-bold text-brand-900 leading-tight">Campos mandatorios conforme Manual de Tablas 28.0 SEPS.</p>
                 </div>
                 
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primer Nombre</label>
-                  <input type="text" value={editingUser.firstName} onChange={e => setEditingUser({...editingUser, firstName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
+                  <input type="text" value={editingUser.firstName} onChange={e => setEditingUser({...editingUser, firstName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
                 </div>
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Segundo Nombre</label>
-                  <input type="text" value={editingUser.middleName} onChange={e => setEditingUser({...editingUser, middleName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
+                  <input type="text" value={editingUser.middleName} onChange={e => setEditingUser({...editingUser, middleName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
                 </div>
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Apellidos</label>
-                  <input type="text" value={editingUser.lastName} onChange={e => setEditingUser({...editingUser, lastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
+                  <input type="text" value={editingUser.lastName} onChange={e => setEditingUser({...editingUser, lastName: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
                 </div>
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
-                  <input type="email" value={editingUser.email} onChange={e => setEditingUser({...editingUser, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
+                  <input type="email" value={editingUser.email} onChange={e => setEditingUser({...editingUser, email: e.target.value.toLowerCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
                 </div>
                 {(editingUser.maritalStatus === 'CASADO' || editingUser.maritalStatus === 'UNIÓN DE HECHO') && (
                   <div className="space-y-4 col-span-full md:col-span-2 p-6 bg-pink-50 rounded-[2rem] border border-pink-100">
@@ -300,7 +300,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
                 <div className="space-y-4 col-span-full">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta Domicilio</label>
                   <div className="flex gap-2">
-                    <textarea value={editingUser.address || ''} onChange={e => setEditingUser({ ...editingUser, address: e.target.value.toUpperCase() })} className="flex-1 px-6 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#14532D] h-20 outline-none resize-none focus:ring-2 focus:ring-blue-500" />
+                    <textarea value={editingUser.address || ''} onChange={e => setEditingUser({ ...editingUser, address: e.target.value.toUpperCase() })} className="flex-1 px-6 py-4 bg-slate-100 border-none rounded-2xl font-black text-[#002B67] h-20 outline-none resize-none focus:ring-2 focus:ring-blue-500" />
                     <button type="button" onClick={() => openMapSelector('home')} className="p-4 bg-white border-2 border-slate-100 text-blue-600 rounded-2xl shadow-sm hover:bg-blue-50 transition-all flex items-center gap-2">
                        <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                     </button>
@@ -327,22 +327,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
 
             {activeTab === 'ACTIVIDAD' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="col-span-full p-6 bg-emerald-50 rounded-2xl border border-emerald-100 flex gap-4">
-                   <Briefcase size={24} className="text-[#14532D]"/>
-                   <p className="text-xs font-bold text-[#14532D]">Información laboral para análisis de capacidad de pago.</p>
+                <div className="col-span-full p-6 bg-brand-50 rounded-2xl border border-brand-100 flex gap-4">
+                   <Briefcase size={24} className="text-[#002B67]"/>
+                   <p className="text-xs font-bold text-[#002B67]">Información laboral para análisis de capacidad de pago.</p>
                 </div>
                 <div className="space-y-4 col-span-full">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar de Trabajo / Empresa</label>
                   <div className="flex gap-2">
-                    <input type="text" value={editingUser.workAddress} onChange={e => setEditingUser({...editingUser, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
-                    <button type="button" onClick={() => openMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-emerald-600 rounded-2xl shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-2">
+                    <input type="text" value={editingUser.workAddress} onChange={e => setEditingUser({...editingUser, workAddress: e.target.value.toUpperCase()})} className="flex-1 px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
+                    <button type="button" onClick={() => openMapSelector('work')} className="p-4 bg-white border-2 border-slate-100 text-brand-600 rounded-2xl shadow-sm hover:bg-brand-50 transition-all flex items-center gap-2">
                        <MapIcon size={20} /> <span className="text-[10px] font-black uppercase">Mapa</span>
                     </button>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cargo / Profesión</label>
-                  <input type="text" value={editingUser.profession} onChange={e => setEditingUser({...editingUser, profession: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#14532D]" />
+                  <input type="text" value={editingUser.profession} onChange={e => setEditingUser({...editingUser, profession: e.target.value.toUpperCase()})} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-[#002B67]" />
                 </div>
               </div>
             )}
@@ -399,7 +399,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
               <button 
                 type="submit" 
                 disabled={isSaving}
-                className="w-full py-6 bg-[#14532D] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#FACC15] active:translate-y-1 transition-all uppercase tracking-tighter flex items-center justify-center gap-3"
+                className="w-full py-6 bg-[#002B67] text-white rounded-full font-black text-xl shadow-2xl border-b-[6px] border-[#03CED4] active:translate-y-1 transition-all uppercase tracking-tighter flex items-center justify-center gap-3"
               >
                 {isSaving ? <><Loader2 className="animate-spin" /> PROCESANDO...</> : "GUARDAR CAMBIOS SEPS"}
               </button>
@@ -409,7 +409,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) 
           <div className="p-10">
             <FichaDeSocio />
             <div className="mt-10 flex gap-4 no-print">
-               <button onClick={() => window.print()} className="flex-1 py-5 bg-[#14532D] text-white rounded-full font-black flex items-center justify-center gap-3 shadow-xl">
+               <button onClick={() => window.print()} className="flex-1 py-5 bg-[#002B67] text-white rounded-full font-black flex items-center justify-center gap-3 shadow-xl">
                  <Printer size={20} /> IMPRIMIR FICHA OFICIAL
                </button>
             </div>

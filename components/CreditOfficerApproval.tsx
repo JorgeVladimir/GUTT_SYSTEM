@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { DataService } from '../services/dataService';
 import { User, Loan, Transaction, AccountType, LoanInstallment, InterestRate, GlobalConfig, UserRole } from '../types';
-import { 
-  CheckCircle2, 
+import {
+  CheckCircle2,
   XCircle, 
   FileText, 
   Calendar, 
@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   UserCheck
 } from 'lucide-react';
+import { COMPANY_NAME, AUTHORSHIP } from '../constants';
 
 interface CreditOfficerApprovalProps {
   users: User[];
@@ -920,7 +921,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     let tableHtml = `
       <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:11px; font-family:sans-serif;">
         <thead>
-          <tr style="background-color:#14532D; color:white; font-weight:bold; text-transform:uppercase; font-size:9px;">
+          <tr style="background-color:#002B67; color:white; font-weight:bold; text-transform:uppercase; font-size:9px;">
             <th style="border:1px solid #ddd; padding:6px; text-align:center;">Cuota</th>
             <th style="border:1px solid #ddd; padding:6px; text-align:center;">Vencimiento</th>
             <th style="border:1px solid #ddd; padding:6px; text-align:right;">Capital ($)</th>
@@ -965,7 +966,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${seg.toFixed(2)}</td>
           <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${sol.toFixed(2)}</td>
           <td style="border:1px solid #ddd; padding:5px; text-align:right;">$${gas.toFixed(2)}</td>
-          <td style="border:1px solid #ddd; padding:5px; text-align:right; font-weight:bold; color:#14532D;">$${tot.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:5px; text-align:right; font-weight:bold; color:#002B67;">$${tot.toFixed(2)}</td>
         </tr>
       `;
     });
@@ -978,7 +979,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalSeguro.toFixed(2)}</td>
           <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalSolca.toFixed(2)}</td>
           <td style="border:1px solid #ddd; padding:6px; text-align:right;">$${totalGasto.toFixed(2)}</td>
-          <td style="border:1px solid #ddd; padding:6px; text-align:right; color:#14532D; font-size:12px;">$${totalPagar.toFixed(2)}</td>
+          <td style="border:1px solid #ddd; padding:6px; text-align:right; color:#002B67; font-size:12px;">$${totalPagar.toFixed(2)}</td>
         </tr>
       </tbody>
     </table>
@@ -996,27 +997,27 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <title>Pagaré a la Orden - ${loan.id}</title>
           <style>
             body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #333; line-height: 1.5; font-size: 11px; }
-            .header { text-align: center; border-bottom: 2px solid #14532D; padding-bottom: 10px; margin-bottom: 20px; }
-            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+            .header { text-align: center; border-bottom: 2px solid #002B67; padding-bottom: 10px; margin-bottom: 20px; }
+            .header h1 { color: #002B67; margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
             .header p { margin: 4px 0 0 0; font-size: 9px; font-weight: bold; color: #666; }
             .title { text-align: center; font-size: 14px; font-weight: bold; text-transform: uppercase; margin: 20px 0 10px 0; color: #111; letter-spacing: 0.5px; }
             .legal-text { text-align: justify; margin-bottom: 25px; text-indent: 30px; font-size: 11px; }
-            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px; color: #14532D; }
+            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px; color: #002B67; }
             .signatures { margin-top: 50px; display: grid; grid-template-cols: 1fr 1fr; gap: 30px; text-align: center; font-size: 10px; }
             .sig-box { border-top: 1px solid #333; margin-top: 45px; padding-top: 5px; }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <h1>${COMPANY_NAME}</h1>
             <p>SISTEMA DE CARTERA - FORMATO DE CONTRATO SEPS ECUADOR</p>
           </div>
           <div class="title">Pagaré a la Orden Nro. ${loan.id}</div>
           <div class="legal-text">
-            Por el presente Pagaré a la Orden, yo, <strong>${member.name.toUpperCase()}</strong>, de nacionalidad ecuatoriana, con Cédula de Identidad Nro. <strong>${member.id}</strong>, en mi calidad de Deudor Principal, me obligo a pagar incondicionalmente a la orden de la <strong>COOPERATIVA DE AHORRO Y CRÉDITO CAJA PATATE LTDA.</strong>, en sus oficinas principales de la provincia de Tungurahua, la cantidad de <strong>$${loan.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong> (DÓLARES DE LOS ESTADOS UNIDOS DE AMÉRICA), más los intereses de financiamiento pactados a la tasa efectiva anual fija del <strong>${loan.rate}%</strong>, amortizable de acuerdo al calendario de pagos adjunto.
+            Por el presente Pagaré a la Orden, yo, <strong>${member.name.toUpperCase()}</strong>, de nacionalidad ecuatoriana, con Cédula de Identidad Nro. <strong>${member.id}</strong>, en mi calidad de Deudor Principal, me obligo a pagar incondicionalmente a la orden de la <strong>${COMPANY_NAME}</strong>, en sus oficinas principales de la provincia de Tungurahua, la cantidad de <strong>$${loan.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} USD</strong> (DÓLARES DE LOS ESTADOS UNIDOS DE AMÉRICA), más los intereses de financiamiento pactados a la tasa efectiva anual fija del <strong>${loan.rate}%</strong>, amortizable de acuerdo al calendario de pagos adjunto.
           </div>
           <div class="legal-text">
-            En caso de mora o retraso en el pago de una o más cuotas del dividendo mensual, la Cooperativa de Ahorro y Crédito Caja Patate Ltda. queda expresamente facultada para declarar vencido el plazo total de esta obligación y exigir el pago inmediato del saldo de capital restante, aplicando la tasa máxima de interés por mora regulada por la SEPS. Los gastos judiciales y extrajudiciales que demande el cobro de esta obligación serán de mi cuenta exclusiva. Declaro recibir los fondos a entera satisfacción y me someto a los jueces competentes de este cantón.
+            En caso de mora o retraso en el pago de una o más cuotas del dividendo mensual, la ${COMPANY_NAME} queda expresamente facultada para declarar vencido el plazo total de esta obligación y exigir el pago inmediato del saldo de capital restante, aplicando la tasa máxima de interés por mora regulada por la SEPS. Los gastos judiciales y extrajudiciales que demande el cobro de esta obligación serán de mi cuenta exclusiva. Declaro recibir los fondos a entera satisfacción y me someto a los jueces competentes de este cantón.
           </div>
           
           <div class="section-title">Detalle de Garantía Constituida</div>
@@ -1038,12 +1039,13 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
             <div>
               <div class="sig-box">
                 <strong>${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? 'Firma de Codeudor Solidario (Garante)' : 'Firma de Representación / Legalización'}</strong><br/>
-                Nombre: ${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? (loan.garantiaInfo?.solidaria?.garanteNombre || '').toUpperCase() : 'COOPERATIVA CAJA PATATE'}<br/>
+                Nombre: ${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? (loan.garantiaInfo?.solidaria?.garanteNombre || '').toUpperCase() : COMPANY_NAME}<br/>
                 C.I. / R.U.C.: ${loan.garantiaInfo?.tipo === 'SOLIDARIA' ? (loan.garantiaInfo?.solidaria?.garanteCedula || '') : '1891813608001'}
               </div>
             </div>
           </div>
           <script>window.print();</script>
+        <div class="autoria">${AUTHORSHIP}</div>
         </body>
       </html>
     `);
@@ -1066,27 +1068,33 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <title>Diario Contable - ${loan.id}</title>
           <style>
             body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 35px; color: #333; font-size: 11px; }
-            .header { border-bottom: 3px double #14532D; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
-            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; }
+            .header { border-bottom: 3px double #002B67; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
+            .header h1 { color: #002B67; margin: 0; font-size: 18px; text-transform: uppercase; }
             .header p { margin: 5px 0 0 0; font-size: 10px; font-weight: bold; color: #666; }
             .meta-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-bottom: 25px; background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
             .meta-item span { display: block; font-size: 9px; color: #777; text-transform: uppercase; font-weight: bold; }
             .meta-item strong { font-size: 11px; color: #111; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            th { background-color: #14532D; color: white; text-transform: uppercase; font-size: 9px; border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #002B67; color: white; text-transform: uppercase; font-size: 9px; border: 1px solid #ddd; padding: 8px; text-align: left; }
             td { border: 1px solid #ddd; padding: 8px; font-size: 10px; }
             .total-row { font-weight: bold; background-color: #f5f5f5; }
             .signatures { margin-top: 60px; display: grid; grid-template-cols: 1fr 1fr 1fr; gap: 20px; text-align: center; font-size: 9px; }
             .sig-box { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+          
+            .marca-agua { position: fixed; top: 45%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg);
+                          font-size: 58px; font-weight: 800; color: #002B67; opacity: .05;
+                          white-space: nowrap; z-index: 0; pointer-events: none; }
+            .contenido { position: relative; z-index: 1; }
           </style>
         </head>
         <body>
+          <div class="marca-agua">JORGE TUQUINGA</div>
           <div class="header">
-            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <h1>${COMPANY_NAME}</h1>
             <p>COMPROBANTE DE DIARIO CONTABLE AUTOMÁTICO - REGISTRO DE CARTERA</p>
           </div>
           
-          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #14532D;">
+          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #002B67;">
             ASIENTO DE DIARIO Nro: DSC-${loan.id}
           </div>
 
@@ -1154,8 +1162,8 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               </tr>
               <tr class="total-row">
                 <td colspan="2" style="text-align: center; text-transform: uppercase;">Sumas Iguales</td>
-                <td style="text-align: right; color:#14532D; font-size:11px;">$${loan.amount.toFixed(2)}</td>
-                <td style="text-align: right; color:#14532D; font-size:11px;">$${loan.amount.toFixed(2)}</td>
+                <td style="text-align: right; color:#002B67; font-size:11px;">$${loan.amount.toFixed(2)}</td>
+                <td style="text-align: right; color:#002B67; font-size:11px;">$${loan.amount.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
@@ -1185,6 +1193,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
             </div>
           </div>
           <script>window.print();</script>
+        <div class="autoria">${AUTHORSHIP}</div>
         </body>
       </html>
     `);
@@ -1251,10 +1260,10 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <title>Reimpresión Solicitud - ${loan.id}</title>
           <style>
             body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 35px; color: #333; font-size: 11px; }
-            .header { border-bottom: 2px solid #14532D; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
-            .header h1 { color: #14532D; margin: 0; font-size: 18px; text-transform: uppercase; }
+            .header { border-bottom: 2px solid #002B67; padding-bottom: 12px; text-align: center; margin-bottom: 25px; }
+            .header h1 { color: #002B67; margin: 0; font-size: 18px; text-transform: uppercase; }
             .header p { margin: 5px 0 0 0; font-size: 10px; font-weight: bold; color: #666; }
-            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 25px; color: #14532D; }
+            .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 25px; color: #002B67; }
             .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 10px; }
             .grid div span { display: block; font-size: 9px; color: #777; text-transform: uppercase; font-weight: bold; }
             .grid div strong { font-size: 11px; color: #111; }
@@ -1264,11 +1273,11 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         </head>
         <body>
           <div class="header">
-            <h1>Cooperativa de Ahorro y Crédito Caja Patate Ltda.</h1>
+            <h1>${COMPANY_NAME}</h1>
             <p>HISTÓRICO GENERAL - EXPEDIENTE DE SOLICITUD DE CRÉDITO ORIGINAL</p>
           </div>
           
-          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #14532D;">
+          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; color: #002B67;">
             CÓDIGO DE SOLICITUD: ${loan.id}
           </div>
 
@@ -1277,7 +1286,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
             <div><span>Nombres Completos</span><strong>${member.name.toUpperCase()}</strong></div>
             <div><span>Identificación (C.I.)</span><strong>${member.id}</strong></div>
             <div><span>ID de Socio Contable</span><strong>${(loan as any).socioId || member.id}</strong></div>
-            <div><span>Origen de Radicación</span><strong>${loan.origen || 'CAJA_PATATE'}</strong></div>
+            <div><span>Origen de Radicación</span><strong>${!loan.origen || loan.origen === 'CAJA_PATATE' ? 'PORTAL WEB' : 'GUTT MÓVIL'}</strong></div>
           </div>
 
           <div class="section-title">Condiciones de Crédito Solicitadas</div>
@@ -1321,6 +1330,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
             </div>
           </div>
           <script>window.print();</script>
+        <div class="autoria">${AUTHORSHIP}</div>
         </body>
       </html>
     `);
@@ -1340,11 +1350,11 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
     let scoreProgressColor = 'bg-slate-400';
     if (bureauScoreData) {
       if (bureauScoreData.score >= 800) {
-        scoreColorClass = 'bg-emerald-50 border-emerald-200 text-emerald-700';
-        scoreProgressColor = 'bg-emerald-600';
+        scoreColorClass = 'bg-brand-50 border-brand-200 text-brand-700';
+        scoreProgressColor = 'bg-brand-600';
       } else if (bureauScoreData.score >= 600) {
-        scoreColorClass = 'bg-teal-50 border-teal-200 text-teal-700';
-        scoreProgressColor = 'bg-teal-600';
+        scoreColorClass = 'bg-accent-50 border-accent-200 text-accent-700';
+        scoreProgressColor = 'bg-accent-600';
       } else if (bureauScoreData.score >= 400) {
         scoreColorClass = 'bg-amber-50 border-amber-200 text-amber-700';
         scoreProgressColor = 'bg-amber-500';
@@ -1356,12 +1366,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
     return (
       <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in duration-300 pb-10">
-        <button onClick={() => setSelectedLoan(null)} className="flex items-center gap-2 text-slate-500 font-bold hover:text-[#14532D]"><ArrowLeft size={20} /> Volver</button>
+        <button onClick={() => setSelectedLoan(null)} className="flex items-center gap-2 text-slate-500 font-bold hover:text-[#002B67]"><ArrowLeft size={20} /> Volver</button>
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
-          <div className="bg-[#14532D] p-10 text-white flex justify-between items-center border-b-[12px] border-[#FACC15]">
+          <div className="bg-[#002B67] p-10 text-white flex justify-between items-center border-b-[12px] border-[#03CED4]">
             <div>
-              <h2 className="text-3xl font-black italic text-[#FACC15]">G</h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#FACC15]">Aprobación de Crédito</p>
+              <h2 className="text-3xl font-black italic text-[#067A80]">G</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#067A80]">Aprobación de Crédito</p>
               <p className="text-2xl font-black mt-4">{loan.id}</p>
             </div>
             <div className="text-right">
@@ -1372,7 +1382,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           
           <div className="p-10 space-y-8">
             <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div><p className="text-[10px] font-black text-slate-400 uppercase">Socio</p><p className="font-black text-[#14532D] text-lg uppercase">{member.name}</p></div>
+              <div><p className="text-[10px] font-black text-slate-400 uppercase">Socio</p><p className="font-black text-[#002B67] text-lg uppercase">{member.name}</p></div>
               <div><p className="text-[10px] font-black text-slate-400 uppercase">Condiciones Originales</p><p className="font-black text-slate-800">{loan.rate}% • {loan.installmentsCount} Meses</p></div>
             </div>
 
@@ -1393,12 +1403,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
                   <div className="flex justify-between items-center border-b pb-4">
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <Scale size={18} className="text-[#14532D]" />
+                      <Scale size={18} className="text-[#002B67]" />
                       Buró de Crédito Interno (Normativa SEPS)
                     </h3>
                     {isLoadingBureauScore && (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
-                        <Loader2 size={12} className="animate-spin text-[#14532D]" /> Cargando Score...
+                        <Loader2 size={12} className="animate-spin text-[#002B67]" /> Cargando Score...
                       </span>
                     )}
                   </div>
@@ -1473,14 +1483,14 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   !iceData ? 'bg-slate-50 border-slate-100'
                   : iceData.estado === 'BLOQUEADO' ? 'bg-rose-50 border-rose-300'
                   : iceData.estado === 'ALERTA'    ? 'bg-amber-50 border-amber-300'
-                  :                                   'bg-emerald-50 border-emerald-200'
+                  :                                   'bg-brand-50 border-brand-200'
                 }`}>
                   <div className="flex justify-between items-center border-b pb-4 border-current/20">
                     <h3 className={`text-sm font-black uppercase tracking-wider flex items-center gap-2 ${
                       !iceData ? 'text-slate-700'
                       : iceData.estado === 'BLOQUEADO' ? 'text-rose-800'
                       : iceData.estado === 'ALERTA'    ? 'text-amber-800'
-                      :                                   'text-emerald-800'
+                      :                                   'text-brand-800'
                     }`}>
                       <Scale size={18} />
                       ICE — Índice de Capacidad de Endeudamiento
@@ -1490,7 +1500,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider ${
                         iceData.estado === 'BLOQUEADO' ? 'bg-rose-600 text-white'
                         : iceData.estado === 'ALERTA'  ? 'bg-amber-500 text-white'
-                        :                                 'bg-emerald-600 text-white'
+                        :                                 'bg-brand-600 text-white'
                       }`}>
                         {iceData.estado === 'BLOQUEADO' ? '⛔ BLOQUEADO' : iceData.estado === 'ALERTA' ? '⚠ ALERTA' : '✓ APROBADO'}
                       </span>
@@ -1505,7 +1515,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                           <span className={
                             iceData.estado === 'BLOQUEADO' ? 'text-rose-700'
                             : iceData.estado === 'ALERTA'  ? 'text-amber-700'
-                            :                                 'text-emerald-700'
+                            :                                 'text-brand-700'
                           }>
                             ICE = {iceData.ice > 999 ? '>999' : iceData.ice.toFixed(1)}%
                           </span>
@@ -1514,19 +1524,19 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         <div className="relative h-5 bg-white rounded-full overflow-hidden border border-slate-200 shadow-inner">
                           {/* Zonas de color */}
                           <div className="absolute inset-0 flex">
-                            <div className="bg-emerald-100" style={{ width: '40%' }} />
+                            <div className="bg-brand-100" style={{ width: '40%' }} />
                             <div className="bg-amber-100" style={{ width: '10%' }} />
                             <div className="bg-rose-100" style={{ width: '50%' }} />
                           </div>
                           {/* Marcadores */}
-                          <div className="absolute top-0 bottom-0 w-px bg-emerald-500 opacity-60" style={{ left: '40%' }} />
+                          <div className="absolute top-0 bottom-0 w-px bg-brand-500 opacity-60" style={{ left: '40%' }} />
                           <div className="absolute top-0 bottom-0 w-px bg-amber-500 opacity-60" style={{ left: '50%' }} />
                           {/* Barra de valor */}
                           <div
                             className={`absolute top-0 bottom-0 left-0 rounded-full transition-all duration-700 ${
                               iceData.estado === 'BLOQUEADO' ? 'bg-rose-500'
                               : iceData.estado === 'ALERTA'  ? 'bg-amber-500'
-                              :                                 'bg-emerald-500'
+                              :                                 'bg-brand-500'
                             }`}
                             style={{ width: `${Math.min(iceData.ice, 100)}%`, opacity: 0.75 }}
                           />
@@ -1536,7 +1546,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         </div>
                         <div className="flex text-[8px] font-bold text-slate-400 justify-between px-0.5">
                           <span>0%</span>
-                          <span className="text-emerald-600">40%</span>
+                          <span className="text-brand-600">40%</span>
                           <span className="text-amber-600">50%</span>
                           <span>100%</span>
                         </div>
@@ -1556,7 +1566,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         </div>
                         <div className="p-3 bg-white rounded-2xl border border-slate-200">
                           <p className="text-[8px] font-black text-slate-400 uppercase">Ingreso Neto/mes</p>
-                          <p className="text-base font-black text-emerald-700 tabular-nums">${iceData.ingresoNeto.toFixed(2)}</p>
+                          <p className="text-base font-black text-brand-700 tabular-nums">${iceData.ingresoNeto.toFixed(2)}</p>
                           <p className="text-[8px] text-slate-400">(ingresos - gastos)</p>
                         </div>
                       </div>
@@ -1565,7 +1575,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         ICE = (${iceData.cuota.toFixed(2)} + ${iceData.deudaExt.toFixed(2)}) ÷ ${iceData.ingresoNeto.toFixed(2)} × 100 = <strong className={
                           iceData.estado === 'BLOQUEADO' ? 'text-rose-700'
                           : iceData.estado === 'ALERTA'  ? 'text-amber-700'
-                          :                                 'text-emerald-700'
+                          :                                 'text-brand-700'
                         }>{iceData.ice.toFixed(2)}%</strong>
                       </p>
 
@@ -1605,7 +1615,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
                   <div className="border-b pb-4">
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <TrendingUp size={18} className="text-[#14532D]" />
+                      <TrendingUp size={18} className="text-[#002B67]" />
                       Análisis de Sensibilidad de Capital (Mitigación de Riesgo)
                     </h3>
                   </div>
@@ -1620,7 +1630,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                           min={100}
                           value={proposedSensitivityAmount} 
                           onChange={e => setProposedSensitivityAmount(e.target.value)} 
-                          className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#14532D] focus:border-[#14532D] outline-none"
+                          className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#002B67] focus:border-[#002B67] outline-none"
                         />
                         <p className="text-[10px] font-semibold text-slate-400 mt-1">
                           Límite máximo permitido: ${loan.amount.toLocaleString()} USD (Monto solicitado originalmente).
@@ -1639,7 +1649,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         <div className="p-5 bg-slate-50 rounded-2xl border text-xs font-bold text-slate-700 space-y-2 font-sans">
                           <span className="text-[8px] font-black text-slate-400 uppercase block border-b pb-1.5 mb-2">Simulación del Plan de Pagos Ajustado</span>
                           <div className="flex justify-between"><span>Capital Recalculado:</span><span className="text-slate-900">${parseFloat(proposedSensitivityAmount).toLocaleString()} USD</span></div>
-                          <div className="flex justify-between"><span>Pago Mensual Estimado:</span><span className="text-[#14532D]">${sensitivitySimulation.monthlyPayment.toFixed(2)} USD</span></div>
+                          <div className="flex justify-between"><span>Pago Mensual Estimado:</span><span className="text-[#002B67]">${sensitivitySimulation.monthlyPayment.toFixed(2)} USD</span></div>
                           <div className="flex justify-between"><span>Total Intereses:</span><span>${sensitivitySimulation.totalInterest.toFixed(2)} USD</span></div>
                           <div className="flex justify-between"><span>Seguro de Desgravamen:</span><span>${sensitivitySimulation.totalSeguro.toFixed(2)} USD</span></div>
                           <div className="flex justify-between"><span>Contribución SOLCA (0.5%):</span><span>${sensitivitySimulation.totalSolca.toFixed(2)} USD</span></div>
@@ -1674,7 +1684,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div className="p-8 bg-white rounded-3xl border-2 border-slate-100 space-y-6">
                   <div className="border-b pb-4">
                     <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <ShieldCheck size={18} className="text-[#14532D]" />
+                      <ShieldCheck size={18} className="text-[#002B67]" />
                       Instancia y Resoluciones de Aprobación
                     </h3>
                   </div>
@@ -1685,7 +1695,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       <select 
                         value={approvalType} 
                         onChange={e => setApprovalType(e.target.value as any)} 
-                        className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-xs text-slate-700 focus:border-[#14532D] outline-none"
+                        className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-xs text-slate-700 focus:border-[#002B67] outline-none"
                       >
                         <option value="ASESOR">Aprobado por Asesor (Monto Autonomía Financiera)</option>
                         <option value="COMITE">Aprobado por Comité de Crédito (Mayor Cuantía)</option>
@@ -1702,7 +1712,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         value={actaSesion} 
                         onChange={e => setActaSesion(e.target.value)} 
                         className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-xs outline-none ${
-                          approvalType === 'COMITE' && !actaSesion.trim() ? 'border-amber-400 focus:border-amber-500' : 'focus:border-[#14532D]'
+                          approvalType === 'COMITE' && !actaSesion.trim() ? 'border-amber-400 focus:border-amber-500' : 'focus:border-[#002B67]'
                         }`}
                       />
                     </div>
@@ -1713,7 +1723,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   value={officerReason} 
                   onChange={e => setOfficerReason(e.target.value)} 
                   placeholder="Escriba el dictamen técnico o justificación para la aprobación/rechazo..." 
-                  className="w-full p-8 bg-slate-50 border-4 border-slate-100 rounded-[2rem] h-40 outline-none focus:border-[#14532D] font-bold text-slate-800" 
+                  className="w-full p-8 bg-slate-50 border-4 border-slate-100 rounded-[2rem] h-40 outline-none focus:border-[#002B67] font-bold text-slate-800" 
                 />
                 
                 <div className="flex gap-4">
@@ -1722,7 +1732,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     onClick={() => handleDecision(true)} 
                     disabled={isApprovalBlocked}
                     className={`flex-[2] py-5 text-white rounded-2xl font-black transition-all ${
-                      isApprovalBlocked ? 'bg-slate-300 border-none cursor-not-allowed text-slate-500' : 'bg-[#14532D] hover:bg-emerald-800 border-b-8 border-[#FACC15]'
+                      isApprovalBlocked ? 'bg-slate-300 border-none cursor-not-allowed text-slate-500' : 'bg-[#002B67] hover:bg-brand-800 border-b-8 border-[#03CED4]'
                     }`}
                   >
                     APROBAR SOLICITUD
@@ -1738,10 +1748,10 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
-      <div className="bg-[#14532D] p-10 rounded-[3rem] shadow-xl text-white flex flex-col xl:flex-row justify-between items-center gap-6">
+      <div className="bg-[#002B67] p-10 rounded-[3rem] shadow-xl text-white flex flex-col xl:flex-row justify-between items-center gap-6">
         <div>
           <h2 className="text-4xl font-black tracking-tighter">Portal Cartera & Crédito</h2>
-          <p className="text-emerald-100/70 font-bold text-sm">Administración Integral del Ciclo de Vida de Préstamos</p>
+          <p className="text-brand-100/70 font-bold text-sm">Administración Integral del Ciclo de Vida de Préstamos</p>
         </div>
         {/* Submenús consolidados en la barra lateral vertical */}
       </div>
@@ -1775,12 +1785,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     placeholder="Dictamen técnico para lote..."
                     value={bulkReason}
                     onChange={e => setBulkReason(e.target.value)}
-                    className="px-4 py-2 bg-slate-50 border rounded-xl font-bold text-xs outline-none focus:border-[#14532D]"
+                    className="px-4 py-2 bg-slate-50 border rounded-xl font-bold text-xs outline-none focus:border-[#002B67]"
                   />
                   <button
                     onClick={handleBulkApprove}
                     disabled={selectedPendingIds.length === 0 || isBulkProcessing}
-                    className="px-5 py-3 bg-[#14532D] hover:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-black text-[10px] uppercase transition-all"
+                    className="px-5 py-3 bg-[#002B67] hover:bg-brand-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-black text-[10px] uppercase transition-all"
                   >
                     Aprobar Lote ({selectedPendingIds.length})
                   </button>
@@ -1805,7 +1815,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                                 setSelectedPendingIds([]);
                               }
                             }}
-                            className="accent-[#14532D] w-4 h-4 cursor-pointer"
+                            className="accent-[#002B67] w-4 h-4 cursor-pointer"
                           />
                         </th>
                       )}
@@ -1834,13 +1844,13 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                                   setSelectedPendingIds(selectedPendingIds.filter(id => id !== loan.id));
                                 }
                               }}
-                              className="accent-[#14532D] w-4 h-4 cursor-pointer"
+                              className="accent-[#002B67] w-4 h-4 cursor-pointer"
                             />
                           </td>
                         )}
                         <td className="p-4 font-black text-slate-800">{loan.id}</td>
                         <td className="p-4 uppercase truncate max-w-[200px]">{member.name}</td>
-                        <td className="p-4 text-[#14532D] font-black">${loan.amount.toLocaleString()}</td>
+                        <td className="p-4 text-[#002B67] font-black">${loan.amount.toLocaleString()}</td>
                         <td className="p-4">{loan.installmentsCount} meses</td>
                         <td className="p-4">{loan.rate}%</td>
                         <td className="p-4">
@@ -1850,15 +1860,15 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         </td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded text-[8px] font-black ${
-                            loan.origen === 'CAJA_PATATE' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                            loan.origen === 'CAJA_PATATE' ? 'bg-brand-50 text-brand-700' : 'bg-blue-50 text-blue-700'
                           }`}>
-                            {loan.origen || 'GUTT_MOVIL'}
+                            {!loan.origen || loan.origen === 'CAJA_PATATE' ? 'PORTAL WEB' : 'GUTT MÓVIL'}
                           </span>
                         </td>
                         <td className="p-4 text-center">
                           <button
                             onClick={() => setSelectedLoan({ loan, member })}
-                            className="px-4 py-2 bg-slate-50 hover:bg-[#14532D] hover:text-white text-[#14532D] rounded-xl font-black text-[10px] uppercase transition-all"
+                            className="px-4 py-2 bg-slate-50 hover:bg-[#002B67] hover:text-white text-[#002B67] rounded-xl font-black text-[10px] uppercase transition-all"
                           >
                             Gestionar
                           </button>
@@ -1887,7 +1897,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <button
                   onClick={handleBulkDisburse}
                   disabled={selectedApprovedIds.length === 0 || isBulkProcessing}
-                  className="px-5 py-3 bg-[#FACC15] hover:bg-yellow-500 disabled:bg-slate-200 disabled:text-slate-400 text-[#14532D] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all"
+                  className="px-5 py-3 bg-[#03CED4] hover:bg-accent-400 disabled:bg-slate-200 disabled:text-slate-400 text-[#002B67] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all"
                 >
                   Desembolsar Lote ({selectedApprovedIds.length})
                 </button>
@@ -1911,7 +1921,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                                 setSelectedApprovedIds([]);
                               }
                             }}
-                            className="accent-[#14532D] w-4 h-4 cursor-pointer"
+                            className="accent-[#002B67] w-4 h-4 cursor-pointer"
                           />
                         </th>
                       )}
@@ -1944,7 +1954,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                                     setSelectedApprovedIds(selectedApprovedIds.filter(id => id !== loan.id));
                                   }
                                 }}
-                                className="accent-[#14532D] w-4 h-4 cursor-pointer"
+                                className="accent-[#002B67] w-4 h-4 cursor-pointer"
                               />
                             </td>
                           )}
@@ -1953,12 +1963,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                           <td className="p-4 text-slate-500 font-bold">${loan.amount.toLocaleString()}</td>
                           <td className="p-4 text-slate-400">${comision.toFixed(2)}</td>
                           <td className="p-4 text-slate-400">${fondo.toFixed(2)}</td>
-                          <td className="p-4 text-[#14532D] font-black">${neto.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td className="p-4 text-[#002B67] font-black">${neto.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                           <td className="p-4">
                             <span className={`px-2 py-0.5 rounded text-[8px] font-black ${
-                              loan.origen === 'CAJA_PATATE' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                              loan.origen === 'CAJA_PATATE' ? 'bg-brand-50 text-brand-700' : 'bg-blue-50 text-blue-700'
                             }`}>
-                              {loan.origen || 'GUTT_MOVIL'}
+                              {!loan.origen || loan.origen === 'CAJA_PATATE' ? 'PORTAL WEB' : 'GUTT MÓVIL'}
                             </span>
                           </td>
                           <td className="p-4 text-center">
@@ -1987,7 +1997,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
         <div className="bg-white p-8 lg:p-12 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-8">
           <div className="flex items-center justify-between border-b pb-6">
             <div className="flex items-center gap-6">
-              <div className="w-12 h-12 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center"><UserCheck size={24} /></div>
+              <div className="w-12 h-12 bg-brand-50 text-[#002B67] rounded-2xl flex items-center justify-center"><UserCheck size={24} /></div>
               <div>
                 <h3 className="text-xl font-black text-slate-800">Radicar Solicitud desde Asesor</h3>
                 <p className="text-slate-500 font-medium text-xs">Cree y registre una solicitud directamente en nombre de un socio.</p>
@@ -2006,12 +2016,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Socio Destinatario</label>
               <div className="relative">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input type="text" placeholder="Escriba el nombre o cédula del socio..." value={memberSearch} onChange={e => setMemberSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#14532D] transition-all" />
+                <input type="text" placeholder="Escriba el nombre o cédula del socio..." value={memberSearch} onChange={e => setMemberSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#002B67] transition-all" />
               </div>
 
               {isSearchingMembers && (
                 <div className="flex items-center gap-2 text-[10px] text-slate-400 pl-4 py-2 font-black uppercase tracking-widest">
-                  <Loader2 size={16} className="animate-spin text-[#14532D]" />
+                  <Loader2 size={16} className="animate-spin text-[#002B67]" />
                   Buscando socio en la base de datos...
                 </div>
               )}
@@ -2019,7 +2029,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               {!isSearchingMembers && searchedMembers.length > 0 && (
                 <div className="border border-slate-100 rounded-2xl divide-y overflow-hidden bg-slate-50/20 max-h-60 overflow-y-auto">
                   {searchedMembers.map(u => (
-                    <button key={u.id} onClick={() => setSelectedUserForLoan(u)} className="w-full px-6 py-4 hover:bg-emerald-50/50 flex justify-between items-center text-left transition-all">
+                    <button key={u.id} onClick={() => setSelectedUserForLoan(u)} className="w-full px-6 py-4 hover:bg-brand-50/50 flex justify-between items-center text-left transition-all">
                       <div>
                         <p className="font-bold text-slate-800 uppercase text-sm">{u.name}</p>
                         <p className="text-[10px] text-slate-400 font-bold uppercase">{u.id} • Socio</p>
@@ -2042,7 +2052,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 {/* Selected Member Header */}
                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex justify-between items-center">
                   <div>
-                    <span className="text-[9px] font-black bg-emerald-100 text-[#14532D] px-2.5 py-1 rounded-full uppercase tracking-tighter">Socio Seleccionado</span>
+                    <span className="text-[9px] font-black bg-brand-100 text-[#002B67] px-2.5 py-1 rounded-full uppercase tracking-tighter">Socio Seleccionado</span>
                     <p className="font-black text-slate-800 uppercase text-lg mt-2">{selectedUserForLoan.name}</p>
                     <p className="text-[10px] text-slate-400 font-bold">{selectedUserForLoan.id}</p>
                   </div>
@@ -2051,12 +2061,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
                 {/* Certificados balance Validation */}
                 <div className={`p-5 rounded-2xl flex gap-4 items-start border transition-all ${
-                  memberCertBalance < 1.00 ? 'bg-red-50 border-red-100 text-red-900 animate-pulse' : 'bg-emerald-50 border-emerald-100 text-emerald-900'
+                  memberCertBalance < 1.00 ? 'bg-red-50 border-red-100 text-red-900 animate-pulse' : 'bg-brand-50 border-brand-100 text-brand-900'
                 }`}>
                   {memberCertBalance < 1.00 ? (
                     <ShieldAlert size={20} className="text-red-500 shrink-0 mt-0.5" />
                   ) : (
-                    <CheckCircle2 size={20} className="text-[#14532D] shrink-0 mt-0.5" />
+                    <CheckCircle2 size={20} className="text-[#002B67] shrink-0 mt-0.5" />
                   )}
                   <div>
                     <p className="text-xs font-black uppercase">
@@ -2075,12 +2085,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Categoría de Crédito</label>
                   <div className="grid grid-cols-1 gap-2.5 max-h-52 overflow-y-auto pr-1">
                     {rates.map(r => (
-                      <button key={r.id} disabled={memberCertBalance < 1.00} onClick={() => setSelectedRateId(r.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center group ${memberCertBalance < 1.00 ? 'opacity-50 cursor-not-allowed border-slate-100' : selectedRateId === r.id ? 'border-[#14532D] bg-emerald-50/50' : 'border-slate-100 hover:border-slate-200'}`}>
+                      <button key={r.id} disabled={memberCertBalance < 1.00} onClick={() => setSelectedRateId(r.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center group ${memberCertBalance < 1.00 ? 'opacity-50 cursor-not-allowed border-slate-100' : selectedRateId === r.id ? 'border-[#002B67] bg-brand-50/50' : 'border-slate-100 hover:border-slate-200'}`}>
                         <div>
                           <p className="text-xs font-black text-slate-800">{r.category}</p>
                           <p className="text-[9px] text-slate-400 font-bold uppercase">Techo TEA: {(r as any).maxRate || r.rate}% • Plazo Max: {r.maxTerm} m.</p>
                         </div>
-                        <p className="text-lg font-black text-[#14532D]">{r.rate}%</p>
+                        <p className="text-lg font-black text-[#002B67]">{r.rate}%</p>
                       </button>
                     ))}
                   </div>
@@ -2090,11 +2100,11 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Monto ($)</label>
-                    <input type="number" disabled={memberCertBalance < 1.00} value={newLoanAmount} onChange={e => setNewLoanAmount(e.target.value)} placeholder="Monto" className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#14532D] focus:border-[#14532D] outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
+                    <input type="number" disabled={memberCertBalance < 1.00} value={newLoanAmount} onChange={e => setNewLoanAmount(e.target.value)} placeholder="Monto" className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#002B67] focus:border-[#002B67] outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                   </div>
                   <div className="col-span-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Plazo (m)</label>
-                    <select disabled={memberCertBalance < 1.00} value={newLoanTerm} onChange={e => setNewLoanTerm(parseInt(e.target.value))} className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#14532D] focus:border-[#14532D] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <select disabled={memberCertBalance < 1.00} value={newLoanTerm} onChange={e => setNewLoanTerm(parseInt(e.target.value))} className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#002B67] focus:border-[#002B67] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                       {[6, 12, 18, 24, 36, 48, 60, 72, 120, 180, 240, 360].filter(m => selectedRate ? m <= selectedRate.maxTerm : true).map(m => (
                         <option key={m} value={m}>{m} meses</option>
                       ))}
@@ -2102,7 +2112,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   </div>
                   <div className="col-span-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Tasa Anual (%)</label>
-                    <input type="number" disabled={memberCertBalance < 1.00} value={customRate} onChange={e => setCustomRate(e.target.value)} placeholder="Tasa" className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#14532D] focus:border-[#14532D] outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
+                    <input type="number" disabled={memberCertBalance < 1.00} value={customRate} onChange={e => setCustomRate(e.target.value)} placeholder="Tasa" className="w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm text-[#002B67] focus:border-[#002B67] outline-none disabled:opacity-50 disabled:cursor-not-allowed" />
                   </div>
                 </div>
 
@@ -2114,7 +2124,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       disabled={memberCertBalance < 1.00}
                       value={newLoanWarrantyType}
                       onChange={e => setNewLoanWarrantyType(e.target.value as any)}
-                      className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl font-bold text-xs text-slate-700 focus:border-[#14532D] outline-none"
+                      className="w-full px-4 py-3 bg-white border-2 border-slate-100 rounded-xl font-bold text-xs text-slate-700 focus:border-[#002B67] outline-none"
                     >
                       <option value="SOLIDARIA">Garantía Personal / Solidaria (Firma Garante)</option>
                       <option value="PRENDARIA">Garantía Prendaria (Bienes Muebles / Vehículos)</option>
@@ -2126,8 +2136,8 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
                   {newLoanWarrantyType === 'SOLIDARIA' && (
                     <div className="grid grid-cols-2 gap-3 pt-2 animate-in fade-in duration-300">
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Nombre Completo Garante" value={newLoanSolidariaGuarantorName} onChange={e => setNewLoanSolidariaGuarantorName(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Cédula del Garante" value={newLoanSolidariaGuarantorId} onChange={e => setNewLoanSolidariaGuarantorId(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Nombre Completo Garante" value={newLoanSolidariaGuarantorName} onChange={e => setNewLoanSolidariaGuarantorName(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Cédula del Garante" value={newLoanSolidariaGuarantorId} onChange={e => setNewLoanSolidariaGuarantorId(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                     </div>
                   )}
                   {newLoanWarrantyType === 'PRENDARIA' && (
@@ -2135,7 +2145,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="flex flex-col space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase">Tipo de Prenda *</label>
-                          <select value={newLoanPrendariaType} onChange={e => setNewLoanPrendariaType(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white">
+                          <select value={newLoanPrendariaType} onChange={e => setNewLoanPrendariaType(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white">
                             <option value="Vehículo">Vehículo</option>
                             <option value="Maquinaria">Maquinaria</option>
                             <option value="Joyas">Joyas</option>
@@ -2144,22 +2154,22 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         </div>
                         <div className="flex flex-col space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase">Valor Comercial y Avalúo ($) *</label>
-                          <input type="number" disabled={memberCertBalance < 1.00} placeholder="Monto Avalúo" value={newLoanPrendariaValuation} onChange={e => setNewLoanPrendariaValuation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                          <input type="number" disabled={memberCertBalance < 1.00} placeholder="Monto Avalúo" value={newLoanPrendariaValuation} onChange={e => setNewLoanPrendariaValuation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                         </div>
                         <div className="flex flex-col space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase">Compañía Aseguradora</label>
-                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Compañía Aseguradora" value={newLoanPrendariaInsurance} onChange={e => setNewLoanPrendariaInsurance(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Compañía Aseguradora" value={newLoanPrendariaInsurance} onChange={e => setNewLoanPrendariaInsurance(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="flex flex-col space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase">Descripción Detallada *</label>
-                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Descripción del Bien (Marca/Modelo/Año)" value={newLoanPrendariaDescription} onChange={e => setNewLoanPrendariaDescription(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Descripción del Bien (Marca/Modelo/Año)" value={newLoanPrendariaDescription} onChange={e => setNewLoanPrendariaDescription(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                         </div>
                         <div className="flex flex-col space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase">Observación Técnica (Estado/Motor/Chasis) *</label>
-                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle estado físico, número motor/chasis" value={newLoanPrendariaObservation} onChange={e => setNewLoanPrendariaObservation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                          <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle estado físico, número motor/chasis" value={newLoanPrendariaObservation} onChange={e => setNewLoanPrendariaObservation(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                         </div>
                       </div>
 
@@ -2170,9 +2180,9 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                           : 0;
                         const ok = cobertura >= 120;
                         return (
-                          <div className={`p-3 rounded-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider ${ok ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                          <div className={`p-3 rounded-xl flex justify-between items-center text-[10px] font-black uppercase tracking-wider ${ok ? 'bg-brand-50 text-brand-800' : 'bg-red-50 text-red-800'}`}>
                             <span>Cobertura SEPS (mín. 120%):</span>
-                            <span className={`text-xs px-3 py-1 rounded-lg font-black ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            <span className={`text-xs px-3 py-1 rounded-lg font-black ${ok ? 'bg-brand-100 text-brand-700' : 'bg-red-100 text-red-700'}`}>
                               {cobertura.toFixed(2)}% {ok ? '✓' : '✗ INSUFICIENTE'}
                             </span>
                           </div>
@@ -2181,23 +2191,23 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     </div>
                   )}                  {newLoanWarrantyType === 'HIPOTECARIA' && (
                     <div className="grid grid-cols-3 gap-3 pt-2 animate-in fade-in duration-300">
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle Inmueble (Finca/Clave Catastral)" value={newLoanHipotecariaInmueble} onChange={e => setNewLoanHipotecariaInmueble(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
-                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Avalúo Comercial ($)" value={newLoanHipotecariaAvaluo} onChange={e => setNewLoanHipotecariaAvaluo(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle Registro de la Propiedad" value={newLoanHipotecariaRegistro} onChange={e => setNewLoanHipotecariaRegistro(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white col-span-1" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle Inmueble (Finca/Clave Catastral)" value={newLoanHipotecariaInmueble} onChange={e => setNewLoanHipotecariaInmueble(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white col-span-1" />
+                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Avalúo Comercial ($)" value={newLoanHipotecariaAvaluo} onChange={e => setNewLoanHipotecariaAvaluo(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white col-span-1" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Detalle Registro de la Propiedad" value={newLoanHipotecariaRegistro} onChange={e => setNewLoanHipotecariaRegistro(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white col-span-1" />
                     </div>
                   )}
 
                   {newLoanWarrantyType === 'DEPOSITO_PLAZO' && (
                     <div className="grid grid-cols-2 gap-3 pt-2 animate-in fade-in duration-300">
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Número de Cuenta o DPF" value={newLoanDpfNumero} onChange={e => setNewLoanDpfNumero(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
-                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Fondos Pignorados ($)" value={newLoanDpfValor} onChange={e => setNewLoanDpfValor(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Número de Cuenta o DPF" value={newLoanDpfNumero} onChange={e => setNewLoanDpfNumero(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
+                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Fondos Pignorados ($)" value={newLoanDpfValor} onChange={e => setNewLoanDpfValor(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                     </div>
                   )}
 
                   {newLoanWarrantyType === 'GRUPO_SOLIDARIO' && (
                     <div className="grid grid-cols-2 gap-3 pt-2 animate-in fade-in duration-300">
-                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Nombre del Grupo Solidario" value={newLoanGrupoNombre} onChange={e => setNewLoanGrupoNombre(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
-                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Número de Integrantes" value={newLoanGrupoIntegrantes} onChange={e => setNewLoanGrupoIntegrantes(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#14532D] outline-none bg-white" />
+                      <input type="text" disabled={memberCertBalance < 1.00} placeholder="Nombre del Grupo Solidario" value={newLoanGrupoNombre} onChange={e => setNewLoanGrupoNombre(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
+                      <input type="number" disabled={memberCertBalance < 1.00} placeholder="Número de Integrantes" value={newLoanGrupoIntegrantes} onChange={e => setNewLoanGrupoIntegrantes(e.target.value)} className="px-3 py-2 border rounded-lg text-xs font-semibold focus:border-[#002B67] outline-none bg-white" />
                     </div>
                   )}
                 </div>
@@ -2206,21 +2216,21 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               {/* Simulation Result Column */}
               <div className="flex flex-col justify-between">
                 {simulation ? (
-                  <div className="bg-[#14532D] rounded-[2.5rem] p-8 text-white shadow-xl flex flex-col justify-between h-full relative overflow-hidden min-h-[350px]">
+                  <div className="bg-[#002B67] rounded-[2.5rem] p-8 text-white shadow-xl flex flex-col justify-between h-full relative overflow-hidden min-h-[350px]">
                     <div>
-                      <div className="flex items-center gap-2 mb-6"><TrendingUp size={16} className="text-[#FACC15]" /><span className="text-[10px] font-black uppercase tracking-widest text-[#FACC15]">Proyección Oficial Asesor</span></div>
+                      <div className="flex items-center gap-2 mb-6"><TrendingUp size={16} className="text-[#067A80]" /><span className="text-[10px] font-black uppercase tracking-widest text-[#067A80]">Proyección Oficial Asesor</span></div>
                       <div className="space-y-6">
                         <div className="border-b border-white/10 pb-4">
-                          <p className="text-emerald-100/60 font-bold text-xs uppercase mb-1">Pago Mensual Estimado</p>
-                          <p className="text-4xl font-black tracking-tight"><span className="text-xl font-bold text-emerald-200 align-top mr-0.5">$</span>{simulation.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                          <p className="text-brand-100/60 font-bold text-xs uppercase mb-1">Pago Mensual Estimado</p>
+                          <p className="text-4xl font-black tracking-tight"><span className="text-xl font-bold text-brand-200 align-top mr-0.5">$</span>{simulation.monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[9px] font-black text-emerald-300 uppercase">Total Intereses</p>
+                            <p className="text-[9px] font-black text-brand-300 uppercase">Total Intereses</p>
                             <p className="text-lg font-black">${simulation.totalInterest.toFixed(2)}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[9px] font-black text-emerald-300 uppercase">Total a Pagar</p>
+                            <p className="text-[9px] font-black text-brand-300 uppercase">Total a Pagar</p>
                             <p className="text-lg font-black">${simulation.totalPayable.toFixed(2)}</p>
                           </div>
                         </div>
@@ -2233,7 +2243,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       className={`w-full py-4 mt-8 rounded-xl font-black text-md transition-all flex items-center justify-center gap-2 shadow-lg ${
                         memberCertBalance < 1.00 
                           ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
-                          : 'bg-[#FACC15] text-[#14532D] hover:scale-[1.02] active:scale-95'
+                          : 'bg-[#03CED4] text-[#002B67] hover:scale-[1.02] active:scale-95'
                       }`}
                     >
                       {isProcessing ? 'Procesando...' : 'CREAR SOLICITUD DE CRÉDITO'}
@@ -2258,18 +2268,18 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-center">
             <div className="flex-1 relative w-full">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-              <input type="text" placeholder="Buscar por Nombre o Cédula..." value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#14532D] transition-all text-slate-800" />
+              <input type="text" placeholder="Buscar por Nombre o Cédula..." value={paymentSearch} onChange={e => setPaymentSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#002B67] transition-all text-slate-800" />
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
               {/* Prorrating selector */}
-              <label className="flex items-center gap-3 p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-[#14532D] cursor-pointer w-full sm:w-auto">
-                <input type="checkbox" checked={applyProrating} onChange={e => setApplyProrating(e.target.checked)} className="accent-[#14532D] w-5 h-5 rounded" />
+              <label className="flex items-center gap-3 p-3 bg-brand-50 rounded-2xl border border-brand-100 text-[#002B67] cursor-pointer w-full sm:w-auto">
+                <input type="checkbox" checked={applyProrating} onChange={e => setApplyProrating(e.target.checked)} className="accent-[#002B67] w-5 h-5 rounded" />
                 <span className="text-[10px] font-black uppercase tracking-wider">Prorrateo (-50% Interés)</span>
               </label>
 
               <div className="flex gap-2 p-1 bg-slate-50 rounded-2xl border w-full sm:w-auto">
-                <button onClick={() => setPaymentSource('ACCOUNT')} className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 ${paymentSource === 'ACCOUNT' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}><Wallet size={16} /> Débito Cuenta</button>
-                <button onClick={() => setPaymentSource('TRANSFER')} className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 ${paymentSource === 'TRANSFER' ? 'bg-[#14532D] text-white shadow-md' : 'text-slate-400'}`}><CreditCard size={16} /> Efectivo</button>
+                <button onClick={() => setPaymentSource('ACCOUNT')} className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 ${paymentSource === 'ACCOUNT' ? 'bg-[#002B67] text-white shadow-md' : 'text-slate-400'}`}><Wallet size={16} /> Débito Cuenta</button>
+                <button onClick={() => setPaymentSource('TRANSFER')} className={`flex-1 md:flex-none px-5 py-3 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 ${paymentSource === 'TRANSFER' ? 'bg-[#002B67] text-white shadow-md' : 'text-slate-400'}`}><CreditCard size={16} /> Efectivo</button>
               </div>
             </div>
           </div>
@@ -2289,7 +2299,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div key={loan.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8 hover:shadow-lg transition-all">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-50 text-[#14532D] rounded-full flex items-center justify-center font-black">{member.name[0]}</div>
+                      <div className="w-10 h-10 bg-brand-50 text-[#002B67] rounded-full flex items-center justify-center font-black">{member.name[0]}</div>
                       <div>
                         <p className="font-black text-slate-800 uppercase leading-none">{member.name}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{loan.id} • {loan.type}</p>
@@ -2297,7 +2307,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     </div>
                     <div className="flex gap-3 pt-2">
                        <div className="px-3 py-1 bg-slate-50 rounded-lg text-[9px] font-black text-slate-500 uppercase">Saldo: ${loan.balance.toFixed(2)}</div>
-                       <div className="px-3 py-1 bg-emerald-50 rounded-lg text-[9px] font-black text-emerald-600 uppercase">Buró: {member.bureau?.score || 800} pts</div>
+                       <div className="px-3 py-1 bg-brand-50 rounded-lg text-[9px] font-black text-brand-600 uppercase">Buró: {member.bureau?.score || 800} pts</div>
                     </div>
                   </div>
 
@@ -2307,23 +2317,23 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         <p className="text-[9px] font-black text-slate-400 uppercase mb-1">
                           Próxima Cuota #{pendingInst.number} {applyProrating ? '(Prorrateado)' : ''}
                         </p>
-                        <p className="text-3xl font-black text-[#14532D]">
+                        <p className="text-3xl font-black text-[#002B67]">
                           ${totalToPay.toFixed(2)}
                         </p>
                         {applyProrating && (
-                          <p className="text-[9px] text-[#FACC15] font-black uppercase tracking-widest">Ahorro: ${(pendingInst.total - totalToPay).toFixed(2)} USD</p>
+                          <p className="text-[9px] text-[#067A80] font-black uppercase tracking-widest">Ahorro: ${(pendingInst.total - totalToPay).toFixed(2)} USD</p>
                         )}
                       </div>
                       <button 
                         onClick={() => handlePayInstallment(member, loan, pendingInst)}
                         disabled={isProcessing}
-                        className="w-full md:w-auto px-8 py-4 bg-[#14532D] text-white rounded-2xl font-black text-xs uppercase shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                        className="w-full md:w-auto px-8 py-4 bg-[#002B67] text-white rounded-2xl font-black text-xs uppercase shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
                       >
-                        {isProcessing ? 'Cobrando...' : 'COBRAR AHORA'} <HandCoins size={20} className="text-[#FACC15]" />
+                        {isProcessing ? 'Cobrando...' : 'COBRAR AHORA'} <HandCoins size={20} className="text-[#067A80]" />
                       </button>
                     </div>
                   ) : (
-                    <div className="px-8 py-3 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-[10px] uppercase">✓ PRÉSTAMO CANCELADO</div>
+                    <div className="px-8 py-3 bg-accent-100 text-accent-700 rounded-2xl font-black text-[10px] uppercase">✓ PRÉSTAMO CANCELADO</div>
                   )}
                 </div>
               );
@@ -2339,7 +2349,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-6 items-center">
             <div className="flex-1 relative w-full">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-              <input type="text" placeholder="Buscar cartera por Nombre o Cédula..." value={carteraSearch} onChange={e => setCarteraSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#14532D] transition-all text-slate-800" />
+              <input type="text" placeholder="Buscar cartera por Nombre o Cédula..." value={carteraSearch} onChange={e => setCarteraSearch(e.target.value)} className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold focus:border-[#002B67] transition-all text-slate-800" />
             </div>
           </div>
 
@@ -2349,7 +2359,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <button onClick={() => setSelectedLoanForPayments(null)} className="absolute right-6 top-6 p-2 text-slate-400 hover:text-slate-600 font-bold">Cerrar</button>
               <div>
                 <h4 className="text-lg font-black text-slate-800 uppercase leading-none">Reversar Dividendos Cobrados</h4>
-                <p className="text-xs font-semibold text-[#14532D] mt-1">{selectedLoanForPayments.loan.id} • {selectedLoanForPayments.member.name}</p>
+                <p className="text-xs font-semibold text-[#002B67] mt-1">{selectedLoanForPayments.loan.id} • {selectedLoanForPayments.member.name}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -2358,7 +2368,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     <div>
                       <p className="font-bold text-slate-800 text-xs">Cuota #{inst.number}</p>
                       <p className="text-[10px] font-bold text-slate-400 mt-0.5">${inst.total.toFixed(2)} USD</p>
-                      <span className={`inline-block mt-2 px-2.5 py-0.5 rounded text-[8px] font-black ${inst.status === 'PAGADO' ? 'bg-emerald-100 text-[#14532D]' : 'bg-slate-100 text-slate-400'}`}>
+                      <span className={`inline-block mt-2 px-2.5 py-0.5 rounded text-[8px] font-black ${inst.status === 'PAGADO' ? 'bg-accent-100 text-[#002B67]' : 'bg-slate-100 text-slate-400'}`}>
                         {inst.status}
                       </span>
                     </div>
@@ -2384,14 +2394,14 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <button onClick={() => setSelectedLoanForStatusChange(null)} className="absolute right-6 top-6 p-2 text-slate-400 hover:text-slate-600 font-bold">Cerrar</button>
               <div>
                 <h4 className="text-lg font-black text-slate-800 uppercase leading-none">Transiciones de Cartera</h4>
-                <p className="text-xs font-semibold text-[#14532D] mt-1">{selectedLoanForStatusChange.loan.id} • {selectedLoanForStatusChange.member.name}</p>
+                <p className="text-xs font-semibold text-[#002B67] mt-1">{selectedLoanForStatusChange.loan.id} • {selectedLoanForStatusChange.member.name}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Nuevo Estado</label>
                   <div className="grid grid-cols-3 gap-3">
-                    <button type="button" onClick={() => setNewLoanStatus('TRAMITE_JUDICIAL')} className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${newLoanStatus === 'TRAMITE_JUDICIAL' ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}>
+                    <button type="button" onClick={() => setNewLoanStatus('TRAMITE_JUDICIAL')} className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${newLoanStatus === 'TRAMITE_JUDICIAL' ? 'border-[#002B67] bg-brand-50 text-[#002B67]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}>
                       Trámite Judicial
                     </button>
                     <button 
@@ -2402,13 +2412,13 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                         selectedLoanForStatusChange.loan.status !== 'VENCIDO' 
                           ? 'border-slate-100 text-slate-300 cursor-not-allowed'
                           : newLoanStatus === 'CASTIGADO' 
-                            ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' 
+                            ? 'border-[#002B67] bg-brand-50 text-[#002B67]' 
                             : 'border-slate-200 hover:border-slate-300 text-slate-500'
                       }`}
                     >
                       Castigo (Overdue)
                     </button>
-                    <button type="button" onClick={() => setNewLoanStatus('VIGENTE')} className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${newLoanStatus === 'VIGENTE' ? 'border-[#14532D] bg-emerald-50 text-[#14532D]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}>
+                    <button type="button" onClick={() => setNewLoanStatus('VIGENTE')} className={`py-3 px-4 rounded-xl border-2 font-bold text-xs transition-all ${newLoanStatus === 'VIGENTE' ? 'border-[#002B67] bg-brand-50 text-[#002B67]' : 'border-slate-200 hover:border-slate-300 text-slate-500'}`}>
                       Acuerdo Reactivación
                     </button>
                   </div>
@@ -2422,12 +2432,12 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                       placeholder="Ej: Firma de acuerdo de pagos / Asignación a juzgado..." 
                       value={statusChangeReason} 
                       onChange={e => setStatusChangeReason(e.target.value)} 
-                      className="flex-1 px-4 py-3 bg-white border rounded-xl font-bold text-xs outline-none focus:border-[#14532D]" 
+                      className="flex-1 px-4 py-3 bg-white border rounded-xl font-bold text-xs outline-none focus:border-[#002B67]" 
                     />
                     <button 
                       onClick={handleUpdateStatus}
                       disabled={isProcessing}
-                      className="py-3 px-6 bg-[#14532D] hover:bg-emerald-800 text-white font-black text-xs uppercase rounded-xl transition-all"
+                      className="py-3 px-6 bg-[#002B67] hover:bg-brand-800 text-white font-black text-xs uppercase rounded-xl transition-all"
                     >
                       Aplicar
                     </button>
@@ -2446,7 +2456,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                 <div key={loan.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-8 hover:shadow-lg transition-all">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-emerald-50 text-[#14532D] rounded-full flex items-center justify-center font-black">{member.name[0]}</div>
+                      <div className="w-10 h-10 bg-brand-50 text-[#002B67] rounded-full flex items-center justify-center font-black">{member.name[0]}</div>
                       <div>
                         <p className="font-black text-slate-800 uppercase leading-none">{member.name}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{loan.id} • {loan.type}</p>
@@ -2454,7 +2464,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                     </div>
                     <div className="flex flex-wrap gap-2 pt-2">
                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
-                         loan.status === 'VIGENTE' ? 'bg-emerald-50 text-emerald-700' :
+                         loan.status === 'VIGENTE' ? 'bg-accent-50 text-accent-700' :
                          loan.status === 'VENCIDO' ? 'bg-amber-50 text-amber-700' :
                          loan.status === 'PAGADO' ? 'bg-blue-50 text-blue-700' :
                          loan.status === 'TRAMITE_JUDICIAL' ? 'bg-purple-50 text-purple-700' :
@@ -2470,14 +2480,14 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                   <div className="flex flex-wrap gap-3 w-full lg:w-auto border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-8 border-slate-100 justify-end">
                     <button 
                       onClick={() => handlePrintPagare(loan, member)}
-                      className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-[#14532D] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      className="px-4 py-3 bg-brand-50 hover:bg-brand-100 text-[#002B67] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
                     >
                       <Printer size={12} /> Pagaré
                     </button>
 
                     <button 
                       onClick={() => handlePrintDiario(loan, member)}
-                      className="px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-[#14532D] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      className="px-4 py-3 bg-brand-50 hover:bg-brand-100 text-[#002B67] rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5"
                     >
                       <Printer size={12} /> Asiento
                     </button>
@@ -2498,7 +2508,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
 
                     <button 
                       onClick={() => setSelectedLoanForPayments({ loan, member })}
-                      className="px-5 py-3 border border-slate-200 rounded-xl font-black text-[10px] text-[#14532D] hover:bg-[#14532D] hover:text-white uppercase tracking-wider transition-all"
+                      className="px-5 py-3 border border-slate-200 rounded-xl font-black text-[10px] text-[#002B67] hover:bg-[#002B67] hover:text-white uppercase tracking-wider transition-all"
                     >
                       Reversar Dividendos
                     </button>
@@ -2537,7 +2547,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <p className="text-xs text-slate-500 font-medium leading-relaxed">Tiene cambios sin guardar. ¿Está seguro que desea regresar a la selección de socio? Perderá los campos ingresados.</p>
               <div className="flex gap-4 w-full pt-4">
                 <button onClick={() => setShowExitConfirm(false)} className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all">Cancelar</button>
-                <button onClick={handleConfirmExit} className="flex-1 py-3 bg-[#14532D] text-white hover:bg-emerald-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all">Sí, regresar</button>
+                <button onClick={handleConfirmExit} className="flex-1 py-3 bg-[#002B67] text-white hover:bg-brand-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all">Sí, regresar</button>
               </div>
             </div>
           </div>
@@ -2550,7 +2560,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
           <div className="bg-white rounded-[2.5rem] p-10 max-w-lg w-full border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200 relative">
             <div className="space-y-6">
               <div className="flex items-center gap-4 border-b pb-4">
-                <div className="w-12 h-12 bg-emerald-50 text-[#14532D] rounded-2xl flex items-center justify-center"><ShieldCheck size={24} /></div>
+                <div className="w-12 h-12 bg-brand-50 text-[#002B67] rounded-2xl flex items-center justify-center"><ShieldCheck size={24} /></div>
                 <div>
                   <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Solicitud Creada e Ingresada</h3>
                   <p className="text-slate-400 font-bold text-[10px] uppercase">Código: {submittedLoanDetails.id}</p>
@@ -2560,7 +2570,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4 font-sans">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Resumen Ejecutivo</h4>
                 <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
-                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Línea de Crédito</span><span className="uppercase text-[#14532D] font-black">{submittedLoanDetails.category}</span></div>
+                  <div><span className="text-[9px] font-black text-slate-400 uppercase block">Línea de Crédito</span><span className="uppercase text-[#002B67] font-black">{submittedLoanDetails.category}</span></div>
                   <div><span className="text-[9px] font-black text-slate-400 uppercase block">Monto Solicitado</span><span className="text-slate-900">${submittedLoanDetails.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</span></div>
                   <div><span className="text-[9px] font-black text-slate-400 uppercase block">Plazo de Pago</span><span>{submittedLoanDetails.term} meses</span></div>
                   <div><span className="text-[9px] font-black text-slate-400 uppercase block">Tasa Aplicada</span><span>{submittedLoanDetails.rate}% TEA</span></div>
@@ -2590,10 +2600,10 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                             <title>Solicitud de Crédito - ${submittedLoanDetails.id}</title>
                             <style>
                               body { font-family: sans-serif; padding: 40px; color: #333; }
-                              .header { border-bottom: 3px double #14532D; padding-bottom: 20px; text-align: center; }
-                              .header h1 { color: #14532D; margin: 0; font-size: 24px; text-transform: uppercase; }
+                              .header { border-bottom: 3px double #002B67; padding-bottom: 20px; text-align: center; }
+                              .header h1 { color: #002B67; margin: 0; font-size: 24px; text-transform: uppercase; }
                               .header p { margin: 5px 0 0 0; font-size: 12px; font-weight: bold; }
-                              .summary-title { font-size: 14px; text-transform: uppercase; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #14532D; }
+                              .summary-title { font-size: 14px; text-transform: uppercase; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #002B67; }
                               .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 15px; margin-top: 15px; font-size: 13px; }
                               .grid div span { display: block; font-size: 10px; color: #777; text-transform: uppercase; font-weight: bold; }
                               .signatures { margin-top: 60px; display: grid; grid-template-cols: 1fr 1fr; gap: 40px; text-align: center; font-size: 12px; }
@@ -2602,7 +2612,7 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                           </head>
                           <body>
                             <div class="header">
-                              <h1>COOPERATIVA DE AHORRO Y CRÉDITO CAJA PATATE</h1>
+                              <h1>${COMPANY_NAME}</h1>
                               <p>PORTAL ASESOR - COMPROBANTE DE RADICACIÓN DE SOLICITUD</p>
                             </div>
                             <div class="summary-title">Resumen de la Solicitud</div>
@@ -2625,13 +2635,14 @@ export const CreditOfficerApproval: React.FC<CreditOfficerApprovalProps> = ({
                               </div>
                             </div>
                             <script>window.print();</script>
+                          <div class="autoria">${AUTHORSHIP}</div>
                           </body>
                         </html>
                       `);
                       printWindow.document.close();
                     }
                   }} 
-                  className="flex-1 py-4 bg-[#14532D] text-white hover:bg-emerald-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-1 py-4 bg-[#002B67] text-white hover:bg-brand-800 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Printer size={16} /> Imprimir Comprobante
                 </button>

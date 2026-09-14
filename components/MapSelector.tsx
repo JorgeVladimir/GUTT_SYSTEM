@@ -125,7 +125,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
-        <div className="p-6 bg-[#14532D] text-white flex justify-between items-center shrink-0">
+        <div className="p-6 bg-[#002B67] text-white flex justify-between items-center shrink-0">
           <h4 className="font-black uppercase text-xs tracking-widest flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -150,12 +150,12 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Escriba una dirección para buscar o haga clic en el mapa..."
-              className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-bold text-sm focus:border-[#14532D] outline-none"
+              className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-bold text-sm focus:border-[#002B67] outline-none"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="px-6 py-3 bg-[#FACC15] text-[#14532D] rounded-xl font-black text-xs uppercase shadow-md hover:bg-yellow-500 transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-[#03CED4] text-[#002B67] rounded-xl font-black text-xs uppercase shadow-md hover:bg-accent-400 transition-all flex items-center gap-2"
             >
               {isSearching ? 'Buscando...' : 'Buscar'}
             </button>
@@ -163,7 +163,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({
               type="button"
               onClick={handleCapture}
               disabled={isCapturing}
-              className="px-6 py-3 bg-[#14532D] text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-[#1b5e20] transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-3 bg-[#002B67] text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-[#0A3D80] transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {isCapturing ? (
                 <>

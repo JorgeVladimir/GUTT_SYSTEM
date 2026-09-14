@@ -180,11 +180,11 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500 font-sans">
       {/* Encabezado */}
-      <div className="bg-gradient-to-r from-[#14532D] via-[#1b5e20] to-[#14532D] p-10 rounded-[3rem] shadow-xl text-white flex flex-col xl:flex-row justify-between items-center gap-6 relative overflow-hidden border-b-[8px] border-[#FACC15]">
+      <div className="bg-gradient-to-r from-[#002B67] via-[#0A3D80] to-[#002B67] p-10 rounded-[3rem] shadow-xl text-white flex flex-col xl:flex-row justify-between items-center gap-6 relative overflow-hidden border-b-[8px] border-[#03CED4]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent"></div>
         <div className="relative z-10">
           <h2 className="text-4xl font-black tracking-tighter">Reportes Socios-Créditos</h2>
-          <p className="text-emerald-100/70 font-bold text-sm mt-1">Análisis Regulatorio, Rentabilidad y Control del Origen de Solicitudes</p>
+          <p className="text-brand-100/70 font-bold text-sm mt-1">Análisis Regulatorio, Rentabilidad y Control del Origen de Solicitudes</p>
         </div>
         {/* Submenús consolidados en la barra lateral vertical */}
       </div>
@@ -206,7 +206,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                 <p className="text-3xl font-black text-slate-800 mt-2">{stats.total}</p>
                 <p className="text-[10px] font-semibold text-slate-400 mt-1">Monto global: ${stats.totalAmount.toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#14532D] flex items-center justify-center"><FileText size={24} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-[#002B67] flex items-center justify-center"><FileText size={24} /></div>
             </div>
 
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between">
@@ -230,10 +230,10 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Créditos Desembolsados</p>
-                <p className="text-3xl font-black text-emerald-600 mt-2">{stats.active}</p>
+                <p className="text-3xl font-black text-brand-600 mt-2">{stats.active}</p>
                 <p className="text-[10px] font-semibold text-slate-400 mt-1">Monto colocado: ${stats.activeAmount.toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><CheckCircle size={24} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center"><CheckCircle size={24} /></div>
             </div>
           </div>
 
@@ -272,7 +272,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                       <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-4 font-black text-slate-800">{loan.id}</td>
                         <td className="p-4 uppercase truncate max-w-[200px]">{loan.memberName}</td>
-                        <td className="p-4 text-[#14532D] font-black">${loan.amount.toLocaleString()}</td>
+                        <td className="p-4 text-[#002B67] font-black">${loan.amount.toLocaleString()}</td>
                         <td className="p-4">{loan.installmentsCount} meses</td>
                         <td className="p-4">{loan.rate}%</td>
                         <td className="p-4">
@@ -282,14 +282,14 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                         </td>
                         <td className="p-4">
                           <span className={`px-2 py-0.5 rounded text-[8px] font-black ${
-                            loan.origen === 'CAJA_PATATE' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                            loan.origen === 'CAJA_PATATE' ? 'bg-brand-50 text-brand-700' : 'bg-blue-50 text-blue-700'
                           }`}>
-                            {loan.origen || 'GUTT_MOVIL'}
+                            {!loan.origen || loan.origen === 'CAJA_PATATE' ? 'PORTAL WEB' : 'GUTT MÓVIL'}
                           </span>
                         </td>
                         <td className="p-4 text-center">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${
-                            loan.status === 'VIGENTE' ? 'bg-emerald-50 text-emerald-700' :
+                            loan.status === 'VIGENTE' ? 'bg-accent-50 text-accent-700' :
                             loan.status === 'APROBADO' ? 'bg-blue-50 text-blue-700' :
                             loan.status === 'SOLICITADO' ? 'bg-amber-50 text-amber-700' :
                             loan.status === 'RECHAZADO' ? 'bg-red-50 text-red-700' :
@@ -327,7 +327,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
               placeholder="Buscar socio por nombre o número de identificación/cédula..." 
               value={socioQuery} 
               onChange={e => setSocioQuery(e.target.value)} 
-              className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold text-sm focus:border-[#14532D] transition-all"
+              className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl outline-none font-bold text-sm focus:border-[#002B67] transition-all"
             />
           </div>
 
@@ -340,7 +340,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                       <p className="text-md font-black text-slate-800 uppercase leading-none">{group.memberName}</p>
                       <p className="text-[10px] font-bold text-slate-400 mt-1">Identificación: {group.memberId}</p>
                     </div>
-                    <span className="bg-[#14532D] text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider">
+                    <span className="bg-[#002B67] text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider">
                       {group.count} {group.count === 1 ? 'SOLICITUD' : 'SOLICITUDES'}
                     </span>
                   </div>
@@ -354,7 +354,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                             <p className="text-[10px] font-bold text-slate-400 mt-0.5">{loan.type} • {loan.installmentsCount} meses</p>
                           </div>
                           <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase ${
-                            loan.status === 'VIGENTE' ? 'bg-emerald-50 text-emerald-700' :
+                            loan.status === 'VIGENTE' ? 'bg-accent-50 text-accent-700' :
                             loan.status === 'APROBADO' ? 'bg-blue-50 text-blue-700' :
                             loan.status === 'SOLICITADO' ? 'bg-amber-50 text-amber-700' :
                             loan.status === 'RECHAZADO' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'
@@ -365,11 +365,11 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                         <div className="border-t mt-4 pt-3 flex justify-between items-center">
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase">Monto Solicitado</p>
-                            <p className="text-lg font-black text-[#14532D]">${loan.amount.toLocaleString()}</p>
+                            <p className="text-lg font-black text-[#002B67]">${loan.amount.toLocaleString()}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-[9px] font-black text-slate-400 uppercase">Origen</p>
-                            <span className="text-[10px] font-black text-slate-700">{loan.origen || 'GUTT_MOVIL'}</span>
+                            <span className="text-[10px] font-black text-slate-700">{!loan.origen || loan.origen === 'CAJA_PATATE' ? 'PORTAL WEB' : 'GUTT MÓVIL'}</span>
                           </div>
                         </div>
                       </div>
@@ -395,9 +395,9 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
         <div className="space-y-8">
           {/* Indicadores globales de rentabilidad */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#14532D] text-white p-6 rounded-[2rem] shadow-md flex items-center justify-between border-b-4 border-[#FACC15]">
+            <div className="bg-[#002B67] text-white p-6 rounded-[2rem] shadow-md flex items-center justify-between border-b-4 border-[#03CED4]">
               <div>
-                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-wider">Cartera Global Evaluada</p>
+                <p className="text-[10px] font-black text-brand-300 uppercase tracking-wider">Cartera Global Evaluada</p>
                 <p className="text-3xl font-black mt-2">${profitabilityAnalysis.globalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center"><Layers size={24} /></div>
@@ -406,9 +406,9 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Rentabilidad Proyectada Global</p>
-                <p className="text-3xl font-black text-[#14532D] mt-2">${profitabilityAnalysis.globalProfitability.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-black text-[#002B67] mt-2">${profitabilityAnalysis.globalProfitability.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#14532D] flex items-center justify-center"><TrendingUp size={24} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-[#002B67] flex items-center justify-center"><TrendingUp size={24} /></div>
             </div>
 
             <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between">
@@ -455,10 +455,10 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                       <td className="p-4 text-slate-600 font-semibold">${item.amount.toLocaleString()}</td>
                       <td className="p-4 text-slate-400">${item.commission.toFixed(2)}</td>
                       <td className="p-4 text-slate-400">${item.interestSum.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="p-4 text-right text-[#14532D] font-black">${item.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="p-4 text-right text-[#002B67] font-black">${item.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="p-4 text-center">
                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
-                          item.status === 'VIGENTE' ? 'bg-emerald-50 text-emerald-700' :
+                          item.status === 'VIGENTE' ? 'bg-accent-50 text-accent-700' :
                           item.status === 'APROBADO' ? 'bg-blue-50 text-blue-700' :
                           item.status === 'SOLICITADO' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-400'
                         }`}>
@@ -486,9 +486,9 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-8 flex flex-col justify-between shadow-sm">
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#14532D] flex items-center justify-center"><Building2 size={24} /></div>
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-[#002B67] flex items-center justify-center"><Building2 size={24} /></div>
               <div>
-                <h4 className="text-xl font-black text-slate-800">Origen: APP-CAJA-PATATE</h4>
+                <h4 className="text-xl font-black text-slate-800">Origen: PORTAL WEB</h4>
                 <p className="text-slate-400 font-semibold text-xs uppercase mt-0.5">Operaciones radicadas en Ventanilla / Asesoría Interna</p>
               </div>
             </div>
@@ -496,7 +496,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
             <div className="grid grid-cols-2 gap-4 border-t pt-6">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase">Solicitudes Generadas</p>
-                <p className="text-3xl font-black text-[#14532D] mt-1">{originStats.patateCount}</p>
+                <p className="text-3xl font-black text-[#002B67] mt-1">{originStats.patateCount}</p>
                 <p className="text-[10px] font-bold text-slate-400 mt-0.5">({originStats.patatePercent.toFixed(1)}% del total)</p>
               </div>
               <div>
@@ -540,7 +540,7 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
                 {originStats.patatePercent > 0 && (
                   <div 
                     style={{ width: `${originStats.patatePercent}%` }} 
-                    className="bg-[#14532D] text-white flex items-center justify-center text-[10px] font-black uppercase transition-all"
+                    className="bg-[#002B67] text-white flex items-center justify-center text-[10px] font-black uppercase transition-all"
                   >
                     {originStats.patatePercent.toFixed(0)}% Presencial
                   </div>
@@ -561,13 +561,13 @@ export const ReportsSociosCreditos: React.FC<ReportsSociosCreditosProps> = ({
               </div>
 
               <div className="flex justify-between text-[10px] font-black uppercase tracking-wider pt-2">
-                <div className="flex items-center gap-2 text-[#14532D]">
-                  <div className="w-3.5 h-3.5 bg-[#14532D] rounded-full"></div>
-                  APP-CAJA-PATATE ({originStats.patateCount} ops)
+                <div className="flex items-center gap-2 text-[#002B67]">
+                  <div className="w-3.5 h-3.5 bg-[#002B67] rounded-full"></div>
+                  PORTAL WEB ({originStats.patateCount} ops)
                 </div>
                 <div className="flex items-center gap-2 text-blue-600">
                   <div className="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                  APP-GUTT-MOVIL ({originStats.movilCount} ops)
+                  GUTT MÓVIL ({originStats.movilCount} ops)
                 </div>
               </div>
             </div>
