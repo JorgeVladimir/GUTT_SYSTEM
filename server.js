@@ -2121,6 +2121,37 @@ app.post('/api/socios/loans/update', async (req, res) => {
   }
 });
 
+app.post('/api/socios/loans/cancel', async (req, res) => {
+  const { id } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ ok: false, error: 'Falta el identificador de la solicitud' });
+  }
+
+  try {
+    const pool = await sql.connect(sqlConfig);
+    const checkStatus = await pool.request()
+      .input('id', sql.NVarChar(50), id)
+      .query('SELECT Estado FROM dbo.SolicitudesCredito WHERE SolicitudID = @id');
+
+    if (checkStatus.recordset.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Crédito no encontrado' });
+    }
+
+    if (checkStatus.recordset[0].Estado !== 'SOLICITADO') {
+      return res.status(400).json({ ok: false, error: 'Solo se puede cancelar una solicitud que aún no fue aprobada o rechazada' });
+    }
+
+    await pool.request()
+      .input('id', sql.NVarChar(50), id)
+      .query("UPDATE dbo.SolicitudesCredito SET Estado = 'ANULADO', Saldo = 0.00 WHERE SolicitudID = @id");
+
+    return res.json({ ok: true, message: 'Solicitud de crédito cancelada con éxito' });
+  } catch (err) {
+    console.error('[cancel loan]', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.post('/api/socios/loans/approve', requireAuth, requireSelf('usuarioId'), async (req, res) => {
   const { id, ids, reason, usuarioId, tipoAprobacion, actaSesion, proposedAmount,
           icePorcentaje, iceEstado, iceCuotaMensual, iceIngresoNeto, iceDeudaExterna } = req.body || {};
@@ -5321,8 +5352,9 @@ app.post('/api/dpf', async (req, res) => {
               VALUES(@depositoID,@socioid,@identificacion,@nombreSocio,@depositoID,@tasaID,@tasaNominalAnual,@plazosDias,@montoCapital,
                      @interesProyectado,@retencionProyectada,@interesNetoProyectado,@fechaVencimiento,@tipoRenovacion,@modalidadPago,
                      @cuentaAhorros,@cuentaContableDPF,@usuarioAperturaID,@observaciones)`);
+    const cuentaDebitoAhorros = '21013505'; // Depósitos ahorros cuentas activas (Catálogo Único)
     const asApertura = [
-      { cuenta: '2.1.01.05', nombre: 'Depósitos Ahorro Vista (Débito Apertura DPF)', debe: monto,    haber: 0 },
+      { cuenta: cuentaDebitoAhorros, nombre: 'Depósitos Ahorro Vista (Débito Apertura DPF)', debe: monto,    haber: 0 },
       { cuenta: tasa.CuentaContableDPF, nombre: `Depósitos a Plazo — ${tasa.DescripcionRango}`, debe: 0, haber: monto }
     ];
     for (const a of asApertura) {
@@ -5333,6 +5365,21 @@ app.post('/api/dpf', async (req, res) => {
         .input('concepto', sql.NVarChar(300), `APERTURA DPF ${depositoID} - ${nombreSocio}`)
         .input('usuarioID', sql.NVarChar(50), usuarioID || 'SISTEMA')
         .query(`INSERT INTO dbo.AsientosContablesDPF (DepositoID,TipoOperacion,CuentaContable,NombreCuenta,DebeAmount,HaberAmount,Concepto,UsuarioID) VALUES(@depositoID,@tipoOp,@cuenta,@nombre,@debe,@haber,@concepto,@usuarioID)`);
+    }
+
+    // Reflejo en el mayor general (dbo.RegistroContable): sin esto la apertura de DPF
+    // no aparecía en Balance de Comprobación ni en el Estado de Situación Financiera.
+    const conceptoGeneral = `APERTURA DPF ${depositoID} - ${nombreSocio}`;
+    for (const a of asApertura) {
+      await pool.request()
+        .input('socioId', sql.BigInt, socioid)
+        .input('cuentaContable', sql.NVarChar(20), a.cuenta)
+        .input('concepto', sql.NVarChar(200), conceptoGeneral)
+        .input('debe', sql.Decimal(18,2), a.debe)
+        .input('haber', sql.Decimal(18,2), a.haber)
+        .input('numeroCuenta', sql.NVarChar(20), cuentaAhorrosRelacionada || depositoID)
+        .input('usuarioId', sql.NVarChar(50), usuarioID || 'SISTEMA')
+        .query('INSERT INTO dbo.RegistroContable (SocioId, CuentaContable, Concepto, Debe, Haber, NumeroCuenta, UsuarioId) VALUES (@socioId, @cuentaContable, @concepto, @debe, @haber, @numeroCuenta, @usuarioId)');
     }
     await pool.close();
     return res.status(201).json({

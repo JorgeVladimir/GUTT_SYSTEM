@@ -124,6 +124,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
   const [preview, setPreview]               = useState<any>(null);
   const [confirmOpen, setConfirmOpen]       = useState(false);
   const [confirmData, setConfirmData]       = useState<{ titulo: string; msg: string; accion: () => void } | null>(null);
+  const [comprobanteDPF, setComprobanteDPF] = useState<any>(null);
 
   // Config tasas
   const [editTasas, setEditTasas]   = useState<Record<number, Partial<TasaPlazoFijo>>>({});
@@ -176,6 +177,7 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
     if (!tasa) { setPreview(null); return; }
     const monto = parseFloat(formMonto), dias = parseInt(formPlazo);
     if (isNaN(monto) || isNaN(dias) || monto <= 0 || dias < 1) { setPreview(null); return; }
+    if (dias < tasa.DiasDesde || (tasa.DiasHasta < 9999 && dias > tasa.DiasHasta)) { setPreview(null); return; }
     const interesBruto = monto * (tasa.TasaNominalAnual / 100) * (dias / 365);
     const retencion    = interesBruto * 0.02;
     const interesNeto  = interesBruto - retencion;
@@ -251,7 +253,27 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
       });
       const d = await r.json();
       if (d.ok) {
-        mostrarAlerta('ok', `✓ DPF aperturado con éxito.\nCertificado: ${d.depositoID}\nInterés neto proyectado: ${fmtUSD(d.interesNetoProyectado)}\nVencimiento: ${d.fechaVencimiento}`);
+        const tasaSel = tasas.find(t => t.TasaID === parseInt(formTasaID));
+        setComprobanteDPF({
+          depositoID: d.depositoID,
+          nombreSocio: socioSeleccionado.NombreCompleto,
+          identificacion: socioSeleccionado.Identificacion,
+          numeroSocio: socioSeleccionado.NumeroSocio,
+          monto: preview.monto,
+          dias: preview.dias,
+          tasaNominal: tasaSel?.TasaNominalAnual,
+          tea: preview.tea,
+          tramo: tasaSel?.DescripcionRango,
+          interesBruto: preview.interesBruto,
+          retencion: preview.retencion,
+          interesNeto: d.interesNetoProyectado,
+          fechaApertura: new Date().toLocaleDateString('es-EC'),
+          fechaVenc: d.fechaVencimiento,
+          cuentaContable: tasaSel?.CuentaContableDPF,
+          renovacion: formRenovacion,
+          modalidad: formModalidad,
+          usuario: currentUser?.name || currentUser?.id,
+        });
         limpiarSocio();
         cargarResumen(); cargarDepositos();
         onActiveTabChange('GESTION');
@@ -598,7 +620,11 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                     {/* Tramo */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tramo de Plazo *</label>
-                      <select value={formTasaID} onChange={e => setFormTasaID(e.target.value)}
+                      <select value={formTasaID} onChange={e => {
+                          setFormTasaID(e.target.value);
+                          const t = tasas.find(t => t.TasaID === parseInt(e.target.value));
+                          if (t) setFormPlazo(String(t.DiasDesde));
+                        }}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:border-amber-400">
                         <option value="">— Seleccione tramo —</option>
                         {tasas.filter(t => t.Activo).map(t => (
@@ -626,6 +652,19 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
                       <input type="number" min="1" value={formPlazo} onChange={e => setFormPlazo(e.target.value)}
                         placeholder="Ej: 90, 180, 360..."
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 text-sm font-bold focus:outline-none focus:border-amber-400" />
+                      {formTasaID && (() => {
+                        const t = tasas.find(t => t.TasaID === parseInt(formTasaID));
+                        if (!t) return null;
+                        const dias = parseInt(formPlazo);
+                        const fueraDeRango = formPlazo !== '' && !isNaN(dias) && (dias < t.DiasDesde || (t.DiasHasta < 9999 && dias > t.DiasHasta));
+                        return (
+                          <p className={`text-[10px] font-bold ${fueraDeRango ? 'text-red-600' : 'text-slate-400'}`}>
+                            {fueraDeRango
+                              ? `Este tramo exige entre ${t.DiasDesde} y ${t.DiasHasta < 9999 ? t.DiasHasta : 'sin límite'} días.`
+                              : `Rango del tramo: ${t.DiasDesde}–${t.DiasHasta < 9999 ? t.DiasHasta : '∞'} días.`}
+                          </p>
+                        );
+                      })()}
                     </div>
 
                     {/* Renovación y Modalidad */}
@@ -1068,6 +1107,132 @@ export const PlazoFijoView: React.FC<Props> = ({ currentUser, activeTab, onActiv
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal: Comprobante de Apertura + Contrato imprimible ── */}
+      {comprobanteDPF && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4 print:hidden">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white/95 backdrop-blur-sm rounded-t-3xl border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                  <CheckCircle2 size={22} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-black text-slate-800 text-base uppercase tracking-tight">Depósito Registrado</p>
+                  <p className="text-xs text-slate-500 font-bold">{comprobanteDPF.depositoID}</p>
+                </div>
+              </div>
+              <button onClick={() => setComprobanteDPF(null)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X size={18} /></button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { label: 'Socio',         value: comprobanteDPF.nombreSocio },
+                  { label: 'Cédula',        value: comprobanteDPF.identificacion },
+                  { label: 'N° Socio',      value: comprobanteDPF.numeroSocio || '—' },
+                  { label: 'Capital',       value: fmtUSD(comprobanteDPF.monto) },
+                  { label: 'Plazo',         value: `${comprobanteDPF.dias} días` },
+                  { label: 'Tramo',         value: comprobanteDPF.tramo },
+                  { label: 'Tasa TNA/TEA',  value: `${comprobanteDPF.tasaNominal}% / ${comprobanteDPF.tea?.toFixed(2)}%` },
+                  { label: 'Interés bruto', value: fmtUSD(comprobanteDPF.interesBruto) },
+                  { label: 'Retención 2%',  value: `-${fmtUSD(comprobanteDPF.retencion)}` },
+                  { label: 'Interés neto',  value: fmtUSD(comprobanteDPF.interesNeto) },
+                  { label: 'Apertura',      value: comprobanteDPF.fechaApertura },
+                  { label: 'Vencimiento',   value: comprobanteDPF.fechaVenc },
+                  { label: 'Cuenta SEPS',   value: comprobanteDPF.cuentaContable },
+                  { label: 'Aperturado por', value: comprobanteDPF.usuario },
+                ].map((f, i) => (
+                  <div key={i} className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{f.label}</p>
+                    <p className="font-black text-slate-800 text-sm mt-0.5">{f.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setComprobanteDPF(null)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
+                  Cerrar
+                </button>
+                <button onClick={() => window.print()}
+                  className="flex-1 py-3.5 text-white rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${P.crimson}, ${P.gold})` }}>
+                  <Printer size={16} /> Imprimir Contrato
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Contrato de Depósito a Plazo Fijo: solo visible al imprimir ── */}
+      {comprobanteDPF && (
+        <>
+          <style>{`
+            @media print {
+              body * { visibility: hidden; }
+              #contrato-dpf-print, #contrato-dpf-print * { visibility: visible; }
+              #contrato-dpf-print { position: absolute; top: 0; left: 0; width: 100%; padding: 24px; }
+            }
+          `}</style>
+          <div id="contrato-dpf-print" className="hidden print:block text-black">
+            <div className="text-center border-b-2 border-black pb-3 mb-5">
+              <p className="font-black text-lg uppercase">Caja de Ahorro y Crédito Patate Ltda.</p>
+              <p className="text-xs">Cooperativa de Ahorro y Crédito regulada por la Superintendencia de Economía Popular y Solidaria (SEPS)</p>
+              <p className="font-black text-base uppercase mt-3">Contrato de Depósito a Plazo Fijo</p>
+              <p className="text-xs">Certificado N° {comprobanteDPF.depositoID}</p>
+            </div>
+
+            <p className="text-sm mb-4">
+              Comparecen, por una parte, <strong>Caja de Ahorro y Crédito Patate Ltda.</strong>, en adelante "la Cooperativa"; y por otra
+              parte <strong>{comprobanteDPF.nombreSocio}</strong>, portador de la cédula N° <strong>{comprobanteDPF.identificacion}</strong>,
+              socio N° <strong>{comprobanteDPF.numeroSocio || '—'}</strong>, en adelante "el Depositante"; quienes libre y voluntariamente
+              acuerdan celebrar el presente contrato de depósito a plazo fijo, al tenor de las siguientes cláusulas:
+            </p>
+
+            <table className="w-full text-sm mb-4" style={{ borderCollapse: 'collapse' }}>
+              <tbody>
+                {[
+                  ['Capital depositado', fmtUSD(comprobanteDPF.monto)],
+                  ['Plazo', `${comprobanteDPF.dias} días (${comprobanteDPF.tramo})`],
+                  ['Tasa nominal anual (TNA)', `${comprobanteDPF.tasaNominal}%`],
+                  ['Tasa efectiva anual (TEA)', `${comprobanteDPF.tea?.toFixed(2)}%`],
+                  ['Interés bruto proyectado', fmtUSD(comprobanteDPF.interesBruto)],
+                  ['Retención en la fuente (2% LORTI Art. 37)', `-${fmtUSD(comprobanteDPF.retencion)}`],
+                  ['Interés neto proyectado', fmtUSD(comprobanteDPF.interesNeto)],
+                  ['Fecha de apertura', comprobanteDPF.fechaApertura],
+                  ['Fecha de vencimiento', comprobanteDPF.fechaVenc],
+                  ['Modalidad de pago de interés', comprobanteDPF.modalidad === 'AL_VENCIMIENTO' ? 'Al vencimiento' : comprobanteDPF.modalidad],
+                  ['Instrucción al vencimiento', comprobanteDPF.renovacion === 'AUTOMATICO' ? 'Renovación automática' : comprobanteDPF.renovacion === 'MANUAL' ? 'Renovación manual' : 'No renovar (liquidar capital e interés)'],
+                  ['Cuenta contable SEPS', comprobanteDPF.cuentaContable],
+                ].map(([k, v], i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #ccc' }}>
+                    <td className="py-1.5 pr-4 font-bold" style={{ width: '55%' }}>{k}</td>
+                    <td className="py-1.5">{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <ol className="text-xs space-y-1.5 list-decimal pl-5 mb-8">
+              <li>El Depositante entrega a la Cooperativa el capital señalado, que la Cooperativa recibe en calidad de depósito a plazo fijo por el tiempo aquí pactado.</li>
+              <li>La Cooperativa reconocerá al Depositante el interés indicado, calculado sobre base de 365 días, pagadero según la modalidad convenida.</li>
+              <li>El retiro anticipado del capital antes del vencimiento está sujeto a la penalización vigente según el reglamento interno de la Cooperativa.</li>
+              <li>Al vencimiento, y salvo instrucción contraria del Depositante, se procederá conforme a la instrucción de renovación señalada en este contrato.</li>
+              <li>Este contrato se rige por la Ley Orgánica de la Economía Popular y Solidaria, su Reglamento y las normas emitidas por la SEPS.</li>
+            </ol>
+
+            <div className="flex justify-between mt-16 text-sm">
+              <div className="text-center" style={{ width: '40%' }}>
+                <div style={{ borderTop: '1px solid #000' }} className="pt-2">{comprobanteDPF.nombreSocio}<br />EL DEPOSITANTE</div>
+              </div>
+              <div className="text-center" style={{ width: '40%' }}>
+                <div style={{ borderTop: '1px solid #000' }} className="pt-2">{comprobanteDPF.usuario}<br />POR LA COOPERATIVA</div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
     </div>
