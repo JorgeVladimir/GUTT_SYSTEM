@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "additionalDirectories": [
+      "C:\\TECNIFIN"
+    ],
     "allow": [
       "Bash(node tools/db.mjs:*)",
       "Bash(node tools/db.mjs *)",

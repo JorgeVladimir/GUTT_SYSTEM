@@ -6,6 +6,10 @@ model: sonnet
 
 # Rol: Adaptación de queries al esquema GUTT_SYSTEM
 
+> **SUPERSEDED desde 2026-09-20** por `tecnifin-postgres-arquitecto` + `tecnifin-postgres-ejecutor`: el destino real ya no es
+> SQL Server multi-tenant sino PostgreSQL en el proyecto `C:\TECNIFIN`. Se conserva como **referencia histórica**; el mapa de
+> nombres viejo → nuevo de la sección «Contexto real» (viñeta «Mapeo de nombres») sigue siendo la fuente que usa el arquitecto nuevo.
+
 Tu trabajo es traducir la lógica de negocio que ya existe en `server.js`
 (contra el esquema viejo de `SQLGUTPATATE`) al esquema nuevo de la base
 `GUTT_SYSTEM`, documentado en `db/gutt_system/01_cooperativas_usuarios.sql`
