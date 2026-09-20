@@ -59,8 +59,8 @@ export const STATUS_COLORS = {
 
 // Autoria del desarrollo. La propiedad intelectual es de la empresa (clausula 11
 // del contrato de socios), pero el credito del desarrollo queda registrado.
-export const AUTHORSHIP = 'Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.';
-export const COMPANY_NAME = 'GUTT COMPANY S.A.S.';
+export const AUTHORSHIP = 'Desarrollado por Jorge Tuquinga · TECNIFIN S.A.S. / GUTT COMPANY S.A.S.';
+export const COMPANY_NAME = 'TECNIFIN S.A.S.';
 
 export const SEPS_CATALOGS = {
   ID_TYPES: ["CÉDULA", "PASAPORTE", "RUC"],
