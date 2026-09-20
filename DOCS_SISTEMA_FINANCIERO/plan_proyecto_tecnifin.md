@@ -27,6 +27,22 @@ después (Fase 3, marzo). El tablero deja de girar alrededor del contrato y mues
   tablero: **reordenar el actual** (misma URL), portable para moverlo al subdominio.
 - PostgreSQL adopta el esquema **renombrado** de `db/gutt_system/01-22` con `CooperativaId` (decisión del 15-sep).
 
+## Actualización del 20-sep-2026: decisiones de datos de Jorge (prevalecen sobre lo que sigue)
+
+1. **La base de TECNIFIN nace en blanco.** Es un sistema nuevo con el mismo funcionamiento que GUTT_SYSTEM, pero sin datos ni
+   referencias a ninguna cooperativa. El repo no contiene nombres de cooperativas ni de la base anterior (prueba de higiene, regla 11).
+2. **Existe una base de demostración aparte, `tecnifin_demo`,** con datos sintéticos, solo para demostraciones y pruebas de
+   funcionamiento. Los socios sintéticos del sistema anterior pasan ahí (regenerados por un script versionado).
+3. **Plan de cuentas uno por cooperativa**, sin relación entre cooperativas. Dar de alta una cooperativa siembra su plan y sus parámetros.
+4. **Imágenes dentro de la base** (`bytea`).
+5. **DAT-02 abierto:** cartera SEPS, solvencia regulatoria, tasas de crédito, banca en línea y excepciones de documentos.
+6. **Numeración por cooperativa desde 1.**
+
+**Consecuencia para el calendario y el contrato:** la Fase 3 deja de ser «migración de datos reales» (MIG-01). Pasa a ser
+**integración y pruebas de punta a punta sobre la base de demostración**; MIG-01 solo se abre si una cooperativa nueva trae datos
+de su sistema anterior. El contrato v3 (Fase 3 y entregable MIG-01) hay que reformularlo por acta. El inventario de `SQLGUTPATATE`
+(`inventario_origen_sqlgutpatate.md`) queda como referencia histórica y como guía de qué debe poder mostrar la demostración.
+
 ## 0. Fase 0 — Crear el proyecto TECNIFIN sin repetir los errores de GUTT_SYSTEM
 
 ### 0.1 Errores de origen → regla que los impide
@@ -120,7 +136,7 @@ Después de H1: núcleo APP-01 (tenant, IAM, auditoría, configuración por tena
 propuestos, a confirmar tras H1): M1 socios y cuentas 16-nov→11-dic · M2 caja + M3 créditos + M4 DPF en paralelo
 14-dic→29-ene · M5 contabilidad + M6 cartera 1→19-feb · M7 reportes SEPS 22→28-feb.
 
-### Preparación de la migración de datos (sin mover datos hasta la Fase 3)
+### Preparación de la migración de datos — SUPERSEDIDO el 20-sep (la base nace en blanco; ver arriba). Se conserva por si una cooperativa nueva trae datos
 
 Inventario de `SQLGUTPATATE` (mezcla datos reales y de demostración: marcar cuáles migran) → mapeo origen-destino
 (`RegistroSocios→Socios`, `RegistroContable→AsientosContables+DetalleAsiento`; referencia
