@@ -3869,8 +3869,8 @@ app.post('/api/socios/transaccion/anular', requireAuth, requireSelf('actorId'), 
         .input('asientoId', sql.Int, asientoId)
         .query("UPDATE dbo.RegistroContable SET Concepto = 'ANULADO: ' + Concepto WHERE AsientoId = @asientoId OR (Concepto = (SELECT Concepto FROM dbo.RegistroContable WHERE AsientoId = @asientoId) AND NumeroCuenta = (SELECT NumeroCuenta FROM dbo.RegistroContable WHERE AsientoId = @asientoId) AND ABS(DATEDIFF(second, Fecha, (SELECT Fecha FROM dbo.RegistroContable WHERE AsientoId = @asientoId))) < 10)");
 
-      // NOTA: el body de este endpoint solo trae {id, role}, no el usuario que ejecuta la anulación
-      // (pendiente: el frontend debería enviar el userId real de quien anula, no solo el rol).
+      // actorId viene validado por requireSelf: el middleware compara el campo del body
+      // contra req.actor.usuarioId extraído del JWT, garantizando identidad real del actor.
       await registrarAuditoriaProceso(transaction, {
         proceso: 'CAJA',
         accion: 'ANULAR',

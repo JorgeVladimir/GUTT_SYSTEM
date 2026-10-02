@@ -1,0 +1,2693 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tablero TECNIFIN</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --navy:#1F3864; --navy-600:#14294A; --navy-50:#EEF2F8; --navy-100:#DCE5F2;
+  --cyan:#00BCD4; --cyan-dark:#00707E; --cyan-50:#E3F8FA; --cyan-100:#C3EFF3;
+  --amber:#B45309; --amber-50:#FFF6E9; --amber-100:#FBE7C6;
+  --red:#B91C1C; --red-50:#FDECEC; --red-100:#F8D3D3;
+  --slate:#64748B; --slate-50:#F1F3F7; --slate-100:#E2E6ED;
+
+  --ground:#F2F4F9; --panel:#FFFFFF; --panel-2:#F8F9FC;
+  --line:#DCE3EE; --line-soft:#E9EDF4;
+  --ink:#1B2436; --ink-2:#4A5670; --ink-3:#7C879C;
+  --shadow:0 16px 34px -22px rgba(19,32,60,.35);
+  --shadow-sm:0 1px 2px rgba(19,32,60,.06);
+
+  --serif:'Source Serif 4',Georgia,serif;
+  --sans:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#8FB0DE; --navy-600:#B7CCEA; --navy-50:#152238; --navy-100:#1C2C48;
+    --cyan:#3FD4E6; --cyan-dark:#6FE3EF; --cyan-50:#0C2A2E; --cyan-100:#123A3F;
+    --amber:#F0A94E; --amber-50:#2E2211; --amber-100:#3D2D15;
+    --red:#F0807D; --red-50:#301415; --red-100:#3E1B1C;
+    --slate:#93A0B8; --slate-50:#171F2E; --slate-100:#1F2A3C;
+
+    --ground:#0A1120; --panel:#111A2C; --panel-2:#0D1524;
+    --line:#233150; --line-soft:#1A2540;
+    --ink:#E7ECF7; --ink-2:#AEBAD1; --ink-3:#7C879C;
+    --shadow:0 20px 40px -22px rgba(0,0,0,.6);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#8FB0DE; --navy-600:#B7CCEA; --navy-50:#152238; --navy-100:#1C2C48;
+  --cyan:#3FD4E6; --cyan-dark:#6FE3EF; --cyan-50:#0C2A2E; --cyan-100:#123A3F;
+  --amber:#F0A94E; --amber-50:#2E2211; --amber-100:#3D2D15;
+  --red:#F0807D; --red-50:#301415; --red-100:#3E1B1C;
+  --slate:#93A0B8; --slate-50:#171F2E; --slate-100:#1F2A3C;
+
+  --ground:#0A1120; --panel:#111A2C; --panel-2:#0D1524;
+  --line:#233150; --line-soft:#1A2540;
+  --ink:#E7ECF7; --ink-2:#AEBAD1; --ink-3:#7C879C;
+  --shadow:0 20px 40px -22px rgba(0,0,0,.6);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--ground);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 56px}
+:where(a,button,[tabindex]):focus-visible{outline:2px solid var(--cyan-dark);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important;animation-duration:.001ms!important}}
+
+/* ── Barra superior ─────────────────────────────────── */
+.bar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--panel) 90%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.bar__in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:11px;min-width:0}
+.mark img{width:32px;height:32px;object-fit:contain;flex:none;border-radius:6px}
+.mark b{display:block;font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:-.005em;color:var(--navy)}
+.mark span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase}
+.bar__sp{flex:1 1 30px}
+.live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.03em}
+.live i{width:6px;height:6px;border-radius:99px;background:var(--cyan-dark);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--cyan-dark) 20%,transparent)}
+.toast{font-family:var(--mono);font-size:10.5px;color:var(--cyan-dark);opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+
+/* ── Selector de pestañas ───────────────────────────── */
+.tabbar{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:3px;flex:none}
+.tabbtn{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-2);background:transparent;
+  border:0;border-radius:7px;padding:7px 13px;cursor:pointer;transition:background .15s,color .15s}
+.tabbtn:hover{color:var(--ink)}
+.tabbtn.is-on{background:var(--navy);color:#fff}
+@media (max-width:620px){.tabbar{order:10;width:100%}}
+
+/* ── Portada del tablero ────────────────────────────── */
+.hero{padding:30px 0 6px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-dark);margin:0 0 8px}
+h1{font-family:var(--serif);font-size:clamp(22px,3.2vw,30px);font-weight:600;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance;color:var(--navy)}
+.lede{font-size:13px;line-height:1.6;color:var(--ink-2);max-width:66ch;margin:0 0 22px}
+
+/* ── Métricas ───────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+@media (max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+.stat__head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:10px}
+.stat__lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.stat__num{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat__bar{height:10px;border-radius:99px;background:var(--slate-50);overflow:hidden;border:1px solid var(--line-soft)}
+.stat__bar i{display:block;height:100%;background:var(--cyan-dark);border-radius:99px;transition:width .4s ease}
+.stat__foot{margin-top:8px;font-size:11px;color:var(--ink-3)}
+
+/* ── Layout de dos columnas ─────────────────────────── */
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden}
+.panel__head{padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+.panel__head h2{font-family:var(--serif);font-size:16px;font-weight:600;margin:0 0 3px;color:var(--navy)}
+.panel__head p{font-size:11.5px;color:var(--ink-3);margin:0}
+.panel__body{padding:6px 20px 18px}
+
+/* ── Línea de fases ─────────────────────────────────── */
+.fase{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line-soft);position:relative}
+.fase:last-child{border-bottom:none}
+.fase__rail{flex:none;display:flex;flex-direction:column;align-items:center;width:26px}
+.fase__num{width:26px;height:26px;border-radius:99px;background:var(--navy-50);color:var(--navy);
+  display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;flex:none;
+  border:1.5px solid var(--navy-100)}
+.fase__line{width:1.5px;flex:1;background:var(--line);margin-top:4px}
+.fase:last-child .fase__line{display:none}
+.fase__body{flex:1;min-width:0;padding-top:1px}
+.fase__top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.fase__name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;margin:0}
+.fase__meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:3px}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  padding:4px 10px;border-radius:99px;border:1px solid transparent;cursor:pointer;flex:none;
+  display:inline-flex;align-items:center;gap:5px;transition:filter .15s}
+.pill:hover{filter:brightness(.97)}
+.pill::before{content:"";width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}
+.pill--pendiente{color:var(--slate);background:var(--slate-50);border-color:var(--slate-100)}
+.pill--en-curso{color:var(--navy);background:var(--navy-50);border-color:var(--navy-100)}
+.pill--aceptada{color:var(--cyan-dark);background:var(--cyan-50);border-color:var(--cyan-100)}
+.pill--observada{color:var(--red);background:var(--red-50);border-color:var(--red-100)}
+.pill--sin-dimensionar{color:var(--amber);background:var(--amber-50);border-color:var(--amber-100)}
+.pill--dimensionando{color:var(--navy);background:var(--navy-50);border-color:var(--navy-100)}
+.pill--dimensionado{color:var(--cyan-dark);background:var(--cyan-50);border-color:var(--cyan-100)}
+.fase__row2{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
+.acta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-2);cursor:pointer;user-select:none}
+.acta input{width:14px;height:14px;accent-color:var(--navy);cursor:pointer;flex:none}
+.nota{flex:1;min-width:140px;font-family:var(--sans);font-size:11.5px;color:var(--ink);background:var(--panel-2);
+  border:1px dashed var(--line);border-radius:7px;padding:5px 8px;resize:vertical;min-height:30px}
+.nota::placeholder{color:var(--ink-3)}
+.nota:focus{outline:none;border-style:solid;border-color:var(--cyan-dark);background:var(--panel)}
+
+/* ── Calendario de desembolsos ──────────────────────── */
+.des{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.des:last-child{border-bottom:none}
+.des__chk{flex:none}
+.des__chk input{width:16px;height:16px;accent-color:var(--cyan-dark);cursor:pointer}
+.des__body{flex:1;min-width:0}
+.des__lab{font-size:12px;font-weight:600;color:var(--ink);line-height:1.35}
+.des__lab.done{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line);font-weight:500}
+.des__fecha{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:1px}
+.des__monto{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums;
+  white-space:nowrap;flex:none;text-align:right}
+.des.equipo{background:var(--amber-50);margin:2px -20px;padding:9px 20px;border-radius:8px;border-bottom:none}
+.des.equipo .des__monto{color:var(--amber)}
+.des__total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 2px;margin-top:4px;
+  border-top:1.5px solid var(--navy);font-family:var(--mono)}
+.des__total b{font-size:13px;color:var(--navy);font-variant-numeric:tabular-nums}
+.des__total span{font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── Cronograma (vista rápida por fecha) ─────────────── */
+.crono{display:flex;flex-wrap:wrap;gap:0}
+.crono-item{flex:1 1 110px;min-width:110px;padding:10px 14px 10px 0;border-left:2px solid var(--line);position:relative;padding-left:16px}
+.crono-item::before{content:"";position:absolute;left:-6px;top:11px;width:10px;height:10px;border-radius:99px;background:var(--navy);border:2px solid var(--panel)}
+.crono-item.hoy::before{background:var(--cyan-dark)}
+.crono-item .fecha{font-family:var(--mono);font-size:10.5px;color:var(--cyan-dark);font-weight:600;letter-spacing:.02em}
+.crono-item .hito{font-size:12px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.35}
+
+/* ── Roles y responsabilidades ───────────────────────── */
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rolecard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+.rolecard__who{display:flex;align-items:baseline;gap:9px;margin-bottom:3px}
+.rolecard__who b{font-family:var(--serif);font-size:15px;color:var(--navy);font-weight:600}
+.rolecard__who span{font-family:var(--mono);font-size:10px;color:var(--cyan-dark);letter-spacing:.03em;text-transform:uppercase}
+.rolecard p{font-size:11.5px;color:var(--ink-3);margin:0 0 10px}
+.rolecard ul{margin:0;padding-left:16px;font-size:12px;color:var(--ink-2);line-height:1.7}
+.rolecard li b{color:var(--ink)}
+
+/* ── Módulos de la migración ─────────────────────────── */
+.mod{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.mod:last-child{border-bottom:none}
+.mod__num{width:26px;height:26px;border-radius:8px;background:var(--slate-50);color:var(--ink-2);
+  display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;font-weight:600;flex:none;
+  border:1.5px solid var(--slate-100);margin-top:1px}
+.mod__body{flex:1;min-width:0}
+.mod__top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.mod__name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;margin:0}
+.mod__meta{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:3px}
+.owner{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-2);margin-top:7px}
+.owner b{color:var(--navy);font-weight:600}
+.mod__row2{display:flex;align-items:center;gap:14px;margin-top:7px;flex-wrap:wrap}
+.dep{font-size:10.5px;color:var(--ink-3)}
+
+/* ── Otros frentes (tracks sin dimensionar) ─────────── */
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.track{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.track__top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.track__name{font-size:12.5px;font-weight:600;color:var(--ink);margin:0;line-height:1.4}
+.track__meta{font-size:11px;color:var(--ink-2);line-height:1.5;margin:6px 0 0}
+.track__meta b{color:var(--ink)}
+.track .nota{margin-top:9px;font-size:11px;min-height:26px}
+/* ── Riesgo principal ───────────────────────────────── */
+.risk{margin-top:20px;background:var(--amber-50);border:1px solid var(--amber-100);border-left:3px solid var(--amber);
+  border-radius:0 12px 12px 0;padding:14px 18px}
+.risk__lab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+.risk p{font-size:12px;line-height:1.55;color:var(--ink-2);margin:0}
+
+/* ── Pie ────────────────────────────────────────────── */
+footer.pie{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+[hidden]{display:none!important}
+
+/* ── v9: hitos, dinero y contrato ───────────────────── */
+.tabbar{flex-wrap:wrap}
+.hitoc{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel-2);margin-bottom:12px}
+.hitoc:last-child{margin-bottom:0}
+.hito__top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hito__cod{font-family:var(--mono);font-size:10.5px;color:var(--cyan-dark);letter-spacing:.06em;text-transform:uppercase}
+.hito__name{font-size:13.5px;font-weight:600;color:var(--ink);margin:2px 0 0;line-height:1.4}
+.hito__meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.hito__bar{height:8px;border-radius:99px;background:var(--slate-50);border:1px solid var(--line-soft);overflow:hidden;margin:10px 0 6px}
+.hito__bar i{display:block;height:100%;background:var(--cyan-dark);border-radius:99px;transition:width .4s ease}
+.chk{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12px;color:var(--ink-2);line-height:1.45;cursor:pointer}
+.chk input{margin-top:2px;width:15px;height:15px;accent-color:var(--cyan-dark);flex:none;cursor:pointer}
+.chk.hecho span{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
+.des__cat{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-left:6px}
+.des.condicional{background:var(--amber-50);margin:2px -20px;padding:9px 20px;border-radius:8px;border-bottom:none}
+.des.condicional .des__monto{color:var(--amber)}
+.gap{margin-top:6px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gap div{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;font-size:12px;color:var(--ink-2);border-bottom:1px solid var(--line-soft)}
+.gap div:last-child{border-bottom:0;background:var(--amber-50);color:var(--ink)}
+.gap b{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.lista{margin:0;padding-left:18px;font-size:12px;color:var(--ink-2);line-height:1.85}
+.aviso{margin-top:14px;background:var(--navy-50);border-left:3px solid var(--navy);border-radius:0 10px 10px 0;padding:11px 14px;font-size:12px;line-height:1.55;color:var(--ink)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.dos{grid-template-columns:1fr}}
+</style>
+
+<div class="bar">
+  <div class="bar__in">
+    <div class="mark">
+      <img src="logo.png" alt="">
+      <div><b>TECNIFIN · Tablero de Avance</b><span>SISTEMA FINANCIERO EPS · alterna GUTT COMPANY</span></div>
+    </div>
+    <nav class="tabbar" role="tablist" aria-label="Secciones del dashboard">
+      <button type="button" class="tabbtn is-on" id="tabBtnAvance" role="tab" aria-selected="true" aria-controls="panelAvance">Desarrollo</button>
+      <button type="button" class="tabbtn" id="tabBtnDinero" role="tab" aria-selected="false" aria-controls="panelDinero">Dinero</button>
+      <button type="button" class="tabbtn" id="tabBtnContrato" role="tab" aria-selected="false" aria-controls="panelContrato">Contrato y socios</button>
+      <button type="button" class="tabbtn" id="tabBtnMovil" role="tab" aria-selected="false" aria-controls="panelMovil">Diseño GUTT Móvil</button>
+      <button type="button" class="tabbtn" id="tabBtnWeb" role="tab" aria-selected="false" aria-controls="panelWeb">Página Web</button>
+    </nav>
+    <div class="bar__sp"></div>
+    <span class="toast" id="toast"></span>
+    <div class="live" id="live"><i></i>conectando…</div>
+  </div>
+</div>
+
+<div class="wrap" id="panelAvance">
+  <header class="hero">
+    <p class="eyebrow">Desarrollo · Proyecto TECNIFIN</p>
+    <h1>Primer entregable: el modelo de base de datos multi-tenant en PostgreSQL</h1>
+    <p class="lede">Meta 30-oct-2026, aceptado por acta. Después vienen el núcleo multi-tenant, los ocho módulos y,
+      en marzo, la migración de los datos reales. El proyecto nuevo vive en C:\TECNIFIN y este tablero lo sigue.
+      El comité marca lo suyo y se ve en vivo para todos.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Hito H1 · Modelo de BD</span><span class="stat__num" id="numH1">0 / 0</span></div>
+      <div class="stat__bar"><i id="barH1" style="width:0%"></i></div>
+      <div class="stat__foot" id="footH1">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Migración a PostgreSQL</span><span class="stat__num" id="numMod">0 / 8 módulos</span></div>
+      <div class="stat__bar"><i id="barMod" style="width:0%"></i></div>
+      <div class="stat__foot" id="footMod">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Fases del contrato</span><span class="stat__num" id="numFases">0 / 7 fases</span></div>
+      <div class="stat__bar"><i id="barFases" style="width:0%"></i></div>
+      <div class="stat__foot" id="footFases">Cargando…</div>
+    </div>
+  </div>
+
+  <section class="panel" style="margin-bottom:20px">
+    <div class="panel__head">
+      <h2>Hitos: crear el proyecto y el modelo de datos</h2>
+      <p>Marca cada punto cuando esté verificado. Los de la Fase 0 ya hechos se comprobaron con pruebas, no de palabra.</p>
+    </div>
+    <div class="panel__body" id="listaHitos">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando hitos…</p>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-bottom:20px">
+    <div class="panel__head">
+      <h2>Cronograma del proyecto</h2>
+      <p>Las obligaciones de trabajo y de pago corren desde el 1-oct-2026 (reunión de socios del 19-sep-2026). Fechas de fase re-basadas desde esa fecha.</p>
+    </div>
+    <div class="panel__body">
+      <div class="crono">
+        <div class="crono-item hoy"><div class="fecha">30-SEP-2026</div><div class="hito">Fase 0 · Proyecto creado, dominio contratado</div></div>
+        <div class="crono-item"><div class="fecha">01-OCT-2026</div><div class="hito">Arranque de las obligaciones</div></div>
+        <div class="crono-item"><div class="fecha">30-OCT-2026</div><div class="hito">H1 · Modelo de BD aceptado</div></div>
+        <div class="crono-item"><div class="fecha">30-NOV-2026</div><div class="hito">Fase 1 · Núcleo multi-tenant</div></div>
+        <div class="crono-item"><div class="fecha">28-FEB-2027</div><div class="hito">Fase 2 · Módulos adaptados</div></div>
+        <div class="crono-item"><div class="fecha">31-MAR-2027</div><div class="hito">Fase 3 · Migración de datos reales</div></div>
+        <div class="crono-item"><div class="fecha">30-ABR-2027</div><div class="hito">Fase 4 · Servidor instalado</div></div>
+        <div class="crono-item"><div class="fecha">31-MAY-2027</div><div class="hito">Fase 5 · Hardening y continuidad</div></div>
+        <div class="crono-item"><div class="fecha">30-JUN-2027</div><div class="hito">Fase 6 · Capacitación</div></div>
+        <div class="crono-item"><div class="fecha">31-JUL-2027</div><div class="hito">Fase 7 · Entrega final</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-bottom:20px">
+    <div class="panel__head">
+      <h2>Fases del proyecto</h2>
+      <p>Pulsa el estado para avanzarlo. La casilla es el acta de aceptación firmada (cláusula 8 del contrato: nada se acepta por silencio).</p>
+    </div>
+    <div class="panel__body" id="listaFases">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando fases…</p>
+    </div>
+    <div class="panel__body" style="padding-top:0">
+      <div class="risk">
+        <div class="risk__lab">Riesgo principal</div>
+        <p>La ADR de aislamiento necesita la revisión expresa de Christian (cláusula 6.3): sin ella H1 se atrasa.
+          El borrador se le envía el 2-oct. Alerta si al 16-oct el esquema no está en migraciones versionadas.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-bottom:20px">
+    <div class="panel__head">
+      <h2>Cómo se ejecuta: agentes con skills</h2>
+      <p>Cada procedimiento repetible se escribe una vez en una skill; un modelo más capaz decide el patrón y uno más económico lo repite.</p>
+    </div>
+    <div class="panel__body">
+      <div class="roles">
+        <div class="rolecard">
+          <div class="rolecard__who"><b>tecnifin-postgres-arquitecto</b><span>Modelo Opus</span></div>
+          <p>Abre cada módulo: redacta las ADR, porta los primeros 2-3 endpoints contra el esquema renombrado
+            (Socios, Cuentas, AsientosContables + DetalleAsiento, CooperativaId), deja escrito el patrón en
+            <code>C:\TECNIFIN\docs\patrones\</code> y hace la revisión de cierre. En créditos, cartera y contabilidad
+            compara los números contra SQL Server.</p>
+          <ul>
+            <li>Un módulo a la vez, solo el inicio</li>
+            <li>Resuelve la ambigüedad de negocio real</li>
+            <li>Cierra el módulo — nadie más lo acepta</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <div class="rolecard__who"><b>tecnifin-postgres-ejecutor</b><span>Modelo Sonnet · worktree propio en TECNIFIN</span></div>
+          <p>Entra después del arquitecto, nunca antes. Lee el patrón ya escrito y lo repite en el resto de los
+            endpoints, uno por uno, con su prueba. Si algo no encaja en el patrón, para y lo reporta.</p>
+          <ul>
+            <li>Solo empieza si ya existe el patrón</li>
+            <li>No toca nada de la copia principal hasta la revisión</li>
+            <li>Todo pasa por <code>withTenant</code>: nadie filtra la cooperativa a mano</li>
+          </ul>
+        </div>
+      </div>
+      <div class="aviso">
+        <strong>Decisión del 20-sep-2026.</strong> El trabajo nuevo no se hace dentro de GUTT_SYSTEM: nace el proyecto
+        <b>TECNIFIN</b> (C:\TECNIFIN), limpio desde el primer commit, con 14 reglas nacidas de los errores del sistema
+        anterior y 6 de ellas comprobadas por pruebas automáticas. GUTT_SYSTEM sigue sirviendo la demo y a la COAC 20 de
+        Febrero, y orquesta el plan. La base PostgreSQL es nueva y usa nombres TECNIFIN (<code>tecnifin_dev</code>).
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="panel__head">
+      <h2>Migración a PostgreSQL · módulos</h2>
+      <p>Cada módulo se porta ya sobre PostgreSQL multi-tenant. Tamaño medido en server.js, no estimado. "Etapa" agrupa los módulos que no dependen entre sí y pueden portarse a la vez. Fechas propuestas a confirmar tras H1.</p>
+    </div>
+    <div class="panel__body" id="listaModulos">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando módulos…</p>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="panel__head">
+      <h2>Otros frentes del proyecto</h2>
+      <p>Corren en paralelo. Sin fecha todavía — dimensionarlos con números reales, no a ojo, es el paso pendiente de cada uno.</p>
+    </div>
+    <div class="panel__body" id="listaTracks">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando…</p>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <span>TECNIFIN S.A.S. · alterna GUTT COMPANY S.A.S. · contrato interno de socios</span>
+    <span>Desarrollado por Jorge Tuquinga</span>
+  </footer>
+</div>
+
+<div class="wrap" id="panelDinero" hidden>
+  <header class="hero">
+    <p class="eyebrow">Dinero</p>
+    <h1>Todos los desembolsos del proyecto y cuánto falta por financiar</h1>
+    <p class="lede">Las cifras salen del contrato interno v3 y de la reunión del 19-sep-2026. Pagos el día 1 de cada mes.
+      Marca lo que ya se pagó. Las filas en ámbar están por confirmar o sin fecha firme.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Pagado</span><span class="stat__num" id="numPresu">$0,00</span></div>
+      <div class="stat__bar"><i id="barPresu" style="width:0%"></i></div>
+      <div class="stat__foot" id="footPresu">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Cuantificado</span><span class="stat__num" id="numTotal">$0,00</span></div>
+      <div class="stat__foot" id="footTotal">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Brecha contra el numerario</span><span class="stat__num" id="numGap">$0,00</span></div>
+      <div class="stat__foot" id="footGap">Cargando…</div>
+    </div>
+  </div>
+
+  <div class="dos">
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Calendario de desembolsos</h2>
+        <p>Ordenado por fecha. Desarrolladores: USD 700 c/u los meses 1-5 y USD 350 c/u los meses 6-10.</p>
+      </div>
+      <div class="panel__body" id="listaDesembolsos">
+        <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando desembolsos…</p>
+      </div>
+    </section>
+
+    <div>
+      <section class="panel" style="margin-bottom:20px">
+        <div class="panel__head">
+          <h2>Financiamiento</h2>
+          <p>Lo comprometido frente a lo cuantificado. Se recalcula con los datos de la izquierda.</p>
+        </div>
+        <div class="panel__body"><div class="gap" id="boxBrecha"></div>
+          <div class="aviso">La cláusula 10.9 del contrato v3 obliga a los cinco accionistas a aportar en partes iguales lo que
+            falte para cubrir gastos, una vez incorporado el quinto accionista.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">
+          <h2>Sin cuantificar o por conciliar</h2>
+          <p>No entran en los totales hasta tener monto y fecha.</p>
+        </div>
+        <div class="panel__body">
+          <ul class="lista">
+            <li><b>Capital de trabajo</b> (constitución, marketing, movilización, hospedaje, postproducción): hasta USD 40.000 de referencia; quién administra el fondo, sin definir.</li>
+            <li><b>Soporte posterior al mes 10:</b> USD 700 mensuales entre ambos en la proforma; la cláusula 13.1 dice que ninguna remuneración queda garantizada. Decidir.</li>
+            <li><b>Servidor básico con traslado desde EE.UU.:</b> estimación pendiente (Jorge), antes del flujo de caja.</li>
+            <li><b>Sin costear:</b> internet redundante, flete real del T630, trámites de constitución de la SAS.</li>
+            <li><b>Conciliar:</b> infraestructura 10.569,45 (proforma) contra 10.595,45 (informe de la reunión, probable error de transcripción); «≈ 6.000 en pagos» de la reunión contra 10.500 + 4.970 de este cálculo.</li>
+            <li><b>Pagos a Christian:</b> la reunión habló de ≈ 4.970 en 10 meses; la cláusula 10.5 del contrato dice «sin pago». Aclarar en acta.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="pie">
+    <span>TECNIFIN S.A.S. · flujo de caja (Anexo I) a cargo de Víctor Cuenca</span>
+    <span>Desarrollado por Jorge Tuquinga</span>
+  </footer>
+</div>
+
+<div class="wrap" id="panelContrato" hidden>
+  <header class="hero">
+    <p class="eyebrow">Contrato y socios</p>
+    <h1>Contrato interno de socios: en revisión, sin frenar el desarrollo</h1>
+    <p class="lede">Contrato interno de compromisos previo a la constitución de la sociedad. No forma parte de los
+      estatutos ni requiere necesariamente notarización. Denominación principal <b>TECNIFIN S.A.S.</b>, alterna
+      <b>GUTT COMPANY S.A.S.</b> (se presentan en ese orden para la reserva de nombre). Las obligaciones de trabajo y de pago
+      comienzan el 1-oct-2026.</p>
+  </header>
+
+  <div class="dos">
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Estado</h2>
+        <p>Versión 3, generada el 19-sep-2026 con lo acordado en la reunión de socios.</p>
+      </div>
+      <div class="panel__body">
+        <ul class="lista">
+          <li><b>Lunes 21-sep, tarde:</b> Christian completa la revisión del contrato.</li>
+          <li><b>Lunes 21-sep:</b> Víctor entrega el flujo de caja de 10 meses (Anexo I).</li>
+          <li><b>Miércoles 23-sep:</b> se presenta el contrato revisado para la aprobación de los cuatro participantes.</li>
+          <li><b>Aportes:</b> USD 25.250 por desarrollador (20.000 de trabajo histórico + 5.250 prorrateados). Franklin completa con trabajo adicional los 4.100 de diferencia.</li>
+          <li><b>Participación:</b> cinco socios con 20 % cada uno, sujeto a inventario y valoración de aportes.</li>
+        </ul>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Pendientes de acta</h2>
+        <p>Puntos que el contrato deja abiertos a propósito.</p>
+      </div>
+      <div class="panel__body">
+        <ul class="lista">
+          <li>Pagos a Christian frente a la cláusula 10.5.</li>
+          <li>Retrasos imputables (7.5) y aceptación por silencio (8.2): redacción.</li>
+          <li>Funciones del quinto socio (socialización, cabildeo, comercialización) y su tabla.</li>
+          <li>Servicios adicionales y ampliación de los objetivos del contrato.</li>
+          <li>Administración del fondo de capital de trabajo.</li>
+          <li>Uso de cada nombre: razón social, nombre comercial o marca del producto.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="panel__head">
+      <h2>Roles y responsabilidades</h2>
+      <p>Fijados en el contrato (cláusulas 4.6 y 7.6): los dos desarrolladores tienen responsabilidades y actividades equivalentes; la distribución interna se registra en este tablero.</p>
+    </div>
+    <div class="panel__body">
+      <div class="roles">
+        <div class="rolecard">
+          <div class="rolecard__who"><b>Jorge Tuquinga</b><span>Backend · BD · Infraestructura</span></div>
+          <p>Ejecución técnica de todo lo que toca el servidor y la base de datos.</p>
+          <ul>
+            <li><b>Modelo de datos</b> — ADR, esquema PostgreSQL y núcleo multi-tenant</li>
+            <li><b>Migración</b> — porta cada módulo y ensaya la migración de datos</li>
+            <li><b>Web</b> — dominio, hosting e infraestructura del sitio</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <div class="rolecard__who"><b>Franklin Lechon</b><span>Frontend · Pruebas · Soporte a cliente</span></div>
+          <p>Verificación de que lo que Jorge construye funciona de verdad, y todo lo de cara al usuario.</p>
+          <ul>
+            <li><b>Pruebas</b> — paridad numérica de cada módulo</li>
+            <li><b>Reportes SEPS</b> — su módulo por contrato</li>
+            <li><b>App móvil y web</b> — construcción de las pantallas</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <div class="rolecard__who"><b>Christian Cuenca</b><span>Jefe de Proyecto · Infraestructura y Seguridad</span></div>
+          <p>Coordina actas y cronograma; revisa toda decisión que toca aislamiento, seguridad, respaldo o capacidad.</p>
+          <ul>
+            <li><b>ADR</b> — revisión expresa de las críticas (cláusula 6.3)</li>
+            <li><b>Servidor</b> — proveedores, especificación y compra desde enero</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <div class="rolecard__who"><b>Víctor Cuenca</b><span>Gerente</span></div>
+          <p>Aporte en numerario y administración de la caja.</p>
+          <ul>
+            <li><b>Flujo de caja</b> — Anexo I, diez meses desde el 1-oct</li>
+            <li><b>Contabilidad</b> — tratamiento del software, aportes y cuentas por pagar</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <span>TECNIFIN S.A.S. · alterna GUTT COMPANY S.A.S.</span>
+    <span>Desarrollado por Jorge Tuquinga</span>
+  </footer>
+</div>
+
+<div id="panelMovil" hidden>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800;900&amp;display=swap">
+<style>/* ───────────────────────── Tokens del lienzo (chasis) ───────────────────────── */
+:root #panelMovil{
+  --navy:#002B67; --navy-600:#0A3D80; --navy-300:#6E9BD1; --navy-50:#EAF1F9;
+  --cyan:#03CED4; --cyan-600:#05AFB5; --cyan-700:#067A80; --cyan-50:#E6FBFC;
+  --amber:#F59E0B; --amber-700:#B45309; --amber-50:#FFFBEB;
+  --red:#EF4444; --red-700:#B91C1C; --red-50:#FEF2F2;
+  --slate:#94A3B8; --slate-700:#475569; --slate-50:#F1F5F9;
+
+  --ground:#EDF1F7; --panel:#FFFFFF; --panel-2:#F6F9FC;
+  --line:#D4DDE9; --line-soft:#E4EBF3;
+  --ink:#0B1929; --ink-2:#465870; --ink-3:#7889A0;
+  --grid:rgba(0,43,103,.06);
+  --shell:#2E333B;
+  --shadow-board:0 22px 44px -28px rgba(4,22,50,.55);
+  --shadow-bar:0 1px 0 var(--line), 0 10px 24px -20px rgba(4,22,50,.5);
+
+  --sans:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace;
+  --app:'Inter','Segoe UI',system-ui,sans-serif;
+}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #panelMovil{
+    --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+    --line:#21314A; --line-soft:#1A2739;
+    --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+    --grid:rgba(3,206,212,.07);
+    --shell:#19202D;
+    --shadow-board:0 24px 50px -26px rgba(0,0,0,.8);
+    --shadow-bar:0 1px 0 var(--line), 0 12px 28px -18px rgba(0,0,0,.8);
+    --navy-50:#10233D;
+  }
+}:root[data-theme="dark"] #panelMovil{
+  --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+  --line:#21314A; --line-soft:#1A2739;
+  --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+  --grid:rgba(3,206,212,.07);
+  --shell:#19202D;
+  --shadow-board:0 24px 50px -26px rgba(0,0,0,.8);
+  --shadow-bar:0 1px 0 var(--line), 0 12px 28px -18px rgba(0,0,0,.8);
+  --navy-50:#10233D;
+}#panelMovil *{box-sizing:border-box}#panelMovil{
+  font-family:var(--sans); color:var(--ink);
+  background-color:var(--ground);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  -webkit-font-smoothing:antialiased;
+}#panelMovil .wrap{max-width:1360px;margin:0 auto;padding-inline:20px;padding-block:0 64px}#panelMovil svg.sprite{display:none}#panelMovil :where(a,button,[tabindex]):focus-visible{outline:2px solid var(--cyan-600);outline-offset:2px;border-radius:6px}@media (prefers-reduced-motion:reduce){#panelMovil *{animation-duration:.001ms!important;transition-duration:.001ms!important}}/* ───────────────────────── Barra superior ───────────────────────── */
+#panelMovil .bar{
+  position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--panel) 88%,transparent);
+  backdrop-filter:blur(10px);box-shadow:var(--shadow-bar);
+}#panelMovil .bar__in{max-width:1360px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}#panelMovil .mark{display:flex;align-items:center;gap:11px;min-width:0}#panelMovil .mark img{width:34px;height:34px;object-fit:contain;flex:none}#panelMovil .mark b{display:block;font-size:13px;font-weight:700;letter-spacing:.02em}#panelMovil .mark span{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.04em}#panelMovil .bar__sp{flex:1 1 40px}#panelMovil .meter{display:flex;align-items:center;gap:10px}#panelMovil .meter__bar{width:168px;height:9px;border-radius:99px;overflow:hidden;display:flex;background:var(--line-soft);border:1px solid var(--line)}#panelMovil .meter__bar i{display:block;height:100%}#panelMovil .meter__txt{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap}#panelMovil .btn{
+  font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.02em;
+  padding:9px 15px;border-radius:9px;border:1px solid var(--navy);background:var(--navy);color:#fff;
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .18s,transform .18s
+}#panelMovil .btn:hover:not(:disabled){background:var(--navy-600)}#panelMovil .btn:active:not(:disabled){transform:translateY(1px)}#panelMovil .btn:disabled{opacity:.45;cursor:not-allowed}#panelMovil .btn--ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}#panelMovil .btn--ghost:hover{background:var(--panel-2);color:var(--ink)}#panelMovil .btn svg{width:14px;height:14px}#panelMovil .dirty{font-family:var(--mono);font-size:10px;color:var(--amber-700);background:var(--amber-50);border:1px solid #FDE9C2;padding:4px 8px;border-radius:99px}#panelMovil .dirty[hidden]{display:none!important}/* ───────────────────────── Portada ───────────────────────── */
+#panelMovil .hero{padding:44px 0 8px;display:grid;gap:22px;grid-template-columns:minmax(0,1fr) minmax(0,320px);align-items:end}@media (max-width:860px){#panelMovil .hero{grid-template-columns:1fr;align-items:start}}#panelMovil .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-700);margin:0 0 12px}#panelMovil h1{font-size:clamp(30px,4.6vw,46px);line-height:1.04;letter-spacing:-.024em;margin:0 0 14px;text-wrap:balance;font-weight:700}#panelMovil .lede{font-size:15px;line-height:1.62;color:var(--ink-2);max-width:62ch;margin:0}#panelMovil .facts{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}#panelMovil .facts div{display:flex;justify-content:space-between;gap:12px;padding:9px 13px;font-size:12px;border-bottom:1px solid var(--line-soft)}#panelMovil .facts div:last-child{border-bottom:0}#panelMovil .facts dt{color:var(--ink-3);font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase}#panelMovil .facts dd{margin:0;font-weight:600;text-align:right}#panelMovil .rule{height:1px;background:var(--line);margin:38px 0 0;border:0}/* ───────────────────────── Secciones ───────────────────────── */
+#panelMovil section{padding-top:46px}#panelMovil .sec__head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}#panelMovil .sec__n{font-family:var(--mono);font-size:11px;color:var(--cyan-700);letter-spacing:.1em}#panelMovil h2{font-size:22px;letter-spacing:-.012em;margin:0;font-weight:700}#panelMovil .sec__sub{font-size:13.5px;line-height:1.6;color:var(--ink-2);max-width:70ch;margin:8px 0 26px}/* ───────────────────────── Fundamentos ───────────────────────── */
+#panelMovil .found{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}#panelMovil .slab{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}#panelMovil .slab h3{margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.01em}#panelMovil .slab p{margin:0 0 14px;font-size:12px;line-height:1.55;color:var(--ink-2)}#panelMovil .ramp{display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--line)}#panelMovil .ramp i{flex:1;height:34px}#panelMovil .ramp+.ramp{margin-top:8px}#panelMovil .keys{display:grid;gap:7px;margin-top:12px}#panelMovil .key{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;color:var(--ink-2)}#panelMovil .key b{width:13px;height:13px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.14)}#panelMovil .key em{font-style:normal;color:var(--ink-3);margin-left:auto}#panelMovil .warn{margin-top:14px;border-left:3px solid var(--cyan-600);background:var(--cyan-50);color:#0A3F43;padding:10px 12px;border-radius:0 8px 8px 0;font-size:11.5px;line-height:1.55}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #panelMovil .warn{background:#08282B;color:#A9E9EC}}:root[data-theme="dark"] #panelMovil .warn{background:#08282B;color:#A9E9EC}#panelMovil .warn--navy{border-left-color:var(--navy-600);background:var(--navy-50);color:var(--ink)}:root[data-theme="dark"] #panelMovil .warn--navy{background:#10233D;color:#CFE0F2}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #panelMovil .warn--navy{background:#10233D;color:#CFE0F2}}#panelMovil .typerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line-soft)}#panelMovil .typerow:last-child{border-bottom:0}#panelMovil .typerow span{font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:nowrap}#panelMovil .semaforo{width:100%;border-collapse:collapse;font-size:11.5px}#panelMovil .semaforo th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:0 0 7px;font-weight:500}#panelMovil .semaforo td{padding:5px 0;border-top:1px solid var(--line-soft)}#panelMovil .semaforo td:last-child{text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink-3)}#panelMovil .pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em}/* ───────────────────────── Rejilla de artboards ───────────────────────── */
+#panelMovil .flow{margin-top:26px}#panelMovil .flow__bar{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding-bottom:9px;border-bottom:1px solid var(--line)}#panelMovil .flow__bar h3{margin:0;font-size:15px;font-weight:700;letter-spacing:-.008em}#panelMovil .flow__bar span{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto;white-space:nowrap}#panelMovil .grid{display:grid;grid-template-columns:repeat(auto-fit,300px);justify-content:center;gap:40px 30px}@media (min-width:700px){#panelMovil .grid{justify-content:start}}#panelMovil .board{width:300px;display:flex;flex-direction:column;gap:10px}#panelMovil .board__head{display:flex;flex-direction:column;gap:6px}#panelMovil .board__t{display:flex;align-items:baseline;gap:8px}#panelMovil .board__t h4{margin:0;font-size:13.5px;font-weight:700;letter-spacing:-.006em}#panelMovil .board__t code{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-left:auto}#panelMovil .tags{display:flex;gap:5px;flex-wrap:wrap}#panelMovil .tag{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:2.5px 7px;border-radius:5px;border:1px solid}#panelMovil .tag--venta{color:var(--navy);background:var(--navy-50);border-color:#BFD5EC}#panelMovil .tag--nueva{color:var(--cyan-700);background:var(--cyan-50);border-color:#A8E7EA}:root[data-theme="dark"] #panelMovil .tag--venta{color:#9CC3EC;background:#0F2440;border-color:#1C3D66}:root[data-theme="dark"] #panelMovil .tag--nueva{color:#6FDDE2;background:#08282B;border-color:#11474B}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #panelMovil .tag--venta{color:#9CC3EC;background:#0F2440;border-color:#1C3D66}:root:not([data-theme="light"]) #panelMovil .tag--nueva{color:#6FDDE2;background:#08282B;border-color:#11474B}
+}#panelMovil .board__desc{margin:0;font-size:11.5px;line-height:1.55;color:var(--ink-2)}#panelMovil .board__ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}#panelMovil .chip{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  padding:4px 9px;border-radius:99px;border:1px solid transparent;cursor:pointer;font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;transition:filter .15s
+}#panelMovil .chip:hover{filter:brightness(.96)}#panelMovil .chip::before{content:"";width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}#panelMovil .chip--fase{background:var(--panel-2);border-color:var(--line);color:var(--ink-2)}#panelMovil .chip--fase::before{display:none}#panelMovil .nota{
+  width:100%;min-height:34px;resize:vertical;font-family:var(--sans);font-size:11.5px;line-height:1.5;
+  color:var(--ink);background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:7px 9px
+}#panelMovil .nota::placeholder{color:var(--ink-3)}#panelMovil .nota:focus{outline:none;border-style:solid;border-color:var(--cyan-600);background:var(--panel-2)}/* ───────────────────────── Marco del teléfono ───────────────────────── */
+#panelMovil .frame{
+  width:300px;height:616px;border-radius:34px;background:var(--shell);padding:8px;
+  box-shadow:var(--shadow-board);flex:none;position:relative
+}#panelMovil .screen{
+  width:100%;height:100%;border-radius:27px;overflow:hidden;background:#F4F6F8;
+  font-family:var(--app);color:#1E293B;display:flex;flex-direction:column;position:relative;isolation:isolate
+}#panelMovil .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:96px;height:19px;background:var(--shell);border-radius:0 0 13px 13px;z-index:9}#panelMovil .status{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;font-size:9px;font-weight:700;color:#1E293B;flex:none}#panelMovil .status u{text-decoration:none;display:inline-flex;gap:2px;align-items:flex-end}#panelMovil .status u i{display:block;width:2.5px;background:#1E293B;border-radius:1px}#panelMovil .body{flex:1;overflow:hidden;padding:8px 16px 16px;display:flex;flex-direction:column;gap:11px}#panelMovil .body--flush{padding:0}#panelMovil .body--dark{background:#002B67}/* Piezas de la app */
+#panelMovil .a-h{font-size:15px;font-weight:800;letter-spacing:-.01em;margin:0}#panelMovil .a-sub{font-size:10px;color:#64748B;margin:0;line-height:1.4}#panelMovil .a-lab{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748B;display:block;margin-bottom:4px}#panelMovil .a-card{background:#fff;border:1px solid #E9EEF4;border-radius:16px;padding:12px}#panelMovil .a-navy{background:linear-gradient(152deg,#002B67 0%,#0A3D80 100%);border-radius:18px;padding:14px;color:#fff;position:relative;overflow:hidden}#panelMovil .a-navy::after{content:"";position:absolute;right:-26px;bottom:-34px;width:96px;height:96px;border-radius:99px;border:10px solid rgba(3,206,212,.22)}#panelMovil .a-field{background:#F8FAFC;border:1.5px solid #EEF2F7;border-radius:13px;padding:10px 11px;display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:#1E293B}#panelMovil .a-field svg{width:13px;height:13px;color:#94A3B8;flex:none}#panelMovil .a-field span.ph{color:#94A3B8;font-weight:500}#panelMovil .a-field--on{border-color:#002B67;background:#fff;box-shadow:0 0 0 3px rgba(0,43,103,.07)}#panelMovil .a-btn{background:#002B67;color:#fff;border:0;border-bottom:3px solid #03CED4;border-radius:14px;padding:11px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;text-align:center;font-family:var(--app)}#panelMovil .a-btn2{background:transparent;color:#002B67;border:1.5px solid #002B67;border-radius:14px;padding:10px;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;text-align:center;font-family:var(--app)}#panelMovil .a-money{font-variant-numeric:tabular-nums;letter-spacing:-.015em}#panelMovil .a-row{display:flex;align-items:center;justify-content:space-between;gap:8px}#panelMovil .a-chip{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:99px}#panelMovil .a-vig{color:#067A80;background:#E6FBFC}#panelMovil .a-pen{color:#B45309;background:#FFFBEB}#panelMovil .a-rec{color:#B91C1C;background:#FEF2F2}#panelMovil .a-anu{color:#475569;background:#F1F5F9}#panelMovil .a-list{display:flex;flex-direction:column;gap:8px}#panelMovil .a-item{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #E9EEF4;border-radius:14px;padding:10px;position:relative;overflow:hidden}#panelMovil .a-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3.5px;background:var(--bar,#94A3B8)}#panelMovil .a-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;background:#EAF1F9;color:#002B67}#panelMovil .a-ico svg{width:14px;height:14px}#panelMovil .a-ico--c{background:#E6FBFC;color:#067A80}#panelMovil .a-ico--a{background:#FFFBEB;color:#B45309}#panelMovil .a-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}#panelMovil .a-quick a{display:flex;flex-direction:column;align-items:center;gap:5px;background:#fff;border:1px solid #E9EEF4;border-radius:13px;padding:9px 3px;font-size:8px;font-weight:700;color:#334155;text-align:center;text-decoration:none;line-height:1.15}#panelMovil .a-quick svg{width:15px;height:15px;color:#002B67}#panelMovil .a-nav{flex:none;height:54px;background:#fff;border-top:1px solid #E9EEF4;display:flex;justify-content:space-around;align-items:center;padding-bottom:4px}#panelMovil .a-nav b{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:8px;font-weight:800;color:#94A3B8;letter-spacing:.02em}#panelMovil .a-nav b svg{width:16px;height:16px}#panelMovil .a-nav b.on{color:#002B67}#panelMovil .a-nav b.on svg{color:#03CED4}#panelMovil .a-tabs{display:flex;background:#E9EEF4;border-radius:12px;padding:3px;gap:3px}#panelMovil .a-tabs b{flex:1;text-align:center;font-size:9.5px;font-weight:800;padding:6px 4px;border-radius:9px;color:#64748B}#panelMovil .a-tabs b.on{background:#fff;color:#002B67;box-shadow:0 1px 3px rgba(0,43,103,.12)}#panelMovil .a-step{display:flex;align-items:center;gap:5px}#panelMovil .a-step i{width:19px;height:19px;border-radius:99px;display:grid;place-items:center;font-size:9px;font-weight:800;font-style:normal;background:#E9EEF4;color:#94A3B8;flex:none}#panelMovil .a-step i.on{background:#002B67;color:#fff}#panelMovil .a-step i.done{background:#E6FBFC;color:#067A80}#panelMovil .a-step u{flex:1;height:2px;background:#E9EEF4;text-decoration:none}#panelMovil .a-track{height:6px;border-radius:99px;background:#E9EEF4;overflow:hidden}#panelMovil .a-track i{display:block;height:100%;background:#05AFB5;border-radius:99px}#panelMovil .a-slider{height:4px;border-radius:99px;background:#E9EEF4;position:relative;margin:9px 2px 4px}#panelMovil .a-slider i{position:absolute;left:0;top:0;bottom:0;background:#002B67;border-radius:99px}#panelMovil .a-slider u{position:absolute;top:50%;width:15px;height:15px;border-radius:99px;background:#fff;border:3px solid #03CED4;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,43,103,.25)}#panelMovil .a-tab{width:100%;border-collapse:collapse;font-size:8.5px;font-variant-numeric:tabular-nums}#panelMovil .a-tab th{font-size:7.5px;text-transform:uppercase;letter-spacing:.05em;color:#64748B;text-align:right;padding:0 0 5px;font-weight:800;border-bottom:1px solid #E9EEF4}#panelMovil .a-tab th:first-child, #panelMovil .a-tab td:first-child{text-align:left}#panelMovil .a-tab td{text-align:right;padding:4px 0;border-bottom:1px solid #F1F5F9;font-weight:600}#panelMovil .a-tab tr.tot td{border-bottom:0;border-top:1.5px solid #002B67;font-weight:800;color:#002B67;padding-top:5px}#panelMovil .a-dl{display:flex;flex-direction:column;gap:6px}#panelMovil .a-dl div{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding-bottom:6px;border-bottom:1px dashed #EEF2F7}#panelMovil .a-dl div:last-child{border-bottom:0;padding-bottom:0}#panelMovil .a-dl dt{color:#64748B}#panelMovil .a-dl dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}#panelMovil .a-bub{max-width:82%;font-size:10px;line-height:1.5;padding:9px 11px;border-radius:14px}#panelMovil .a-bub--ia{background:#fff;border:1px solid #E9EEF4;border-left:3px solid #03CED4;border-radius:4px 14px 14px 14px;align-self:flex-start;color:#1E293B}#panelMovil .a-bub--yo{background:#002B67;color:#fff;border-radius:14px 14px 4px 14px;align-self:flex-end}#panelMovil .a-sug{display:flex;gap:5px;flex-wrap:wrap}#panelMovil .a-sug b{font-size:8.5px;font-weight:700;color:#067A80;background:#E6FBFC;border:1px solid #BEEFF1;border-radius:99px;padding:4px 8px}#panelMovil .a-auto{font-size:7.5px;color:#94A3B8;text-align:center;letter-spacing:.02em;font-weight:600}#panelMovil .a-codes{display:flex;gap:6px}#panelMovil .a-codes i{flex:1;height:38px;border-radius:11px;border:1.5px solid #EEF2F7;background:#F8FAFC;display:grid;place-items:center;font-size:15px;font-weight:800;font-style:normal;color:#002B67}#panelMovil .a-codes i.on{border-color:#03CED4;background:#fff}#panelMovil .a-codes i.mt{color:#CBD5E1}#panelMovil .a-logo{width:52px;height:52px;border-radius:18px;background:#002B67;border-bottom:4px solid #03CED4;display:grid;place-items:center;color:#fff;font-size:19px;font-weight:900;font-style:italic;letter-spacing:-1.5px;margin:0 auto}#panelMovil .a-mask{position:absolute;inset:0;background:rgba(15,23,42,.62);z-index:5;display:flex;align-items:center;justify-content:center;padding:14px}#panelMovil .a-modal{background:#fff;border-radius:22px;border:1.5px solid #03CED4;overflow:hidden;display:flex;flex-direction:column;max-height:100%;width:100%}#panelMovil .a-modal header{background:#002B67;color:#fff;padding:14px;text-align:center;border-bottom:3px solid #03CED4}#panelMovil .a-modal header h5{margin:0;font-size:12px;font-weight:900;letter-spacing:.06em}#panelMovil .a-modal header p{margin:3px 0 0;font-size:8.5px;color:#03CED4;font-weight:700;letter-spacing:.05em;text-transform:uppercase}#panelMovil .a-modal .in{padding:13px;display:flex;flex-direction:column;gap:9px;overflow:hidden}#panelMovil .a-modal .in h6{margin:0 0 2px;font-size:10px;font-weight:800;color:#002B67}#panelMovil .a-modal .in p{margin:0;font-size:9px;line-height:1.5;color:#64748B}#panelMovil .a-modal footer{padding:12px 13px;background:#F8FAFC;border-top:1px solid #E9EEF4;display:flex;flex-direction:column;gap:9px}#panelMovil .a-check{display:flex;gap:8px;align-items:flex-start;font-size:8.5px;font-weight:700;color:#64748B;line-height:1.4}#panelMovil .a-check b{width:14px;height:14px;border-radius:4px;background:#002B67;color:#fff;display:grid;place-items:center;flex:none}#panelMovil .a-check b svg{width:9px;height:9px}#panelMovil .a-ok{width:54px;height:54px;border-radius:99px;background:#E6FBFC;border:3px solid #03CED4;display:grid;place-items:center;color:#067A80;margin:0 auto}#panelMovil .a-ok svg{width:25px;height:25px}#panelMovil .a-fade{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(to top,#F4F6F8,rgba(244,246,248,0));pointer-events:none;z-index:3}/* ───────────────────────── Fuera de alcance ───────────────────────── */
+#panelMovil .out{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}#panelMovil .out div{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--slate);border-radius:0 10px 10px 0;padding:12px 14px}#panelMovil .out h4{margin:0 0 4px;font-size:12.5px;font-weight:700}#panelMovil .out p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-2)}/* ───────────────────────── Pie ───────────────────────── */
+#panelMovil footer.pie{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}#panelMovil footer.pie p{margin:0;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);line-height:1.6}/* ───────────────────────── Aviso flotante ───────────────────────── */
+#panelMovil .toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,14px);z-index:90;opacity:0;pointer-events:none;
+  background:var(--navy);color:#fff;font-size:12px;font-weight:600;padding:11px 17px;border-radius:10px;
+  border-bottom:3px solid var(--cyan);box-shadow:0 16px 36px -18px rgba(0,0,0,.7);transition:opacity .2s,transform .2s;
+  max-width:calc(100vw - 40px);text-align:center
+}#panelMovil .toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+
+<svg class="sprite" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v13M4 14l3 3 3-3M17 20V7M14 10l3-3 3 3"></path></symbol>
+<symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"></path><path d="M14 3v4h4M9 13h6M9 17h4"></path></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5 1.5 5h-15S6 13 6 9z"></path><path d="M10.5 18.5a2 2 0 0 0 3 0"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><circle cx="8.5" cy="11" r="2"></circle><path d="M5 16c.6-1.6 2-2.2 3.5-2.2S11.4 14.4 12 16M15 10h4M15 14h4"></path></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.2-8 9-4.6-.8-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5.2l3.2 2"></path></symbol>
+<symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 11.5L12 16l4.5-4.5M5 19h14"></path></symbol>
+<symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path><rect x="7" y="14" width="10" height="7" rx="1"></rect></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"></path></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5M5 9v9M9.7 9v9M14.3 9v9M19 9v9M3 21h18"></path></symbol>
+<symbol id="i-vault" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="11" cy="12" r="3.4"></circle><path d="M11 4v2.5M18 12h-1.5"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></symbol>
+<symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></symbol>
+<symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"></path><path d="M8 3v6h8V3M8 21v-6h8v6"></path></symbol>
+<symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h9M18 12v3M15.5 12v2.4"></path></symbol>
+<symbol id="i-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"></path></symbol>
+</defs></svg>
+
+<div class="bar">
+  <div class="bar__in">
+    <div class="mark">
+      <img src="logo.png" alt="">
+      <div><b>LIENZO GUTT MÓVIL</b><span>v1 · 14-sep-2026</span></div>
+    </div>
+    <div class="bar__sp"></div>
+    <div class="meter">
+      <div class="meter__bar" id="medidor" role="img" aria-label="Avance de las pantallas"></div>
+      <span class="meter__txt" id="medidorTxt">—</span>
+    </div>
+    <span class="dirty" id="sucio" hidden="">cambios sin guardar</span>
+    <button class="btn" id="guardar" type="button"><svg><use href="#i-save"></use></svg>Guardar versión</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Entregable D · Diseño del aplicativo móvil</p>
+      <h1>El móvil del socio, pantalla por pantalla</h1>
+      <p class="lede">Diecisiete pantallas para <strong>GUTT MÓVIL</strong>, el canal del socio del SISTEMA
+      FINANCIERO EPS, dibujadas con la marca nueva de GUTT COMPANY S.A.S. Este documento no describe el
+      diseño: <em>es</em> el diseño, y es la referencia contra la que se construye el móvil durante las
+      fases 2 y 3 del cronograma. Cada pantalla lleva su estado y su fase, y ambos se editan aquí mismo:
+      cuando una pantalla se implementa o el comité la acepta, se marca y se guarda una versión nueva, de
+      modo que el lienzo avanza junto con los entregables en vez de quedarse congelado.</p>
+    </div>
+    <dl class="facts">
+      <div><dt>Pantallas</dt><dd>17</dd></div>
+      <div><dt>Paleta</dt><dd>#002B67 · #03CED4</dd></div>
+      <div><dt>Tipografía</dt><dd>Inter</dd></div>
+      <div><dt>Lienzo base</dt><dd>430 × 900 px</dd></div>
+      <div><dt>Fases de construcción</dt><dd>2 y 3</dd></div>
+      <div><dt>Backend</dt><dd>server.js · puerto 5005</dd></div>
+    </dl>
+  </header>
+
+  <hr class="rule">
+
+  <!-- ══════════════════ FUNDAMENTOS ══════════════════ -->
+  <section id="fundamentos">
+    <div class="sec__head"><span class="sec__n">01</span><h2>Fundamentos</h2></div>
+    <p class="sec__sub">Lo que toda pantalla hereda. Estos valores son los mismos que ya viven en
+    <code>index.html</code> y <code>constants.tsx</code> del portal web y en <code>index.css</code> del móvil:
+    el lienzo no inventa una paleta paralela, refleja la que el código ya usa.</p>
+
+    <div class="found">
+      <div class="slab">
+        <h3>Color</h3>
+        <p>Dos escalas derivadas del logo. El navy manda; el cian acentúa y nunca gobierna una pantalla entera.</p>
+        <div class="ramp">
+          <i style="background:#EAF1F9"></i><i style="background:#CFE0F2"></i><i style="background:#A5C4E6"></i><i style="background:#6E9BD1"></i><i style="background:#3D72B8"></i><i style="background:#17509C"></i><i style="background:#0A3D80"></i><i style="background:#002B67"></i><i style="background:#002253"></i><i style="background:#00193D"></i>
+        </div>
+        <div class="ramp">
+          <i style="background:#E6FBFC"></i><i style="background:#C2F5F7"></i><i style="background:#8DEBEE"></i><i style="background:#4FDEE3"></i><i style="background:#03CED4"></i><i style="background:#05AFB5"></i><i style="background:#068E93"></i><i style="background:#067A80"></i><i style="background:#085F63"></i><i style="background:#094B4E"></i>
+        </div>
+        <div class="keys">
+          <span class="key"><b style="background:#002B67"></b>brand-700 · primario<em>#002B67</em></span>
+          <span class="key"><b style="background:#0A3D80"></b>brand-600 · hover<em>#0A3D80</em></span>
+          <span class="key"><b style="background:#03CED4"></b>accent-400 · acento<em>#03CED4</em></span>
+          <span class="key"><b style="background:#067A80"></b>accent-700 · texto<em>#067A80</em></span>
+        </div>
+        <p class="warn"><strong>Regla dura.</strong> El cian del logo da 1,95:1 sobre blanco: sirve de fondo,
+        borde, subrayado y relleno de gráfico, nunca de color de texto. El texto en cian va siempre en
+        <code>#067A80</code>, que da 5,12:1 y cumple WCAG AA.</p>
+      </div>
+
+      <div class="slab">
+        <h3>Tipografía</h3>
+        <p>Inter en todo el aplicativo. Los pesos altos hacen el trabajo de jerarquía; el tamaño casi nunca sube de 22 px.</p>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:900;font-size:21px;letter-spacing:-.02em">$ 1.284,55</span><span>900 · 21 px · saldo</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:800;font-size:15px">Mis solicitudes</span><span>800 · 15 px · título</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:700;font-size:12px">Crédito de consumo</span><span>700 · 12 px · ítem</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:400;font-size:11px;color:var(--ink-2)">Cuota 4 de 24 · vence 01-oct-2026</span><span>400 · 11 px · apoyo</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:800;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)">Cuenta de ahorros</span><span>800 · 9 px · etiqueta</span></div>
+        <p class="warn warn--navy">
+        Las cifras llevan <code>tabular-nums</code> y formato ecuatoriano: punto de miles, coma decimal,
+        el símbolo separado del número — <strong>$ 1.284,55</strong>.</p>
+      </div>
+
+      <div class="slab">
+        <h3>Semáforo de estados</h3>
+        <p>Un solo mapa para toda la aplicación. El verde salió del sistema con la marca nueva: lo positivo
+        vive ahora en la familia cian. Borde de tarjeta y etiqueta salen del mismo renglón, que es justo lo
+        que antes no ocurría.</p>
+        <table class="semaforo">
+          <thead><tr><th>Estado</th><th>Etiqueta</th><th>Barra</th></tr></thead>
+          <tbody>
+            <tr><td>Aprobado · Vigente · Pagado</td><td><span class="pill" style="color:#067A80;background:#E6FBFC">VIGENTE</span></td><td>#05AFB5</td></tr>
+            <tr><td>Solicitado · Por vencer</td><td><span class="pill" style="color:#B45309;background:#FFFBEB">SOLICITADO</span></td><td>#F59E0B</td></tr>
+            <tr><td>Rechazado · Vencido</td><td><span class="pill" style="color:#B91C1C;background:#FEF2F2">RECHAZADO</span></td><td>#EF4444</td></tr>
+            <tr><td>Anulado · Inactivo</td><td><span class="pill" style="color:#475569;background:#F1F5F9">ANULADO</span></td><td>#94A3B8</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slab">
+        <h3>Piezas</h3>
+        <p>Radios generosos (13–18 px), un solo nivel de sombra y el filo cian bajo el botón primario como
+        firma de marca. Nada lleva borde, relleno y sombra a la vez.</p>
+        <div style="display:flex;flex-direction:column;gap:9px;font-family:var(--app)">
+          <div class="a-btn">Transferir</div>
+          <div class="a-btn2">Ver tabla de amortización</div>
+          <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>1804567890</div>
+          <div class="a-field"><svg><use href="#i-lock"></use></svg><span class="ph">Clave de acceso</span></div>
+          <div class="a-item" style="--bar:#05AFB5">
+            <span class="a-ico a-ico--c"><svg><use href="#i-file"></use></svg></span>
+            <div style="flex:1;min-width:0">
+              <div class="a-row"><b style="font-size:11px">Crédito de consumo</b><span class="a-chip a-vig">Vigente</span></div>
+              <p class="a-sub" style="margin-top:2px">Cuota 4 de 24 · <span class="a-money">$ 236,17</span></p>
+            </div>
+          </div>
+        </div>
+        <p class="warn">Los teléfonos de este lienzo muestran siempre el tema claro porque es el único que el
+        aplicativo tiene hoy. El tema oscuro del móvil no está en alcance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PANTALLAS ══════════════════ -->
+  <section id="pantallas">
+    <div class="sec__head"><span class="sec__n">02</span><h2>Las diecisiete pantallas</h2></div>
+    <p class="sec__sub">Agrupadas por el recorrido real del socio, no por orden de construcción. Las etiquetas
+    dicen de dónde viene cada pantalla: <span class="tag tag--venta">Vendida</span> es un compromiso escrito en
+    la propuesta PRF-2026-GUTT-002 y <span class="tag tag--nueva">Nueva</span> es ampliación con datos que el
+    backend ya tiene. Las que no llevan etiqueta ya existen y aquí se rediseñan.</p>
+
+    <!-- ─── Flujo 1 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Acceso y consentimiento</h3><span>3 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-acceso">
+          <div class="board__head">
+            <div class="board__t"><h4>Acceso</h4><code>01</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:14px">
+              <div style="margin-bottom:4px">
+                <div class="a-logo">GC</div>
+                <p style="text-align:center;margin:10px 0 2px;font-size:13px;font-weight:900;letter-spacing:2px;color:#002B67">GUTT MÓVIL</p>
+                <p class="a-sub" style="text-align:center">Canal del socio · Sistema Financiero EPS</p>
+              </div>
+              <div>
+                <span class="a-lab">Cédula o RUC</span>
+                <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>1804567890</div>
+              </div>
+              <div>
+                <span class="a-lab">Clave de acceso</span>
+                <div class="a-field"><svg><use href="#i-lock"></use></svg>••••••••</div>
+              </div>
+              <div class="a-btn">Ingresar</div>
+              <p style="text-align:center;font-size:10px;font-weight:700;color:#067A80;margin:0">¿Olvidaste tu clave?</p>
+              <div style="flex:1"></div>
+              <p class="a-auto">Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Identificación y clave contra <code>/api/socios/login</code>. El sello de
+            autoría vive aquí y en el pie del menú, no como marca de agua.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="acceso"></div>
+        </figure>
+
+        <figure class="board" id="b-consentimiento">
+          <div class="board__head">
+            <div class="board__t"><h4>Consentimiento de datos</h4><code>02</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="filter:blur(1.2px);opacity:.55;justify-content:center;gap:14px">
+              <div class="a-logo">GC</div>
+              <div class="a-field"><svg><use href="#i-id"></use></svg>1804567890</div>
+              <div class="a-field"><svg><use href="#i-lock"></use></svg>••••••••</div>
+              <div class="a-btn">Ingresar</div>
+            </div>
+            <div class="a-mask">
+              <div class="a-modal">
+                <header>
+                  <svg style="width:20px;height:20px;color:#03CED4" aria-hidden="true"><use href="#i-shield"></use></svg>
+                  <h5>PROTECCIÓN DE DATOS</h5>
+                  <p>LOPDP · Registro Oficial 459</p>
+                </header>
+                <div class="in">
+                  <div><h6>Responsable del tratamiento</h6><p>GUTT COMPANY S.A.S., en calidad de operador del sistema de la cooperativa.</p></div>
+                  <div><h6>Finalidad</h6><p>Consultar tus productos, solicitar crédito y transferir entre cuentas del sistema.</p></div>
+                  <div><h6>Tus derechos</h6><p>Acceso, rectificación, eliminación, oposición y portabilidad, por escrito en cualquier oficina.</p></div>
+                </div>
+                <footer>
+                  <span class="a-check"><b><svg><use href="#i-check"></use></svg></b>He leído y acepto el tratamiento de mis datos personales.</span>
+                  <div class="a-btn">Aceptar y continuar</div>
+                </footer>
+              </div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Bloquea el ingreso hasta que el socio acepta. Se muestra una sola vez y
+            queda registrada la fecha de aceptación.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="consentimiento"></div>
+        </figure>
+
+        <figure class="board" id="b-activacion">
+          <div class="board__head">
+            <div class="board__t"><h4>Activación por correo</h4><code>03</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:15px">
+              <div class="a-ok"><svg><use href="#i-mail"></use></svg></div>
+              <div>
+                <h2 class="a-h" style="text-align:center;font-size:16px">Verifica tu correo</h2>
+                <p class="a-sub" style="text-align:center;margin-top:5px">Enviamos un código de seis dígitos a<br><b style="color:#002B67">v•••••••@gmail.com</b></p>
+              </div>
+              <div class="a-codes">
+                <i class="on">4</i><i class="on">8</i><i class="on">2</i><i class="on">9</i><i class="on">1</i><i class="mt">—</i>
+              </div>
+              <div class="a-btn">Validar código</div>
+              <p style="text-align:center;font-size:10px;color:#64748B;margin:0">Reenviar código en <b style="color:#067A80" class="a-money">00:42</b></p>
+              <div style="flex:1"></div>
+              <p class="a-auto">El código caduca a los 10 minutos</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Un socio sin correo confirmado no ve saldos ni puede transferir. El código
+            sale del mismo SMTP que el resto del sistema.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="activacion"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 2 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Inicio y consulta</h3><span>4 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-inicio">
+          <div class="board__head">
+            <div class="board__t"><h4>Inicio</h4><code>04</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <div><p class="a-sub">Buenos días</p><h2 class="a-h">Jorge Tuquinga</h2></div>
+                <span class="a-ico" style="border-radius:99px;position:relative"><svg><use href="#i-bell"></use></svg><i style="position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:99px;background:#F59E0B;border:1.5px solid #EAF1F9"></i></span>
+              </div>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">AHORROS A LA VISTA</p>
+                <p class="a-money" style="font-size:10px;opacity:.72;margin:2px 0 8px;letter-spacing:.05em">2201-0004512</p>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:0">$ 1.284,55</p>
+                <p style="font-size:9px;opacity:.78;margin:5px 0 0">Disponible · corte 14-sep 09:30</p>
+              </div>
+              <div class="a-quick">
+                <a><svg><use href="#i-swap"></use></svg>Transferir</a>
+                <a><svg><use href="#i-file"></use></svg>Crédito</a>
+                <a><svg><use href="#i-vault"></use></svg>Plazo fijo</a>
+                <a><svg><use href="#i-list"></use></svg>Movimientos</a>
+              </div>
+              <p class="a-lab" style="margin:2px 0 0">Mis productos</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-file"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:11px">Crédito de consumo</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:2px">Cuota 4 de 24 · <span class="a-money">$ 236,17</span></p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#05AFB5">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-vault"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:11px">Plazo fijo 120 días</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:2px">Vence 12-dic-2026 · <span class="a-money">$ 2.000,00</span></p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b class="on"><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Saldo primero, acciones después, productos al final. Las cuatro acciones
+            rápidas son las cuatro cosas que un socio abre la app a hacer.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="inicio"></div>
+        </figure>
+
+        <figure class="board" id="b-movimientos">
+          <div class="board__head">
+            <div class="board__t"><h4>Movimientos</h4><code>05</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Movimientos</h2><span class="a-chip a-anu">2201-0004512</span></div>
+              <div class="a-tabs"><b class="on">Todos</b><b>Ingresos</b><b>Egresos</b></div>
+              <p class="a-lab" style="margin:0">Hoy · 14 de septiembre</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;padding:9px 10px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-down"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Transferencia recibida</b><b class="a-money" style="font-size:11px;color:#067A80">+ 150,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">De María F. Chimbo · 09:12</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;padding:9px 10px">
+                  <span class="a-ico"><svg><use href="#i-file"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Pago de cuota de crédito</b><b class="a-money" style="font-size:11px">− 236,17</b></div>
+                    <p class="a-sub" style="margin-top:1px">Cuota 4 de 24 · 08:40</p>
+                  </div>
+                </div>
+              </div>
+              <p class="a-lab" style="margin:2px 0 0">Viernes 12 de septiembre</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;padding:9px 10px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-bank"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Depósito en ventanilla</b><b class="a-money" style="font-size:11px;color:#067A80">+ 400,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">Caja 2 · comprobante 184390</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;padding:9px 10px">
+                  <span class="a-ico"><svg><use href="#i-swap"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Retiro</b><b class="a-money" style="font-size:11px">− 60,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">Ventanilla · 16:05</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b class="on"><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Agrupado por día, signo y color en la misma línea. El estado de cuenta
+            del período se descarga desde el menú de la cabecera.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="movimientos"></div>
+        </figure>
+
+        <figure class="board" id="b-comprobante">
+          <div class="board__head">
+            <div class="board__t"><h4>Comprobante</h4><code>06</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:14px">
+              <div class="a-ok"><svg><use href="#i-check"></use></svg></div>
+              <div>
+                <h2 class="a-h" style="text-align:center;font-size:16px">Transferencia realizada</h2>
+                <p class="a-money" style="text-align:center;font-size:26px;font-weight:900;color:#002B67;margin:7px 0 0">$ 150,00</p>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Para</dt><dd>María F. Chimbo T.</dd></div>
+                  <div><dt>Cuenta destino</dt><dd>2201-0007788</dd></div>
+                  <div><dt>Desde</dt><dd>2201-0004512</dd></div>
+                  <div><dt>Fecha y hora</dt><dd>14-sep-2026 · 09:41</dd></div>
+                  <div><dt>N.º de comprobante</dt><dd>TRF-000184521</dd></div>
+                </dl>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div class="a-btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:12px;height:12px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar</div>
+                <div class="a-btn2" style="flex:1">Compartir</div>
+              </div>
+              <div style="flex:1"></div>
+              <p class="a-auto">Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Una sola plantilla sirve a transferencias, pagos y depósitos: cambia el
+            título y el juego de filas. El PDF sale con el mismo pie de autoría.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="comprobante"></div>
+        </figure>
+
+        <figure class="board" id="b-notificaciones">
+          <div class="board__head">
+            <div class="board__t"><h4>Notificaciones</h4><code>07</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Notificaciones</h2><span style="font-size:9.5px;font-weight:800;color:#067A80">Marcar leídas</span></div>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;align-items:flex-start">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-check"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Crédito aprobado</b><span class="a-sub" style="font-size:8.5px">hoy</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">Tu solicitud de <span class="a-money">$ 3.500,00</span> a 24 meses fue aprobada. Acércate a cualquier oficina a firmar.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <span class="a-ico a-ico--a"><svg><use href="#i-clock"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Cuota por vencer</b><span class="a-sub" style="font-size:8.5px">ayer</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">La cuota 5 vence el 01-oct-2026 por <span class="a-money">$ 236,17</span>.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <span class="a-ico a-ico--a"><svg><use href="#i-vault"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Tu plazo fijo vence pronto</b><span class="a-sub" style="font-size:8.5px">10-sep</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">DPF-2026-0087 vence el 12-dic-2026. Puedes renovarlo o acreditarlo a tus ahorros.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;align-items:flex-start;opacity:.68">
+                  <span class="a-ico"><svg><use href="#i-list"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Estado de cuenta de agosto</b><span class="a-sub" style="font-size:8.5px">01-sep</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">Ya puedes descargarlo desde Movimientos.</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Tres avisos que el sistema ya sabe generar: crédito aprobado, cuota por
+            vencer y DPF por vencer. La barra de color repite el semáforo, sin inventar otro código.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="notificaciones"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 3 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Transferencias</h3><span>2 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-transferencia">
+          <div class="board__head">
+            <div class="board__t"><h4>Transferencia entre socios</h4><code>08</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Transferir</h2>
+              <div class="a-tabs"><b class="on">Entre socios</b><b>Otros bancos</b></div>
+              <div>
+                <span class="a-lab">Desde</span>
+                <div class="a-card" style="padding:10px 11px">
+                  <div class="a-row">
+                    <div><b style="font-size:10.5px">Ahorros a la vista</b><p class="a-money a-sub" style="margin-top:1px">2201-0004512</p></div>
+                    <b class="a-money" style="font-size:12.5px;color:#002B67">$ 1.284,55</b>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <span class="a-lab">Cuenta destino</span>
+                <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>2201-0007788</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:9.5px;font-weight:700;color:#067A80">
+                  <svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-check"></use></svg>MARÍA F. CHIMBO TIBÁN
+                </div>
+              </div>
+              <div>
+                <span class="a-lab">Monto</span>
+                <div class="a-field a-field--on" style="padding:12px 11px"><b class="a-money" style="font-size:19px;font-weight:900;color:#002B67">$ 150,00</b></div>
+              </div>
+              <div>
+                <span class="a-lab">Concepto</span>
+                <div class="a-field"><span class="ph">Aporte mensual</span></div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Transferir</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">El nombre del beneficiario aparece antes de escribir el monto: es la
+            confirmación que evita el error más caro de este flujo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="transferencia"></div>
+        </figure>
+
+        <figure class="board" id="b-interbancaria">
+          <div class="board__head">
+            <div class="board__t"><h4>Transferencia interbancaria</h4><code>09</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Transferir</h2>
+              <div class="a-tabs"><b>Entre socios</b><b class="on">Otros bancos</b></div>
+              <div>
+                <span class="a-lab">Institución destino</span>
+                <div class="a-field a-field--on"><svg><use href="#i-bank"></use></svg>Banco Pichincha<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div>
+                <span class="a-lab">Tipo de cuenta</span>
+                <div class="a-tabs" style="background:#F8FAFC;border:1.5px solid #EEF2F7"><b class="on">Ahorros</b><b>Corriente</b></div>
+              </div>
+              <div>
+                <span class="a-lab">Número de cuenta</span>
+                <div class="a-field"><span class="ph">2100xxxxxx</span></div>
+              </div>
+              <div>
+                <span class="a-lab">Cédula del beneficiario</span>
+                <div class="a-field"><svg><use href="#i-id"></use></svg><span class="ph">Obligatorio para el SPI</span></div>
+              </div>
+              <div>
+                <span class="a-lab">Monto</span>
+                <div class="a-field"><b class="a-money" style="font-size:17px;font-weight:900;color:#94A3B8">$ 0,00</b></div>
+              </div>
+              <div class="a-card" style="background:#E6FBFC;border-color:#BEEFF1;padding:9px 11px">
+                <p style="margin:0;font-size:9px;line-height:1.5;color:#0A4F53"><b>Comisión SPI $ 0,45.</b> Las órdenes recibidas hasta las 14:00 se acreditan el mismo día hábil.</p>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Continuar</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Un mismo módulo con dos pestañas, no dos módulos. Exige cédula del
+            beneficiario porque el SPI del Banco Central la valida contra el nombre.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="interbancaria"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 4 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Crédito</h3><span>5 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-simulador">
+          <div class="board__head">
+            <div class="board__t"><h4>Simulador de crédito</h4><code>10</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Simulador</h2>
+              <div class="a-tabs"><b class="on">Consumo</b><b>Microcrédito</b><b>Vivienda</b></div>
+              <div>
+                <div class="a-row"><span class="a-lab" style="margin:0">Monto</span><b class="a-money" style="font-size:14px;color:#002B67">$ 3.500</b></div>
+                <div class="a-slider"><i style="width:17%"></i><u style="left:17%"></u></div>
+                <div class="a-row"><span class="a-sub">$ 500</span><span class="a-sub">$ 20.000</span></div>
+              </div>
+              <div>
+                <div class="a-row"><span class="a-lab" style="margin:0">Plazo</span><b class="a-money" style="font-size:14px;color:#002B67">24 meses</b></div>
+                <div class="a-slider"><i style="width:42%"></i><u style="left:42%"></u></div>
+                <div class="a-row"><span class="a-sub">6</span><span class="a-sub">48</span></div>
+              </div>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">CUOTA MENSUAL ESTIMADA</p>
+                <p class="a-money" style="font-size:27px;font-weight:900;margin:4px 0 10px">$ 236,17</p>
+                <div style="display:flex;gap:14px;font-size:9px">
+                  <div><p style="opacity:.7;margin:0">Tasa nominal</p><b class="a-money" style="font-size:11px">15,20% anual</b></div>
+                  <div><p style="opacity:.7;margin:0">Total a pagar</p><b class="a-money" style="font-size:11px">$ 5.668,08</b></div>
+                </div>
+              </div>
+              <div class="a-btn2" style="display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-list"></use></svg>Ver tabla de amortización</div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Solicitar este crédito</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Sistema francés, cuota fija. La tasa no se escribe a mano: viene del
+            producto y del plazo, igual que en ventanilla.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="simulador"></div>
+        </figure>
+
+        <figure class="board" id="b-solicitud">
+          <div class="board__head">
+            <div class="board__t"><h4>Solicitud de crédito</h4><code>11</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Solicitud de crédito</h2>
+              <div class="a-step">
+                <i class="done"><svg style="width:9px;height:9px" aria-hidden="true"><use href="#i-check"></use></svg></i><u></u>
+                <i class="on">2</i><u></u>
+                <i>3</i>
+              </div>
+              <p class="a-sub" style="margin-top:-4px">Paso 2 de 3 · Destino y capacidad de pago</p>
+              <div>
+                <span class="a-lab">Destino del crédito</span>
+                <div class="a-field a-field--on">Capital de trabajo<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div>
+                <span class="a-lab">Actividad económica</span>
+                <div class="a-field">Comercio al por menor<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1"><span class="a-lab">Ingresos</span><div class="a-field" style="padding:9px"><b class="a-money" style="font-size:11.5px">$ 1.150,00</b></div></div>
+                <div style="flex:1"><span class="a-lab">Egresos</span><div class="a-field" style="padding:9px"><b class="a-money" style="font-size:11.5px">$ 620,00</b></div></div>
+              </div>
+              <div class="a-card" style="padding:11px">
+                <div class="a-row" style="margin-bottom:7px">
+                  <b style="font-size:10px">Capacidad de pago</b>
+                  <b class="a-money" style="font-size:11px;color:#067A80">46%</b>
+                </div>
+                <div class="a-track"><i style="width:46%"></i></div>
+                <p class="a-sub" style="margin-top:6px;font-size:9px">Excedente <span class="a-money">$ 530,00</span> frente a una cuota de <span class="a-money">$ 236,17</span>.</p>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Continuar</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">La capacidad de pago se calcula mientras el socio escribe, con la misma
+            fórmula que usa el oficial. Nadie envía una solicitud que ya sabe que no pasa.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="solicitud"></div>
+        </figure>
+
+        <figure class="board" id="b-solicitudes">
+          <div class="board__head">
+            <div class="board__t"><h4>Mis solicitudes</h4><code>12</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Mis solicitudes</h2><span class="a-chip a-anu">4</span></div>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 3.500,00</b><span class="a-chip a-pen">Solicitado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 24 meses · 12-sep-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#B45309">En revisión por el oficial de crédito</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#05AFB5;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 1.200,00</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 12 meses · 02-jun-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#067A80">Desembolsado · saldo <span class="a-money">$ 512,40</span></p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#EF4444;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 5.000,00</b><span class="a-chip a-rec">Rechazado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Microcrédito · 36 meses · 18-abr-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#B91C1C">Capacidad de pago insuficiente</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#64748B">$ 800,00</b><span class="a-chip a-anu">Anulado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 6 meses · 05-mar-2026</p>
+                    <p class="a-sub" style="margin-top:2px">Anulada por el socio</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b class="on"><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Los cuatro estados que el backend devuelve, cada uno con su motivo.
+            La barra izquierda y la etiqueta salen del mismo renglón del semáforo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="solicitudes"></div>
+        </figure>
+
+        <figure class="board" id="b-credito">
+          <div class="board__head">
+            <div class="board__t"><h4>Detalle del crédito</h4><code>13</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Crédito de consumo</h2>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">SALDO DE CAPITAL</p>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:4px 0 10px">$ 2.126,53</p>
+                <div class="a-track" style="background:rgba(255,255,255,.22)"><i style="width:17%;background:#03CED4"></i></div>
+                <p style="font-size:9px;opacity:.8;margin:6px 0 0">4 de 24 cuotas pagadas · desembolsado <span class="a-money">$ 2.500,00</span></p>
+              </div>
+              <div class="a-item" style="--bar:#F59E0B">
+                <span class="a-ico a-ico--a"><svg><use href="#i-clock"></use></svg></span>
+                <div style="flex:1;min-width:0">
+                  <div class="a-row"><b style="font-size:10.5px">Próxima cuota</b><span class="a-chip a-pen">01-oct</span></div>
+                  <p class="a-sub" style="margin-top:2px">Cuota 5 · <b class="a-money" style="color:#002B67">$ 236,17</b></p>
+                </div>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Tasa nominal</dt><dd>15,20% anual</dd></div>
+                  <div><dt>Desembolso</dt><dd>01-jun-2026</dd></div>
+                  <div><dt>Vencimiento</dt><dd>01-jun-2028</dd></div>
+                  <div><dt>Días de mora</dt><dd>0</dd></div>
+                  <div><dt>Cuenta contable</dt><dd>140205</dd></div>
+                </dl>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;gap:8px">
+                <div class="a-btn2" style="flex:1">Ver tabla</div>
+                <div class="a-btn" style="flex:1">Pagar cuota</div>
+              </div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Muestra la cuenta contable del crédito (<code>1402</code>, consumo por
+            vencer) porque es lo que el socio necesita citar en ventanilla.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="credito"></div>
+        </figure>
+
+        <figure class="board" id="b-amortizacion">
+          <div class="board__head">
+            <div class="board__t"><h4>Tabla de amortización</h4><code>14</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <h2 class="a-h">Tabla de amortización</h2>
+                <span class="a-ico"><svg><use href="#i-print"></use></svg></span>
+              </div>
+              <div class="a-card" style="padding:11px">
+                <p style="margin:0;font-size:9.5px;font-weight:900;color:#002B67;letter-spacing:.04em">GUTT COMPANY S.A.S.</p>
+                <p class="a-sub" style="margin-top:2px">Sistema francés · cuota fija · 15,20% anual</p>
+                <div style="height:1px;background:#E9EEF4;margin:9px 0"></div>
+                <table class="a-tab">
+                  <thead><tr><th>N.º</th><th>Vence</th><th>Capital</th><th>Interés</th><th>Cuota</th><th>Saldo</th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>01-jul-26</td><td>204,50</td><td>31,67</td><td>236,17</td><td>2.295,50</td></tr>
+                    <tr><td>2</td><td>01-ago-26</td><td>207,09</td><td>29,08</td><td>236,17</td><td>2.088,41</td></tr>
+                    <tr><td>3</td><td>01-sep-26</td><td>209,71</td><td>26,46</td><td>236,17</td><td>1.878,70</td></tr>
+                    <tr><td>4</td><td>01-oct-26</td><td>212,37</td><td>23,80</td><td>236,17</td><td>1.666,33</td></tr>
+                    <tr><td colspan="6" style="text-align:center;color:#94A3B8;font-weight:700;padding:6px 0">20 cuotas más</td></tr>
+                    <tr class="tot"><td colspan="2">Totales</td><td>2.500,00</td><td>3.168,08</td><td>5.668,08</td><td>0,00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="a-btn" style="display:flex;align-items:center;justify-content:center;gap:6px"><svg style="width:12px;height:12px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar en PDF</div>
+              <div style="flex:1"></div>
+              <p class="a-auto">Documento generado el 14-sep-2026 · Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">El documento oficial, no un resumen. La columna de saldo cierra en 0,00 y
+            los totales cuadran contra el desembolso: así se verifica de un vistazo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="amortizacion"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 5 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Ahorro e inversión</h3><span>1 pantalla</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-dpf">
+          <div class="board__head">
+            <div class="board__t"><h4>Certificados a plazo fijo</h4><code>15</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Plazo fijo</h2><span class="a-chip a-vig">1 vigente</span></div>
+              <div class="a-navy">
+                <div class="a-row">
+                  <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">DPF-2026-0087</p>
+                  <span class="a-chip" style="background:rgba(3,206,212,.22);color:#8DEBEE">Vigente</span>
+                </div>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:5px 0 8px">$ 2.000,00</p>
+                <p style="font-size:9px;opacity:.8;margin:0">120 días al 8,25% anual</p>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Apertura</dt><dd>14-ago-2026</dd></div>
+                  <div><dt>Vencimiento</dt><dd>12-dic-2026</dd></div>
+                  <div><dt>Interés a recibir</dt><dd>$ 67,81</dd></div>
+                  <div><dt>Cuenta contable</dt><dd>210315 · 91-180 días</dd></div>
+                  <div><dt>Al vencer</dt><dd>Acreditar a ahorros</dd></div>
+                </dl>
+              </div>
+              <div class="a-btn2" style="display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar certificado</div>
+              <p class="a-lab" style="margin:3px 0 0">Anteriores</p>
+              <div class="a-item" style="--bar:#94A3B8;padding:9px 10px;opacity:.75">
+                <div style="flex:1;min-width:0">
+                  <div class="a-row"><b class="a-money" style="font-size:11px">$ 1.500,00</b><span class="a-chip a-anu">Cancelado</span></div>
+                  <p class="a-sub" style="margin-top:2px">90 días · venció 20-may-2026</p>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Abrir un plazo fijo</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Cita la subcuenta del tramo (<code>210315</code>, 91 a 180 días) porque es
+            la misma que el sistema contabiliza al abrir el depósito.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="dpf"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 6 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Asistencia y cuenta</h3><span>2 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-asistente">
+          <div class="board__head">
+            <div class="board__t"><h4>Asistente virtual</h4><code>16</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-spark"></use></svg></span>
+                  <div><h2 class="a-h" style="font-size:13px">Asistente</h2><p class="a-sub">Consulta, no ejecuta</p></div>
+                </div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+                <div class="a-bub a-bub--ia">Hola Jorge. Puedo consultar tus saldos, explicarte una cuota o ayudarte a simular un crédito.</div>
+                <div class="a-bub a-bub--yo">¿Cuánto me falta para terminar mi crédito?</div>
+                <div class="a-bub a-bub--ia">Te quedan <b>20 cuotas</b> de <span class="a-money">$ 236,17</span>. El saldo de capital es <span class="a-money">$ 2.126,53</span> y la última cuota vence el <b>01-jun-2028</b>.</div>
+                <div class="a-bub a-bub--yo">¿Y si abono $500?</div>
+              </div>
+              <div class="a-sug"><b>Mi próxima cuota</b><b>Simular un crédito</b><b>Abrir un plazo fijo</b></div>
+              <div class="a-field a-field--on"><svg style="color:#03CED4"><use href="#i-spark"></use></svg><span class="ph">Escribe tu consulta…</span><svg style="margin-left:auto;color:#002B67"><use href="#i-right"></use></svg></div>
+              <p class="a-auto">El asistente no ejecuta transacciones ni entrega asesoría financiera.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Responde sobre los datos del socio que ya tiene en pantalla. El límite
+            está escrito en la propia interfaz, no escondido en los términos.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="asistente"></div>
+        </figure>
+
+        <figure class="board" id="b-perfil">
+          <div class="board__head">
+            <div class="board__t"><h4>Perfil del socio</h4><code>17</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div style="text-align:center;padding:6px 0 2px">
+                <div class="a-logo" style="border-radius:99px;font-style:normal;letter-spacing:0;font-size:17px">JT</div>
+                <h2 class="a-h" style="margin-top:9px">Jorge Tuquinga</h2>
+                <p class="a-sub" style="margin-top:2px">Socio 100067 · desde marzo de 2019</p>
+                <span class="a-chip a-vig" style="margin-top:7px">Certificados de aportación $ 120,00</span>
+              </div>
+              <div class="a-list" style="gap:6px">
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-id"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Datos personales</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-key"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Cambiar clave de acceso</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-bell"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Notificaciones</b>
+                  <span style="width:30px;height:17px;border-radius:99px;background:#05AFB5;position:relative;flex:none"><i style="position:absolute;top:2px;right:2px;width:13px;height:13px;border-radius:99px;background:#fff"></i></span>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-shield"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Protección de datos</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico" style="background:#FEF2F2;color:#B91C1C"><svg><use href="#i-out"></use></svg></span>
+                  <b style="flex:1;font-size:11px;color:#B91C1C">Cerrar sesión</b>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <p class="a-auto">GUTT MÓVIL 1.4.0 · Desarrollado por Jorge Tuquinga<br>GUTT COMPANY S.A.S.</p>
+            </div>
+            <div class="a-nav">
+              <b><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b class="on"><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Cerrar sesión es la única fila en rojo de toda la aplicación: el rojo
+            queda reservado para lo que el socio no debe tocar por accidente.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="perfil"></div>
+        </figure>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ FUERA DE ALCANCE ══════════════════ -->
+  <section id="limites">
+    <div class="sec__head"><span class="sec__n">03</span><h2>Fuera de alcance</h2></div>
+    <p class="sec__sub">Dicho por escrito para que no reaparezca a mitad de la fase 2. Nada de esto se diseña
+    ni se construye en este contrato; si el comité lo quiere, entra como adenda con su propio plazo.</p>
+    <div class="out">
+      <div><h4>Pago de servicios básicos</h4><p>Exige convenio de recaudación con un agregador y conciliación diaria propia.</p></div>
+      <div><h4>Biometría</h4><p>Huella y rostro dependen del dispositivo y de una política de riesgo que la cooperativa aún no tiene.</p></div>
+      <div><h4>Apertura de cuenta 100% digital</h4><p>Requiere validación de identidad contra el Registro Civil y firma electrónica.</p></div>
+      <div><h4>Geolocalización del socio</h4><p>El croquis de domicilio y de trabajo se levanta en ventanilla, donde ya funciona.</p></div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <p>Lienzo de diseño · GUTT MÓVIL<br>Entregable D del plan de implementación</p>
+    <p style="text-align:right">Desarrollado por Jorge Tuquinga<br>GUTT COMPANY S.A.S. · 14-sep-2026</p>
+  </footer>
+</div>
+
+<div class="toast" id="toastMovil" role="status" aria-live="polite"></div>
+
+<script id="estado-lienzo" type="application/json">
+{
+  "acceso": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "consentimiento": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "activacion": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "inicio": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "movimientos": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "comprobante": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "notificaciones": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "transferencia": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "interbancaria": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "simulador": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "solicitud": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "solicitudes": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "credito": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "amortizacion": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "dpf": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "asistente": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "perfil": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  }
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* La plantilla se captura ANTES de pintar nada: es el documento tal como se
+     escribió, sin una sola marca del estado en vivo. Al guardar se reemplaza
+     únicamente el bloque JSON dentro de ella. */
+  var PLANTILLA = document.body.innerHTML;
+  var CABEZA = document.head.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, "");
+
+  var ESTADO = JSON.parse(document.getElementById("estado-lienzo").textContent);
+  var sucio = false;
+  var arte = null;
+
+  var ESTADOS = [
+    { id:"por-construir", txt:"Por construir", fg:"#475569", bg:"#F1F5F9", bd:"#DDE4EC" },
+    { id:"en-desarrollo", txt:"En desarrollo", fg:"#B45309", bg:"#FFFBEB", bd:"#FBE3B6" },
+    { id:"implementada",  txt:"Implementada",  fg:"#067A80", bg:"#E6FBFC", bd:"#B6EDEF" },
+    { id:"verificada",    txt:"Verificada",    fg:"#FFFFFF", bg:"#002B67", bd:"#002B67" }
+  ];
+  var FASES = {
+    1:"Fase 1 · Esquema", 2:"Fase 2 · Módulos", 3:"Fase 3 · Integración",
+    4:"Fase 4 · Infraestructura", 5:"Fase 5 · Continuidad",
+    6:"Fase 6 · Capacitación", 7:"Fase 7 · Producción"
+  };
+
+  function porId(id){ for(var i=0;i<ESTADOS.length;i++){ if(ESTADOS[i].id===id) return ESTADOS[i]; } return ESTADOS[0]; }
+
+  function aviso(texto){
+    var t = document.getElementById("toastMovil");
+    t.textContent = texto; t.classList.add("on");
+    clearTimeout(aviso._t);
+    aviso._t = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+
+  function marcarSucio(){
+    sucio = true;
+    document.getElementById("sucio").hidden = false;
+  }
+
+  function medidor(){
+    var cuenta = {};
+    ESTADOS.forEach(function(e){ cuenta[e.id] = 0; });
+    var total = 0;
+    Object.keys(ESTADO).forEach(function(k){ cuenta[porId(ESTADO[k].estado).id]++; total++; });
+
+    var barra = document.getElementById("medidor");
+    barra.textContent = "";
+    ESTADOS.slice().reverse().forEach(function(e){
+      if(!cuenta[e.id]) return;
+      var i = document.createElement("i");
+      i.style.width = (cuenta[e.id] / total * 100) + "%";
+      i.style.background = e.id === "por-construir" ? "#C3CDDB" : e.bg === "#FFFBEB" ? "#F59E0B" : e.id === "implementada" ? "#05AFB5" : "#002B67";
+      i.title = e.txt + ": " + cuenta[e.id];
+      barra.appendChild(i);
+    });
+    document.getElementById("medidorTxt").textContent =
+      (cuenta["implementada"] + cuenta["verificada"]) + " de " + total + " listas";
+  }
+
+  function pintarChip(boton, id){
+    var e = porId(ESTADO[id].estado);
+    boton.textContent = e.txt;
+    boton.style.color = e.fg;
+    boton.style.background = e.bg;
+    boton.style.borderColor = e.bd;
+    boton.setAttribute("aria-label", "Estado de la pantalla: " + e.txt + ". Pulsa para cambiar.");
+  }
+
+  function construir(){
+    var cajas = document.querySelectorAll(".board__ctl");
+    Array.prototype.forEach.call(cajas, function(caja){
+      var id = caja.getAttribute("data-id");
+      if(!ESTADO[id]) ESTADO[id] = { estado:"por-construir", fase:2, nota:"" };
+
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.id = "estado-" + id;
+      pintarChip(chip, id);
+      chip.addEventListener("click", function(){
+        var i = 0;
+        for(var k=0;k<ESTADOS.length;k++){ if(ESTADOS[k].id===ESTADO[id].estado){ i = k; break; } }
+        ESTADO[id].estado = ESTADOS[(i+1) % ESTADOS.length].id;
+        pintarChip(chip, id);
+        medidor();
+        marcarSucio();
+      });
+
+      var fase = document.createElement("button");
+      fase.type = "button";
+      fase.className = "chip chip--fase";
+      fase.id = "fase-" + id;
+      fase.textContent = FASES[ESTADO[id].fase] || FASES[2];
+      fase.addEventListener("click", function(){
+        ESTADO[id].fase = (ESTADO[id].fase % 7) + 1;
+        fase.textContent = FASES[ESTADO[id].fase];
+        marcarSucio();
+      });
+
+      var nota = document.createElement("textarea");
+      nota.className = "nota";
+      nota.id = "nota-" + id;
+      nota.rows = 1;
+      nota.placeholder = "Nota de diseño o de avance…";
+      nota.value = ESTADO[id].nota || "";
+      nota.addEventListener("input", function(){
+        ESTADO[id].nota = nota.value;
+        marcarSucio();
+      });
+
+      caja.appendChild(chip);
+      caja.appendChild(fase);
+      caja.appendChild(nota);
+    });
+    medidor();
+  }
+
+  function documento(){
+    var json = JSON.stringify(ESTADO, null, 2).replace(/</g, "\\u003c");
+    var cuerpo = PLANTILLA.replace(
+      /(<script id="estado-lienzo"[^>]*>)[\s\S]*?(<\/script>)/,
+      function(_, abre, cierra){ return abre + "\n" + json + "\n" + cierra; }
+    );
+    return "<!doctype html>\n<html lang=\"es\">\n<head>\n" + CABEZA + "\n</head>\n<body>\n" + cuerpo + "\n</body>\n</html>";
+  }
+
+  function guardar(){
+    var boton = document.getElementById("guardar");
+    if(!arte){ aviso("Esta vista es de solo lectura: no se puede guardar."); return; }
+    boton.disabled = true;
+    arte.publish(documento()).then(function(){
+      sucio = false;
+      document.getElementById("sucio").hidden = true;
+      aviso("Versión guardada. Todos los que tengan el lienzo abierto la verán.");
+    }).catch(function(err){
+      var c = err && err.code;
+      if(c === "conflict"){
+        aviso("Alguien guardó antes que tú. La página se actualiza sola con esa versión.");
+      } else if(c === "not_granted" || c === "not_writer"){
+        aviso("No tienes permiso de edición sobre este lienzo.");
+      } else {
+        aviso("No se pudo guardar. Vuelve a intentarlo.");
+      }
+    }).then(function(){ boton.disabled = false; });
+  }
+
+  function arrancar(datos){
+    if(datos && datos.estado){
+      Object.keys(datos.estado).forEach(function(k){ ESTADO[k] = datos.estado[k]; });
+    }
+    construir();
+    if(datos && datos.sucio) marcarSucio();
+
+    document.getElementById("guardar").addEventListener("click", guardar);
+    window.addEventListener("beforeunload", function(e){
+      if(sucio){ e.preventDefault(); e.returnValue = ""; }
+    });
+
+    if(window.claude && window.claude.use){
+      window.claude.use("artifact").then(function(a){
+        arte = a;
+        if(!a){
+          var b = document.getElementById("guardar");
+          b.classList.add("btn--ghost");
+          b.title = "Solo lectura";
+        }
+      }).catch(function(){});
+    }
+  }
+
+  if(window.claude && window.claude.hot && window.claude.hot.snapshot){
+    window.claude.hot.snapshot(function(){ return { estado: ESTADO, sucio: sucio }; });
+  }
+  if(window.claude && window.claude.hot && window.claude.hot.ready){
+    window.claude.hot.ready(arrancar);
+  } else {
+    arrancar((window.claude && window.claude.hot && window.claude.hot.data) || {});
+  }
+})();
+</script>
+</div>
+
+<div id="panelWeb" hidden>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800;900&amp;display=swap">
+<style>
+:root #panelWeb{
+  --navy:#002B67; --navy-600:#0A3D80; --navy-50:#EAF1F9;
+  --cyan:#03CED4; --cyan-700:#067A80; --cyan-50:#E6FBFC;
+  --ground:#EDF1F7; --panel:#FFFFFF; --panel-2:#F6F9FC;
+  --line:#D4DDE9; --line-soft:#E4EBF3;
+  --ink:#0B1929; --ink-2:#465870; --ink-3:#7889A0;
+  --shadow-board:0 22px 44px -28px rgba(4,22,50,.55);
+  --sans:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace;
+  --app:'Inter','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #panelWeb{
+  --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+  --line:#21314A; --line-soft:#1A2739;
+  --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+}}
+:root[data-theme="dark"] #panelWeb{
+  --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+  --line:#21314A; --line-soft:#1A2739;
+  --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+}
+#panelWeb *{box-sizing:border-box}
+#panelWeb{font-family:var(--sans);color:var(--ink);background:var(--ground);-webkit-font-smoothing:antialiased}
+#panelWeb .wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 56px}
+#panelWeb code{font-family:var(--mono);font-size:.92em;background:var(--panel-2);padding:1px 5px;border-radius:4px}
+#panelWeb .bar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(10px);box-shadow:0 1px 0 var(--line)}
+#panelWeb .bar__in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#panelWeb .mark{display:flex;align-items:center;gap:11px}
+#panelWeb .mark img{width:32px;height:32px;object-fit:contain;border-radius:6px}
+#panelWeb .mark b{display:block;font-size:13px;font-weight:700}
+#panelWeb .mark span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+#panelWeb .bar__sp{flex:1}
+#panelWeb .bar__note{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+#panelWeb .hero{padding:36px 0 8px}
+#panelWeb .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-700);margin:0 0 8px}
+#panelWeb h1{font-size:clamp(24px,3.4vw,32px);font-weight:700;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
+#panelWeb .lede{font-size:13.5px;line-height:1.62;color:var(--ink-2);max-width:66ch;margin:0 0 20px}
+#panelWeb .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);margin-bottom:26px}
+#panelWeb .facts div{padding:10px 14px;border-left:1px solid var(--line-soft)}
+#panelWeb .facts div:first-child{border-left:0}
+#panelWeb .facts dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0}
+#panelWeb .facts dd{margin:3px 0 0;font-size:12px;font-weight:600}
+
+#panelWeb .sec__head{display:flex;align-items:baseline;gap:14px;margin:38px 0 6px}
+#panelWeb .sec__n{font-family:var(--mono);font-size:11px;color:var(--cyan-700);letter-spacing:.1em}
+#panelWeb h2{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
+#panelWeb .sec__sub{font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:72ch;margin:6px 0 22px}
+
+#panelWeb .found{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+#panelWeb .slab{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+#panelWeb .slab h3{margin:0 0 6px;font-size:12.5px;font-weight:700}
+#panelWeb .slab p{margin:0;font-size:11.5px;line-height:1.6;color:var(--ink-2)}
+#panelWeb .slab p+p{margin-top:8px}
+
+#panelWeb .flow{margin-top:8px}
+#panelWeb .flow__bar{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+#panelWeb .flow__bar h3{margin:0;font-size:14px;font-weight:700}
+#panelWeb .flow__bar span{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-left:auto}
+#panelWeb .pgrid{display:grid;grid-template-columns:repeat(auto-fit,380px);justify-content:center;gap:34px 26px}
+@media(min-width:820px){#panelWeb .pgrid{justify-content:start}}
+#panelWeb .board{width:380px;display:flex;flex-direction:column;gap:9px}
+#panelWeb .board__t{display:flex;align-items:baseline;gap:8px}
+#panelWeb .board__t h4{margin:0;font-size:13px;font-weight:700}
+#panelWeb .board__t code{margin-left:auto;background:none;padding:0;color:var(--ink-3);font-size:9.5px}
+#panelWeb .board__desc{margin:0;font-size:11px;line-height:1.55;color:var(--ink-2)}
+
+#panelWeb .frame{width:380px;border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow-board);border:1px solid var(--line)}
+#panelWeb .chrome{background:#E2E6ED;padding:8px 12px;display:flex;align-items:center;gap:7px}
+#panelWeb .chrome i{width:8px;height:8px;border-radius:99px;background:#C7CEDA;flex:none}
+#panelWeb .chrome i:nth-child(1){background:#F3A6A6}
+#panelWeb .chrome i:nth-child(2){background:#F6D08A}
+#panelWeb .chrome i:nth-child(3){background:#9FE0B8}
+#panelWeb .chrome .url{flex:1;background:#fff;border-radius:99px;padding:3px 12px;font-family:var(--mono);font-size:8.5px;color:#94A3B8;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#panelWeb .page{max-height:480px;overflow:hidden;position:relative;font-family:var(--app);color:#1E293B;background:#fff}
+#panelWeb .w-fade{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(to top,#fff,rgba(255,255,255,0));pointer-events:none}
+
+#panelWeb .w-nav{display:flex;align-items:center;gap:16px;padding:11px 20px;border-bottom:1px solid #EEF1F6}
+#panelWeb .w-brand{display:flex;align-items:center;gap:7px;margin-right:auto}
+#panelWeb .w-logo{width:22px;height:22px;border-radius:6px;background:#002B67;border-bottom:2px solid #03CED4;display:grid;place-items:center;color:#fff;font-size:9px;font-weight:900;font-style:italic}
+#panelWeb .w-brand b{font-size:10.5px;font-weight:800;color:#002B67;letter-spacing:-.01em}
+#panelWeb .w-links{display:flex;gap:13px}
+#panelWeb .w-links span{font-size:9px;font-weight:600;color:#465870}
+#panelWeb .w-links span.on{color:#002B67;font-weight:800}
+#panelWeb .w-cta{background:#002B67;color:#fff;border-bottom:2px solid #03CED4;border-radius:7px;padding:6px 12px;font-size:9px;font-weight:800;white-space:nowrap}
+
+#panelWeb .w-hero{padding:30px 20px;background:linear-gradient(160deg,#002B67 0%,#0A3D80 100%);color:#fff;position:relative;overflow:hidden}
+#panelWeb .w-hero::after{content:"";position:absolute;right:-36px;top:-36px;width:140px;height:140px;border-radius:99px;border:12px solid rgba(3,206,212,.18)}
+#panelWeb .w-eyebrow{font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8DEBEE;margin:0 0 7px}
+#panelWeb .w-h1{font-size:17px;font-weight:800;line-height:1.22;margin:0 0 8px;max-width:82%}
+#panelWeb .w-sub{font-size:9.5px;line-height:1.55;opacity:.86;max-width:84%;margin:0 0 15px}
+#panelWeb .w-btnrow{display:flex;gap:7px}
+#panelWeb .w-btn{background:#03CED4;color:#00323A;border-radius:7px;padding:7px 13px;font-size:8.5px;font-weight:800;display:inline-block}
+#panelWeb .w-btn2{border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:7px;padding:6px 13px;font-size:8.5px;font-weight:800}
+#panelWeb .w-shot{margin-top:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:9px;height:76px;display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,.62);letter-spacing:.03em}
+
+#panelWeb .w-trust{padding:12px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #EEF1F6;flex-wrap:wrap}
+#panelWeb .w-trust span{font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94A3B8}
+#panelWeb .w-trust b{font-size:8.5px;font-weight:800;color:#465870;background:#F1F5F9;padding:3px 9px;border-radius:99px}
+
+#panelWeb .w-feats{padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#panelWeb .w-feat{background:#F8FAFC;border:1px solid #EEF1F6;border-radius:9px;padding:10px}
+#panelWeb .w-feat i{display:block;width:20px;height:20px;border-radius:6px;background:#E6FBFC;margin-bottom:6px}
+#panelWeb .w-feat b{display:block;font-size:9px;font-weight:800;color:#0B1929;margin-bottom:2px}
+#panelWeb .w-feat p{margin:0;font-size:8px;line-height:1.4;color:#64748B}
+
+#panelWeb .w-quote{margin:0 20px 18px;background:#EAF1F9;border-left:3px solid #002B67;border-radius:0 9px 9px 0;padding:12px 14px}
+#panelWeb .w-quote p{margin:0;font-size:9px;line-height:1.5;color:#0B1929;font-style:italic}
+#panelWeb .w-quote span{display:block;margin-top:6px;font-size:8px;font-weight:700;color:#465870}
+
+#panelWeb .w-band{background:#0A3D80;color:#fff;padding:18px 20px;text-align:center}
+#panelWeb .w-band b{display:block;font-size:11px;font-weight:800;margin-bottom:8px}
+
+#panelWeb .w-foot{background:#0B1929;color:#7889A0;padding:14px 20px;font-size:7.5px;display:flex;justify-content:space-between;gap:10px}
+
+#panelWeb .w-team{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#panelWeb .w-person{text-align:center;background:#F8FAFC;border:1px solid #EEF1F6;border-radius:9px;padding:13px 8px}
+#panelWeb .w-avatar{width:34px;height:34px;border-radius:99px;background:#002B67;color:#fff;display:grid;place-items:center;margin:0 auto 7px;font-size:11px;font-weight:800}
+#panelWeb .w-person b{display:block;font-size:9px;font-weight:800;color:#0B1929}
+#panelWeb .w-person span{display:block;font-size:7.5px;color:#67748C;margin-top:2px}
+
+#panelWeb .w-form{padding:16px 20px;display:flex;flex-direction:column;gap:8px}
+#panelWeb .w-fld{background:#F8FAFC;border:1px solid #EEF1F6;border-radius:7px;padding:8px 10px;font-size:8.5px;color:#94A3B8}
+#panelWeb .w-fld.tall{height:46px}
+#panelWeb .w-contact{padding:0 20px 18px;display:flex;flex-direction:column;gap:5px;margin:0}
+#panelWeb .w-contact div{display:flex;justify-content:space-between;font-size:8.5px;padding:6px 0;border-bottom:1px dashed #EEF2F7}
+#panelWeb .w-contact dt{color:#94A3B8;font-family:var(--mono);font-size:7.5px;text-transform:uppercase;letter-spacing:.03em;background:none;padding:0}
+#panelWeb .w-contact dd{margin:0;font-weight:700;color:#0B1929}
+
+#panelWeb .w-modlist{padding:16px 20px 18px;display:flex;flex-direction:column;gap:7px}
+#panelWeb .w-mod{display:flex;gap:9px;align-items:flex-start;background:#F8FAFC;border:1px solid #EEF1F6;border-radius:8px;padding:9px 10px}
+#panelWeb .w-mod i{width:20px;height:20px;border-radius:6px;background:#E6FBFC;flex:none;margin-top:1px}
+#panelWeb .w-mod b{display:block;font-size:9px;font-weight:800;color:#0B1929}
+#panelWeb .w-mod p{margin:2px 0 0;font-size:8px;color:#64748B;line-height:1.4}
+
+#panelWeb .out{display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+#panelWeb .out div{background:var(--panel);border:1px solid var(--line);border-left:3px solid #94A3B8;border-radius:0 9px 9px 0;padding:11px 13px}
+#panelWeb .out h4{margin:0 0 4px;font-size:12px;font-weight:700}
+#panelWeb .out p{margin:0;font-size:11px;line-height:1.5;color:var(--ink-2)}
+
+#panelWeb footer.pie{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+</style>
+
+<div class="bar">
+  <div class="bar__in">
+    <div class="mark">
+      <img src="logo.png" alt="">
+      <div><b>BOSQUEJO PÁGINA WEB</b><span>Track D · 16-sep-2026</span></div>
+    </div>
+    <div class="bar__sp"></div>
+    <span class="bar__note">4 páginas · vista de escritorio · solo lectura</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Track D · Página web de GUTT COMPANY S.A.S.</p>
+    <h1>Cómo se vería el sitio, antes de escribir una sola línea de código</h1>
+    <p class="lede">Cuatro páginas — Inicio, Producto, Nosotros y Contacto — con la misma marca del móvil
+      (navy <code>#002B67</code> + cian <code>#03CED4</code>). Es un bosquejo de estructura y contenido,
+      no diseño final: sirve para que el comité apruebe el mensaje y el recorrido antes de que se construya
+      de verdad. El dominio (tecnifin.com) y el hosting se contratan con un tope conjunto de USD 150 — ver Track D en "Otros frentes del
+      proyecto", en la pestaña Desarrollo.</p>
+    <dl class="facts">
+      <div><dt>Páginas</dt><dd>4</dd></div>
+      <div><dt>Paleta</dt><dd>#002B67 · #03CED4</dd></div>
+      <div><dt>Tipografía</dt><dd>Inter</dd></div>
+      <div><dt>Lienzo base</dt><dd>1280 px de ancho</dd></div>
+      <div><dt>Dominio</dt><dd>tecnifin.com (a contratar)</dd></div>
+      <div><dt>Responsable</dt><dd>Franklin Lechon</dd></div>
+    </dl>
+  </header>
+
+  <section id="fundamentos-web">
+    <div class="sec__head"><span class="sec__n">01</span><h2>Qué cambia frente al móvil</h2></div>
+    <p class="sec__sub">Mismos tokens de marca, tratamiento distinto: el sitio vende antes de que alguien
+      inicie sesión, así que necesita bloques grandes de color y una sola idea por sección — no la densidad
+      de datos de una pantalla de socio ya identificado.</p>
+    <div class="found">
+      <div class="slab">
+        <h3>Estructura de página</h3>
+        <p>Barra fija con los 5 enlaces y un botón de acción. Franja de héroe a todo el ancho en navy.
+          Secciones alternadas blanco / gris muy claro para marcar el ritmo del scroll. Una sola franja
+          de llamado a la acción antes del pie, nunca más de una por página.</p>
+      </div>
+      <div class="slab">
+        <h3>Contenido real, no relleno</h3>
+        <p>Los seis reportes SEPS, las pantallas del móvil y el cliente real (COAC 20 de Febrero) ya
+          existen — el sitio los muestra, no promete algo que el sistema no hace todavía. Donde falta
+          un dato real (testimonio, correo de contacto) el bosquejo lo marca como pendiente en vez de
+          inventarlo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="paginas-web">
+    <div class="sec__head"><span class="sec__n">02</span><h2>Las cuatro páginas</h2></div>
+    <p class="sec__sub">Vista de escritorio, recortada por abajo con degradado — cada página sigue
+      bajando en el sitio real. El bosquejo no es interactivo: es la referencia para construir.</p>
+
+    <div class="flow">
+      <div class="flow__bar"><h3>Recorrido del visitante</h3><span>4 páginas</span></div>
+      <div class="pgrid">
+
+        <figure class="board" id="wb-inicio">
+          <div class="board__t"><h4>Inicio</h4><code>01</code></div>
+          <div class="frame">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">guttcompany.com</span></div>
+            <div class="page">
+              <nav class="w-nav">
+                <div class="w-brand"><span class="w-logo">GC</span><b>GUTT COMPANY</b></div>
+                <div class="w-links"><span class="on">Inicio</span><span>Producto</span><span>Nosotros</span><span>Precios</span><span>Contacto</span></div>
+                <span class="w-cta">Solicitar demo</span>
+              </nav>
+              <div class="w-hero">
+                <p class="w-eyebrow">Core bancario para cooperativas SEPS</p>
+                <h2 class="w-h1">El sistema financiero que tu cooperativa necesita, listo para producción</h2>
+                <p class="w-sub">Créditos, cartera, contabilidad y los seis reportes regulatorios de la SEPS, en un solo sistema standalone.</p>
+                <div class="w-btnrow"><span class="w-btn">Solicitar una demo</span><span class="w-btn2">Ver el producto</span></div>
+                <div class="w-shot">captura del panel de Cartera SEPS</div>
+              </div>
+              <div class="w-trust"><span>Ya opera en</span><b>COAC 20 de Febrero</b></div>
+              <div class="w-feats">
+                <div class="w-feat"><i></i><b>Cartera SEPS</b><p>Clasificación y reclasificación con el mismo motor que alimenta los reportes.</p></div>
+                <div class="w-feat"><i></i><b>Reportería SEPS</b><p>Los seis reportes regulatorios listos para entregar cada mes.</p></div>
+                <div class="w-feat"><i></i><b>Créditos</b><p>Simulación, aprobación y amortización con partida doble automática.</p></div>
+                <div class="w-feat"><i></i><b>Móvil del socio</b><p>Saldos, transferencias y solicitud de crédito desde el celular.</p></div>
+              </div>
+              <div class="w-quote"><p>"Espacio para el primer testimonio real de una cooperativa cliente."</p><span>— pendiente, no inventar una cita</span></div>
+              <div class="w-band"><b>¿Listo para modernizar tu cooperativa?</b><span class="w-btn">Solicitar una demo</span></div>
+              <div class="w-foot"><span>© 2026 GUTT COMPANY S.A.S.</span><span>Ecuador</span></div>
+              <span class="w-fade"></span>
+            </div>
+          </div>
+          <figcaption><p class="board__desc">La única página que vende sin contexto: debe explicar qué es
+            el sistema y a quién sirve en los primeros 10 segundos.</p></figcaption>
+        </figure>
+
+        <figure class="board" id="wb-producto">
+          <div class="board__t"><h4>Producto</h4><code>02</code></div>
+          <div class="frame">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">guttcompany.com/producto</span></div>
+            <div class="page">
+              <nav class="w-nav">
+                <div class="w-brand"><span class="w-logo">GC</span><b>GUTT COMPANY</b></div>
+                <div class="w-links"><span>Inicio</span><span class="on">Producto</span><span>Nosotros</span><span>Precios</span><span>Contacto</span></div>
+                <span class="w-cta">Solicitar demo</span>
+              </nav>
+              <div class="w-hero" style="padding-bottom:22px">
+                <p class="w-eyebrow">Producto</p>
+                <h2 class="w-h1">Un solo sistema para toda la operación de tu cooperativa</h2>
+                <p class="w-sub">Seis módulos que hoy corren en producción, no una maqueta.</p>
+              </div>
+              <div class="w-modlist">
+                <div class="w-mod"><i></i><div><b>Socios y cuentas</b><p>Apertura, consulta y mantenimiento de cuentas de ahorro.</p></div></div>
+                <div class="w-mod"><i></i><div><b>Créditos</b><p>Simulación, solicitud, aprobación y tabla de amortización.</p></div></div>
+                <div class="w-mod"><i></i><div><b>Cartera SEPS</b><p>Clasificación por bandas de antigüedad según el Catálogo Único.</p></div></div>
+                <div class="w-mod"><i></i><div><b>Contabilidad</b><p>Partida doble automática con Plan de Cuentas homologado SEPS.</p></div></div>
+                <div class="w-mod"><i></i><div><b>Reportería SEPS</b><p>ESF, PERLAS, SEPS B1-1, matriz UAF y balance de comprobación.</p></div></div>
+                <div class="w-mod"><i></i><div><b>Móvil del socio</b><p>Canal propio para consulta y transacciones básicas.</p></div></div>
+              </div>
+              <div class="w-band"><b>Pide una demo con tus propios datos</b><span class="w-btn">Solicitar una demo</span></div>
+              <div class="w-foot"><span>© 2026 GUTT COMPANY S.A.S.</span><span>Ecuador</span></div>
+              <span class="w-fade"></span>
+            </div>
+          </div>
+          <figcaption><p class="board__desc">Lista los módulos que ya existen en <code>server.js</code>,
+            no un plan a futuro — todo lo mostrado aquí ya corre en producción.</p></figcaption>
+        </figure>
+
+        <figure class="board" id="wb-nosotros">
+          <div class="board__t"><h4>Nosotros</h4><code>03</code></div>
+          <div class="frame">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">guttcompany.com/nosotros</span></div>
+            <div class="page">
+              <nav class="w-nav">
+                <div class="w-brand"><span class="w-logo">GC</span><b>GUTT COMPANY</b></div>
+                <div class="w-links"><span>Inicio</span><span>Producto</span><span class="on">Nosotros</span><span>Precios</span><span>Contacto</span></div>
+                <span class="w-cta">Solicitar demo</span>
+              </nav>
+              <div class="w-hero" style="padding-bottom:22px">
+                <p class="w-eyebrow">Nuestra empresa</p>
+                <h2 class="w-h1">GUTT COMPANY S.A.S.</h2>
+                <p class="w-sub">Construimos software financiero para cooperativas de ahorro y crédito reguladas por la SEPS, en Ecuador.</p>
+              </div>
+              <div class="w-team">
+                <div class="w-person"><div class="w-avatar">JT</div><b>Jorge Tuquinga</b><span>Backend · BD · Infraestructura</span></div>
+                <div class="w-person"><div class="w-avatar">FL</div><b>Franklin Lechon</b><span>Frontend · Pruebas · Soporte</span></div>
+              </div>
+              <div class="w-quote"><p>Que ninguna cooperativa pequeña dependa de un sistema que ya no se vende ni se mantiene.</p><span>— misión de GUTT COMPANY S.A.S.</span></div>
+              <div class="w-foot"><span>© 2026 GUTT COMPANY S.A.S.</span><span>Ecuador</span></div>
+              <span class="w-fade"></span>
+            </div>
+          </div>
+          <figcaption><p class="board__desc">Pone nombre y cara a quién sostiene el sistema — importa
+            para una cooperativa que va a confiar su contabilidad regulatoria a esta empresa.</p></figcaption>
+        </figure>
+
+        <figure class="board" id="wb-contacto">
+          <div class="board__t"><h4>Contacto</h4><code>04</code></div>
+          <div class="frame">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">guttcompany.com/contacto</span></div>
+            <div class="page">
+              <nav class="w-nav">
+                <div class="w-brand"><span class="w-logo">GC</span><b>GUTT COMPANY</b></div>
+                <div class="w-links"><span>Inicio</span><span>Producto</span><span>Nosotros</span><span>Precios</span><span class="on">Contacto</span></div>
+                <span class="w-cta">Solicitar demo</span>
+              </nav>
+              <div class="w-hero" style="padding-bottom:22px">
+                <p class="w-eyebrow">Contacto</p>
+                <h2 class="w-h1">Hablemos de tu cooperativa</h2>
+                <p class="w-sub">Cuéntanos tu caso y te mostramos el sistema funcionando con datos reales.</p>
+              </div>
+              <div class="w-form">
+                <div class="w-fld">Nombre completo</div>
+                <div class="w-fld">Correo electrónico</div>
+                <div class="w-fld">Cooperativa</div>
+                <div class="w-fld tall">Mensaje</div>
+                <span class="w-btn" style="align-self:flex-start">Enviar mensaje</span>
+              </div>
+              <dl class="w-contact">
+                <div><dt>Correo</dt><dd>por definir con el dominio</dd></div>
+                <div><dt>Ubicación</dt><dd>Ecuador</dd></div>
+              </dl>
+              <div class="w-foot"><span>© 2026 GUTT COMPANY S.A.S.</span><span>Ecuador</span></div>
+              <span class="w-fade"></span>
+            </div>
+          </div>
+          <figcaption><p class="board__desc">El correo y el dominio quedan marcados como pendientes a
+            propósito: se definen junto con el hosting (Track D), no antes.</p></figcaption>
+        </figure>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="fuera-web">
+    <div class="sec__head"><span class="sec__n">03</span><h2>Fuera de alcance de este bosquejo</h2></div>
+    <p class="sec__sub">Para que no se dé por incluido a mitad del desarrollo.</p>
+    <div class="out">
+      <div><h4>Página de precios con montos públicos</h4><p>Los precios se negocian por cooperativa; el enlace de Precios lleva a Contacto, no a una tabla pública.</p></div>
+      <div><h4>Blog o contenido recurrente</h4><p>No hay plan editorial ni responsable de mantenerlo.</p></div>
+      <div><h4>Panel de cliente propio en el sitio</h4><p>Ya existe: es GUTT_SYSTEM y GUTT MÓVIL. El sitio enlaza a ellos, no los reemplaza.</p></div>
+      <div><h4>Multi-idioma</h4><p>Español únicamente — el mercado objetivo actual son COAC ecuatorianas.</p></div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <span>Bosquejo · Página web de GUTT COMPANY S.A.S. · Track D</span>
+    <span>Referencia para Franklin Lechon · 16-sep-2026</span>
+  </footer>
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var MONEY = new Intl.NumberFormat('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2});
+  var fmt = function(n){ return '$ ' + MONEY.format(n); };
+  var fmtFecha = function(iso){
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('es-EC', {day:'2-digit', month:'short', year:'numeric'}).replace('.', '');
+  };
+  var $ = function(id){ return document.getElementById(id); };
+
+  var ESTADOS = ['pendiente','en-curso','aceptada','observada'];
+  var ESTADO_TXT = {pendiente:'Pendiente', 'en-curso':'En curso', aceptada:'Aceptada', observada:'Observada'};
+
+  // Fechas re-basadas: el contrato corre desde el 1-oct-2026 (reunion del 19-sep-2026).
+  var FASES_SEED = [
+    {id:'f1', numero:1, nombre:'Arquitectura y núcleo multi-tenant (H1: modelo de BD el 30-oct)', meses:'1–2', entrega:'2026-11-30'},
+    {id:'f2', numero:2, nombre:'Módulos de negocio adaptados al esquema multi-tenant', meses:'3–5', entrega:'2027-02-28'},
+    {id:'f3', numero:3, nombre:'Migración de datos reales e integración probada de punta a punta', meses:'6', entrega:'2027-03-31'},
+    {id:'f4', numero:4, nombre:'Servidor instalado, aprovisionado y primeras empresas activas', meses:'7', entrega:'2027-04-30'},
+    {id:'f5', numero:5, nombre:'Hardening, monitoreo y prueba de recuperación superada', meses:'8', entrega:'2027-05-31'},
+    {id:'f6', numero:6, nombre:'Manuales entregados y capacitación impartida', meses:'9', entrega:'2027-06-30'},
+    {id:'f7', numero:7, nombre:'Sistema en producción para las diez empresas y acta de cierre', meses:'10', entrega:'2027-07-31'}
+  ];
+
+  // Hitos con lista de verificacion. Nada nace marcado en el HTML: lo hecho vive en la base (hitos/<id>.hechos).
+  var HITOS_SEED = [
+    {id:'h0', codigo:'Fase 0', nombre:'Crear el proyecto TECNIFIN sin repetir los errores de GUTT_SYSTEM', meta:'2026-09-30', items:[
+      {id:'a', t:'Repositorio C:\\TECNIFIN creado con las reglas 1-14 y sus pruebas de higiene'},
+      {id:'b', t:'Base tecnifin_dev creada y migrador con SHA-256 verificado'},
+      {id:'c', t:'Agentes tecnifin-postgres-* y skills creados; orquestación desde GUTT_SYSTEM verificada'},
+      {id:'d', t:'Primer commit y repositorio remoto en GitHub (con confirmación de Jorge)'},
+      {id:'e', t:'CI verde en GitHub (solo pruebas, sin despliegue)'},
+      {id:'f', t:'Dominio tecnifin.com y hosting contratados (tope USD 150)'},
+      {id:'g', t:'Línea base de GUTT_SYSTEM: npm test (55) y migración 34 aplicada'}
+    ]},
+    {id:'h1', codigo:'H1', nombre:'Modelo de base de datos multi-tenant en PostgreSQL', meta:'2026-10-30', items:[
+      {id:'a', t:'ADR-001 · identificación del tenant'},
+      {id:'b', t:'ADR-002 · aislamiento de datos (revisión expresa de Christian, sin aprobación por silencio)'},
+      {id:'c', t:'ADR-003 · modelo y nomenclatura (tipos, collation, roles con prefijo TECNIFIN)'},
+      {id:'d', t:'ARQ-01 · documento de arquitectura multi-tenant'},
+      {id:'e', t:'DAT-01 · esquema en db/migrations con SHA-256, todo aplica limpio'},
+      {id:'f', t:'Catálogos: Plan de Cuentas SEPS, ponderaciones y parámetros regulatorios'},
+      {id:'g', t:'Prueba de aislamiento entre dos cooperativas sin filtración'},
+      {id:'h', t:'Prueba de partida doble: asientos cuadrados'},
+      {id:'i', t:'Acta de aceptación de H1 firmada'}
+    ]}
+  ];
+
+  // Desembolsos: el total sale de la suma, nunca de una constante.
+  var NUMERARIO = 20000;          // aporte en numerario comprometido por Victor (cláusula 10.4, "hasta")
+  var DESEMB_SEED = [
+    {id:'dom', categoria:'dominio', etiqueta:'Dominio tecnifin.com + hosting (tope conjunto)', fecha:'2026-09-30', monto:150, tipo:'mensual'},
+    {id:'chr', categoria:'christian', etiqueta:'Christian · pagos prorrateados, ≈ 497 al mes durante 10 meses — por confirmar en acta', fecha:'2026-10-01', fechaTxt:'oct-2026 → jul-2027', monto:4970, tipo:'condicional'},
+    {id:'nav', categoria:'otros', etiqueta:'Reunión navideña de los cinco accionistas (aprox.)', fecha:'2026-12-15', monto:100, tipo:'mensual'},
+    {id:'srv', categoria:'servidor', etiqueta:'Servidor e infraestructura T630 (proforma) — fecha por fijar en el flujo de caja', fecha:'2027-01-31', monto:10569.45, tipo:'equipo'}
+  ];
+  ['2026-10-01','2026-11-01','2026-12-01','2027-01-01','2027-02-01','2027-03-01','2027-04-01','2027-05-01','2027-06-01','2027-07-01']
+    .forEach(function(f, i){
+      DESEMB_SEED.push({id:'dv' + (i + 1), categoria:'desarrolladores',
+        etiqueta:'Desarrolladores · mes ' + (i + 1) + ' (USD ' + (i < 5 ? '700' : '350') + ' cada uno)',
+        fecha:f, monto:(i < 5 ? 1400 : 700), tipo:'mensual'});
+    });
+  DESEMB_SEED.sort(function(a, b){ return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0; });
+  var TOTAL = DESEMB_SEED.reduce(function(s, d){ return s + d.monto; }, 0);
+  var CAT_TXT = {desarrolladores:'desarrolladores', christian:'christian', dominio:'dominio', servidor:'servidor', otros:'otros'};
+
+  var TRACK_ESTADOS = ['sin-dimensionar','dimensionando','dimensionado'];
+  var TRACK_ESTADO_TXT = {'sin-dimensionar':'Sin dimensionar', 'dimensionando':'Dimensionando', 'dimensionado':'Dimensionado'};
+
+  var TRACKS_SEED = [
+    {id:'trackB', nombre:'Integración y dureza operativa',
+      meta:'Medido: server.gutt_system.js le faltan 25 endpoints frente a server.js (Plataforma 8, Socios 4, Créditos 1, Contabilidad 1, Cartera SEPS 5/5, Reportes SEPS 3, Infra 3). Desde el 20-sep el backend multi-tenant nuevo vive en el proyecto TECNIFIN y server.gutt_system.js queda como referencia. server.js: 76/76 endpoints, 55/55 pruebas — aquí toca verificar en operación real, no reconstruir.',
+      responsable:'Jorge (backend nuevo) · Franklin (server.js, verificación y pruebas)'},
+    {id:'trackC', nombre:'App móvil — construcción',
+      meta:'El diseño ya existe (17 pantallas, ver el lienzo GUTT Móvil). Falta construirlo de verdad contra el backend nuevo. Depende de qué módulos del Track A ya estén listos.',
+      responsable:'Franklin (frontend por contrato) · Jorge (endpoints de cada pantalla)'},
+    {id:'trackD', nombre:'Página web de TECNIFIN (alterna: GUTT COMPANY)',
+      meta:'Actualizado el 19-sep: el dominio y el hosting ya no son un costo aparte — se contratan antes de fin de septiembre con un tope conjunto de USD 150 (dominio ≈ 45-50 al año, hosting ≈ 60-70), incluidos en el flujo de caja desde octubre, para publicar la web y un tablero privado de avances. El desarrollo del sitio sigue dentro del presupuesto y del tiempo del contrato; parte del trabajo adicional de igualación de Franklin (USD 4.100) podría cubrirse con esta página. No existe ningún archivo del sitio todavía — falta medir el alcance real. Primer bosquejo de estructura y contenido (4 páginas: Inicio, Producto, Nosotros, Contacto) ya publicado en la pestaña "Página Web" — pendiente de aprobación del comité.',
+      responsable:'Franklin (frontend/soporte a cliente por contrato) · Jorge (dominio e infraestructura)'}
+  ];
+
+  var MODULOS_SEED = [
+    {id:'m0', numero:0, etapa:0, nombre:'Modelo de BD multi-tenant y núcleo (H1 y APP-01)', responsable:'tecnifin-postgres-arquitecto (opus)',
+      endpoints:12, lineas:553, params:29, rango:'1-oct → 30-nov (H1: 30-oct)', dep:'—'},
+    {id:'m1', numero:1, etapa:1, nombre:'Socios y cuentas', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:18, lineas:1598, params:233, rango:'16-nov → 11-dic (a confirmar)', dep:'Módulo 0'},
+    {id:'m2', numero:2, etapa:2, nombre:'Caja y ventanilla', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:4, lineas:135, params:12, rango:'14-dic → 29-ene (a confirmar)', dep:'Módulo 1'},
+    {id:'m3', numero:3, etapa:2, nombre:'Créditos', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:13, lineas:1521, params:270, rango:'14-dic → 29-ene (a confirmar)', dep:'Módulo 1'},
+    {id:'m4', numero:4, etapa:2, nombre:'Plazo fijo (DPF)', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:10, lineas:435, params:112, rango:'14-dic → 29-ene (a confirmar)', dep:'Módulo 1'},
+    {id:'m5', numero:5, etapa:3, nombre:'Contabilidad (verificación cruzada)', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:3, lineas:128, params:3, rango:'1-feb → 19-feb (a confirmar)', dep:'Módulos 1, 3, 4'},
+    {id:'m6', numero:6, etapa:3, nombre:'Cartera SEPS', responsable:'arquitecto (opus) → ejecutor (sonnet)',
+      endpoints:6, lineas:459, params:37, rango:'1-feb → 19-feb (a confirmar)', dep:'Módulo 3'},
+    {id:'m7', numero:7, etapa:4, nombre:'Reportes SEPS', responsable:'Franklin (su módulo por contrato) + ejecutor',
+      endpoints:6, lineas:820, params:2, rango:'22-feb → 28-feb (a confirmar)', dep:'Módulos 5, 6'}
+  ];
+
+  var db = null;
+  var toastTimer = null;
+  function aviso(msg){
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2200);
+  }
+  function marcarVivo(){ $('live').innerHTML = '<i></i>en vivo'; }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function guardar(col, id, seedList, porId, cambio, msg){
+    if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+    var seed = seedList.find(function(x){ return x.id === id; });
+    db.collection(col).doc(id).set(Object.assign({}, seed, porId[id] || {}, cambio))
+      .catch(function(){ aviso(msg); });
+  }
+
+  function pintarHitos(porId){
+    var cont = $('listaHitos');
+    cont.innerHTML = '';
+    HITOS_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var hechos = doc.hechos || {};
+      var n = seed.items.filter(function(it){ return hechos[it.id]; }).length;
+      var pct = Math.round(n / seed.items.length * 100);
+      var card = document.createElement('div');
+      card.className = 'hitoc';
+      card.innerHTML =
+        '<div class="hito__top"><div><span class="hito__cod">' + seed.codigo + '</span>' +
+          '<p class="hito__name">' + esc(seed.nombre) + '</p></div>' +
+          '<span class="hito__meta">meta ' + fmtFecha(seed.meta) + ' · ' + n + ' / ' + seed.items.length + '</span></div>' +
+        '<div class="hito__bar"><i style="width:' + pct + '%"></i></div>' +
+        seed.items.map(function(it){
+          return '<label class="chk' + (hechos[it.id] ? ' hecho' : '') + '"><input type="checkbox" data-hito="' + seed.id + '" data-item="' + it.id + '"' +
+            (hechos[it.id] ? ' checked' : '') + '><span>' + esc(it.t) + '</span></label>';
+        }).join('');
+      cont.appendChild(card);
+      if (seed.id === 'h1') {
+        $('numH1').textContent = n + ' / ' + seed.items.length;
+        $('barH1').style.width = pct + '%';
+        $('footH1').textContent = pct + '% de la lista de verificación de H1 · meta ' + fmtFecha(seed.meta);
+      }
+    });
+    cont.querySelectorAll('[data-hito]').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        var id = chk.getAttribute('data-hito');
+        var hechos = Object.assign({}, (porId[id] || {}).hechos || {});
+        hechos[chk.getAttribute('data-item')] = chk.checked;
+        guardar('hitos', id, HITOS_SEED, porId, {hechos: hechos}, 'No se pudo guardar el hito.');
+      });
+    });
+  }
+
+  function pintarFases(porId){
+    var cont = $('listaFases');
+    cont.innerHTML = '';
+    var aceptadas = 0;
+    FASES_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'pendiente';
+      var acta = !!doc.acta;
+      var nota = doc.nota || '';
+      if (estado === 'aceptada') aceptadas++;
+      var row = document.createElement('div');
+      row.className = 'fase';
+      row.innerHTML =
+        '<div class="fase__rail"><div class="fase__num">' + seed.numero + '</div><div class="fase__line"></div></div>' +
+        '<div class="fase__body">' +
+          '<div class="fase__top">' +
+            '<p class="fase__name">' + seed.nombre + '</p>' +
+            '<button type="button" class="pill pill--' + estado + '" data-fase="' + seed.id + '">' + ESTADO_TXT[estado] + '</button>' +
+          '</div>' +
+          '<div class="fase__meta">Meses ' + seed.meses + ' · entrega máxima ' + fmtFecha(seed.entrega) + '</div>' +
+          '<div class="fase__row2">' +
+            '<label class="acta"><input type="checkbox" data-acta="' + seed.id + '"' + (acta ? ' checked' : '') + '> Acta firmada</label>' +
+            '<textarea class="nota" rows="1" placeholder="Nota de avance…" data-nota="' + seed.id + '">' + esc(nota) + '</textarea>' +
+          '</div>' +
+        '</div>';
+      cont.appendChild(row);
+    });
+    var pct = Math.round(aceptadas / FASES_SEED.length * 100);
+    $('numFases').textContent = aceptadas + ' / ' + FASES_SEED.length + ' fases';
+    $('barFases').style.width = pct + '%';
+    $('footFases').textContent = pct + '% de las fases aceptadas por el Jefe de Proyecto';
+
+    cont.querySelectorAll('[data-fase]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-fase');
+        var actual = (porId[id] || {}).estado || 'pendiente';
+        guardar('fases', id, FASES_SEED, porId, {estado: ESTADOS[(ESTADOS.indexOf(actual) + 1) % ESTADOS.length]}, 'No se pudo guardar el estado.');
+      });
+    });
+    cont.querySelectorAll('[data-acta]').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        guardar('fases', chk.getAttribute('data-acta'), FASES_SEED, porId, {acta: chk.checked}, 'No se pudo guardar el acta.');
+      });
+    });
+    cont.querySelectorAll('[data-nota]').forEach(function(area){
+      var id = area.getAttribute('data-nota');
+      var previo = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === previo) return;
+        previo = area.value;
+        guardar('fases', id, FASES_SEED, porId, {nota: area.value}, 'No se pudo guardar la nota.');
+      });
+    });
+  }
+
+  function pintarModulos(porId){
+    var cont = $('listaModulos');
+    cont.innerHTML = '';
+    var aceptados = 0;
+    MODULOS_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'pendiente';
+      var nota = doc.nota || '';
+      if (estado === 'aceptada') aceptados++;
+      var row = document.createElement('div');
+      row.className = 'mod';
+      row.innerHTML =
+        '<div class="mod__num">' + seed.numero + '</div>' +
+        '<div class="mod__body">' +
+          '<div class="mod__top">' +
+            '<span class="chip chip--fase" style="flex:none">Etapa ' + seed.etapa + '</span>' +
+            '<p class="mod__name" style="flex:1">' + seed.nombre + '</p>' +
+            '<button type="button" class="pill pill--' + estado + '" data-mod="' + seed.id + '">' + ESTADO_TXT[estado] + '</button>' +
+          '</div>' +
+          '<div class="mod__meta">' + seed.endpoints + ' endpoints · ' + seed.lineas + ' líneas · ' + seed.params + ' parámetros a traducir · ' + seed.rango + '</div>' +
+          '<div class="mod__row2">' +
+            '<span class="owner">' + seed.responsable + '</span>' +
+            '<span class="dep">Depende de: ' + seed.dep + '</span>' +
+          '</div>' +
+          '<textarea class="nota" rows="1" style="margin-top:7px" placeholder="Nota de avance…" data-modnota="' + seed.id + '">' + esc(nota) + '</textarea>' +
+        '</div>';
+      cont.appendChild(row);
+    });
+    var pct = Math.round(aceptados / MODULOS_SEED.length * 100);
+    $('numMod').textContent = aceptados + ' / ' + MODULOS_SEED.length + ' módulos';
+    $('barMod').style.width = pct + '%';
+    $('footMod').textContent = pct + '% portados y con prueba de paridad en verde';
+
+    cont.querySelectorAll('[data-mod]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-mod');
+        var actual = (porId[id] || {}).estado || 'pendiente';
+        guardar('modulos', id, MODULOS_SEED, porId, {estado: ESTADOS[(ESTADOS.indexOf(actual) + 1) % ESTADOS.length]}, 'No se pudo guardar el estado.');
+      });
+    });
+    cont.querySelectorAll('[data-modnota]').forEach(function(area){
+      var id = area.getAttribute('data-modnota');
+      var previo = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === previo) return;
+        previo = area.value;
+        guardar('modulos', id, MODULOS_SEED, porId, {nota: area.value}, 'No se pudo guardar la nota.');
+      });
+    });
+  }
+
+  function pintarTracks(porId){
+    var cont = $('listaTracks');
+    cont.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'tracks';
+    TRACKS_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'sin-dimensionar';
+      var nota = doc.nota || '';
+      var card = document.createElement('div');
+      card.className = 'track';
+      card.innerHTML =
+        '<div class="track__top">' +
+          '<p class="track__name">' + seed.nombre + '</p>' +
+          '<button type="button" class="pill pill--' + estado + '" data-track="' + seed.id + '">' + TRACK_ESTADO_TXT[estado] + '</button>' +
+        '</div>' +
+        '<p class="track__meta">' + seed.meta + '</p>' +
+        '<div class="owner" style="margin-top:8px">' + seed.responsable + '</div>' +
+        '<textarea class="nota" rows="1" placeholder="Nota…" data-tracknota="' + seed.id + '">' + esc(nota) + '</textarea>';
+      wrap.appendChild(card);
+    });
+    cont.appendChild(wrap);
+    cont.querySelectorAll('[data-track]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-track');
+        var actual = (porId[id] || {}).estado || 'sin-dimensionar';
+        guardar('tracks', id, TRACKS_SEED, porId, {estado: TRACK_ESTADOS[(TRACK_ESTADOS.indexOf(actual) + 1) % TRACK_ESTADOS.length]}, 'No se pudo guardar el estado.');
+      });
+    });
+    cont.querySelectorAll('[data-tracknota]').forEach(function(area){
+      var id = area.getAttribute('data-tracknota');
+      var previo = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === previo) return;
+        previo = area.value;
+        guardar('tracks', id, TRACKS_SEED, porId, {nota: area.value}, 'No se pudo guardar la nota.');
+      });
+    });
+  }
+
+  function pintarDesembolsos(porId){
+    var cont = $('listaDesembolsos');
+    cont.innerHTML = '';
+    var ejecutado = 0;
+    DESEMB_SEED.forEach(function(seed){
+      var hecho = !!(porId[seed.id] || {}).ejecutado;
+      if (hecho) ejecutado += seed.monto;
+      var row = document.createElement('div');
+      row.className = 'des' + (seed.tipo === 'equipo' ? ' equipo' : seed.tipo === 'condicional' ? ' condicional' : '');
+      row.innerHTML =
+        '<span class="des__chk"><input type="checkbox" data-des="' + seed.id + '"' + (hecho ? ' checked' : '') + '></span>' +
+        '<span class="des__body">' +
+          '<div class="des__lab' + (hecho ? ' done' : '') + '">' + seed.etiqueta + '</div>' +
+          '<div class="des__fecha">' + (seed.fechaTxt || fmtFecha(seed.fecha)) + '<span class="des__cat">' + CAT_TXT[seed.categoria] + '</span></div>' +
+        '</span>' +
+        '<span class="des__monto">' + fmt(seed.monto) + '</span>';
+      cont.appendChild(row);
+    });
+    var total = document.createElement('div');
+    total.className = 'des__total';
+    total.innerHTML = '<span>Pagado sobre ' + fmt(TOTAL) + '</span><b>' + fmt(ejecutado) + '</b>';
+    cont.appendChild(total);
+
+    var pct = Math.round(ejecutado / TOTAL * 100);
+    $('numPresu').textContent = fmt(ejecutado);
+    $('barPresu').style.width = pct + '%';
+    $('footPresu').textContent = pct + '% de lo cuantificado (' + fmt(TOTAL) + ')';
+    cont.querySelectorAll('[data-des]').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        guardar('desembolsos', chk.getAttribute('data-des'), DESEMB_SEED, porId, {ejecutado: chk.checked}, 'No se pudo guardar el desembolso.');
+      });
+    });
+  }
+
+  // Brecha: todo sale de DESEMB_SEED, nada escrito a mano.
+  function pintarBrecha(){
+    var christian = DESEMB_SEED.filter(function(d){ return d.tipo === 'condicional'; })
+      .reduce(function(s, d){ return s + d.monto; }, 0);
+    var sinChristian = TOTAL - christian;
+    var brechaMax = Math.max(0, TOTAL - NUMERARIO);
+    var brechaMin = Math.max(0, sinChristian - NUMERARIO);
+    $('numTotal').textContent = fmt(TOTAL);
+    $('footTotal').textContent = fmt(sinChristian) + ' si Christian no cobra';
+    $('numGap').textContent = fmt(brechaMax);
+    $('footGap').textContent = 'entre ' + fmt(brechaMin) + ' y ' + fmt(brechaMax) + ' antes de constitución y marketing';
+    $('boxBrecha').innerHTML =
+      '<div><span>Numerario comprometido por Víctor (hasta)</span><b>' + fmt(NUMERARIO) + '</b></div>' +
+      '<div><span>Cuantificado, con pagos a Christian</span><b>' + fmt(TOTAL) + '</b></div>' +
+      '<div><span>Cuantificado, sin pagos a Christian</span><b>' + fmt(sinChristian) + '</b></div>' +
+      '<div><span>Falta por financiar (rango)</span><b>' + fmt(brechaMin) + ' – ' + fmt(brechaMax) + '</b></div>';
+  }
+
+  function suscribir(col, pintar, msg, guardarMapa){
+    db.collection(col).onSnapshot(function(snap){
+      var map = {};
+      snap.docs.forEach(function(doc){ map[doc.id] = doc.data(); });
+      guardarMapa(map);
+      pintar(map);
+    }, function(){ aviso(msg); });
+  }
+
+  function arrancar(){
+    // Estado local por si aún no hay conexión a la base
+    var fases = {}, desemb = {}, modulos = {}, tracks = {}, hitos = {};
+    pintarBrecha();
+    pintarHitos(hitos);
+    pintarFases(fases);
+    pintarDesembolsos(desemb);
+    pintarModulos(modulos);
+    pintarTracks(tracks);
+
+    if (!(window.claude && window.claude.use)) return;
+    window.claude.use('db').then(function(d){
+      if (!d) { aviso('El tablero abrió sin conexión a datos compartidos.'); return; }
+      db = d;
+      marcarVivo();
+      suscribir('hitos', pintarHitos, 'Se perdió la conexión en vivo de los hitos.', function(m){ hitos = m; });
+      suscribir('fases', pintarFases, 'Se perdió la conexión en vivo de las fases.', function(m){ fases = m; });
+      suscribir('desembolsos', pintarDesembolsos, 'Se perdió la conexión en vivo de los desembolsos.', function(m){ desemb = m; });
+      suscribir('modulos', pintarModulos, 'Se perdió la conexión en vivo de los módulos.', function(m){ modulos = m; });
+      suscribir('tracks', pintarTracks, 'Se perdió la conexión en vivo de los otros frentes.', function(m){ tracks = m; });
+    }).catch(function(){ aviso('No se pudo abrir la conexión de datos.'); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', arrancar);
+  } else {
+    arrancar();
+  }
+})();
+</script>
+
+
+<script>
+(function(){
+  "use strict";
+  var nombres = ['avance','dinero','contrato','movil','web'];
+  var ids = {avance:'Avance', dinero:'Dinero', contrato:'Contrato', movil:'Movil', web:'Web'};
+  var btns = {}, panels = {};
+  nombres.forEach(function(k){
+    btns[k] = document.getElementById('tabBtn' + ids[k]);
+    panels[k] = document.getElementById('panel' + ids[k]);
+  });
+  if (nombres.some(function(k){ return !btns[k] || !panels[k]; })) return;
+
+  function activar(nombre){
+    nombres.forEach(function(k){
+      var esEste = k === nombre;
+      panels[k].hidden = !esEste;
+      btns[k].classList.toggle('is-on', esEste);
+      btns[k].setAttribute('aria-selected', String(esEste));
+    });
+    try { localStorage.setItem('gutt-dashboard-tab', nombre); } catch(e){}
+  }
+  nombres.forEach(function(k){
+    btns[k].addEventListener('click', function(){ activar(k); });
+  });
+  var recordado = null;
+  try { recordado = localStorage.getItem('gutt-dashboard-tab'); } catch(e){}
+  if (nombres.indexOf(recordado) !== -1) activar(recordado);
+})();
+
+</script>
+
+</body></html>

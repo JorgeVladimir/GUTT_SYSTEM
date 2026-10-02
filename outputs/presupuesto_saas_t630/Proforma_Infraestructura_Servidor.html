@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Proforma de infraestructura tecnológica y mano de obra para SISTEMA FINANCIERO EPS: servidor, red, respaldo e implementación para diez empresas cliente">
+<title>Proforma SISTEMA FINANCIERO EPS</title>
+<style>
+  :root{
+    --navy:#17365d; --navy-ink:#0e2440; --blue:#2f75b5; --blue-soft:#e9f2f9;
+    --teal:#0e7c86; --teal-soft:#e2f4f3; --amber:#8a6100; --amber-soft:#fff4ce;
+    --ink:#1f2937; --muted:#5b6b80; --line:#dbe3ec; --paper:#ffffff; --page:#eef2f6;
+    --gantt-off:#e3e9f1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --navy:#5b9ade; --navy-ink:#dce8f7; --blue:#79b0e0; --blue-soft:#16273b;
+      --teal:#57cabf; --teal-soft:#0f2b2a; --amber:#e8c25f; --amber-soft:#332707;
+      --ink:#e9eef5; --muted:#a3b3c7; --line:#2c3e57; --paper:#111a29; --page:#0b1220;
+      --gantt-off:#1c2c42;
+    }
+  }
+  :root[data-theme="dark"]{
+    --navy:#5b9ade; --navy-ink:#dce8f7; --blue:#79b0e0; --blue-soft:#16273b;
+    --teal:#57cabf; --teal-soft:#0f2b2a; --amber:#e8c25f; --amber-soft:#332707;
+    --ink:#e9eef5; --muted:#a3b3c7; --line:#2c3e57; --paper:#111a29; --page:#0b1220;
+    --gantt-off:#1c2c42;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;color:var(--ink);background:var(--page);font-family:Arial,Helvetica,sans-serif;font-size:14.5px;line-height:1.65;}
+  .document{width:min(1180px, calc(100% - 32px));margin:32px auto;overflow:hidden;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 45px rgba(15,30,55,.12);}
+  .hero{padding:46px 56px 40px;color:#fff;background:linear-gradient(135deg, var(--navy-ink) 0%, #1c4771 55%, var(--teal) 145%);}
+  .topline{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:30px;}
+  .doc-kind{color:rgba(255,255,255,.7);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px;}
+  .brand{font-weight:800;letter-spacing:.02em;font-size:14px;}
+  .meta{color:rgba(255,255,255,.8);text-align:right;font-size:12px;line-height:1.9;}
+  .meta b{color:#fff;}
+  h1{max-width:860px;margin:0 0 16px;font-size:clamp(24px,3.2vw,34px);line-height:1.25;letter-spacing:-.015em;text-wrap:balance;}
+  .lead{max-width:760px;margin:0;color:rgba(255,255,255,.88);font-size:15.5px;line-height:1.6;}
+  .content{padding:40px 56px 56px;}
+
+  .summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:46px;}
+  .metric{min-height:112px;padding:20px 22px;background:var(--paper);border:1px solid var(--line);border-radius:14px;}
+  .metric.primary{color:#fff;background:var(--navy);border-color:var(--navy);}
+  .label{margin-bottom:10px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1.4;}
+  .metric.primary .label{color:rgba(255,255,255,.75);}
+  .value{font-size:22px;font-weight:800;line-height:1.2;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+  .note{margin-top:7px;color:var(--muted);font-size:11.5px;line-height:1.5;}
+  .metric.primary .note{color:rgba(255,255,255,.78);}
+
+  section{margin-top:48px;}
+  .section-num{display:inline-block;color:var(--teal);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px;padding-bottom:13px;border-bottom:2px solid var(--navy);}
+  h2{margin:0;color:var(--navy);font-size:19px;line-height:1.35;letter-spacing:-.01em;}
+  h3.sub{margin:28px 0 12px;color:var(--navy);font-size:14.5px;}
+  .caption{color:var(--muted);font-size:12px;text-align:right;line-height:1.5;}
+  p.body-text{max-width:78ch;color:var(--ink);line-height:1.7;}
+  p.body-text + p.body-text{margin-top:12px;}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;}
+  table{width:100%;border-collapse:collapse;background:var(--paper);}
+  th{padding:13px 15px;color:#fff;background:var(--navy);font-size:11px;letter-spacing:.03em;text-align:left;text-transform:uppercase;white-space:nowrap;line-height:1.4;}
+  td{padding:13px 15px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55;}
+  tbody tr:last-child td{border-bottom:0;}
+  .qty,.money{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;}
+  .subtotal td{color:var(--navy);background:var(--blue-soft);font-weight:800;}
+  .grand-total td{color:#fff;background:var(--navy);font-size:15px;font-weight:800;}
+
+  .gantt th.month, .gantt td.cell{text-align:center;width:84px;}
+  .gantt td.cell .bar{height:18px;border-radius:5px;background:var(--gantt-off);}
+  .gantt td.cell .bar.on{background:linear-gradient(90deg,var(--teal),#0a5a62);}
+  .gantt td.phase-name{font-weight:700;color:var(--navy);}
+  .gantt td.phase-name span{display:block;font-weight:400;color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.4;}
+
+  .config-grid,.conditions,.capacity-grid,.role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+  .panel{padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--paper);}
+  .panel.selected{border-color:var(--teal);background:linear-gradient(180deg,var(--teal-soft) 0%,var(--paper) 55%);}
+  .panel h3{margin:0 0 12px;color:var(--navy);font-size:14.5px;line-height:1.4;}
+  .panel .role{color:var(--muted);font-size:12px;margin-bottom:14px;line-height:1.5;}
+  .panel .rate{font-size:19px;font-weight:800;color:var(--teal);font-variant-numeric:tabular-nums;}
+  .panel .rate span{font-size:12px;font-weight:400;color:var(--muted);}
+  .badge{display:inline-block;margin-bottom:12px;padding:5px 10px;color:var(--teal);background:var(--teal-soft);border-radius:999px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+  ul{margin:0;padding-left:20px;} li{margin:7px 0;line-height:1.55;} .muted{color:var(--muted);}
+  p.muted{line-height:1.6;margin-top:14px;}
+
+  .stack{display:grid;gap:14px;}
+  .note-block{padding:16px 20px;background:var(--page);border-left:4px solid var(--blue);border-radius:0 10px 10px 0;line-height:1.6;}
+  .note-block.numbered{padding-left:52px;position:relative;}
+  .note-block.numbered .n{position:absolute;left:18px;top:16px;font-weight:800;color:var(--blue);}
+  .note-block strong{display:block;margin-bottom:5px;color:var(--navy);}
+  .note-block.teal{border-left-color:var(--teal);}
+
+  .capacity-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .capacity-grid .stat{text-align:center;padding:22px 12px;}
+  .capacity-grid .stat .big{font-size:27px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.2;}
+  .capacity-grid .stat .lbl{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.4;}
+
+  .sources{margin:0;padding-left:22px;color:var(--muted);font-size:12.5px;line-height:1.6;} .sources li{margin:9px 0;}
+  a{color:var(--blue);text-underline-offset:2px;}
+  .footer{padding:24px 56px;color:#dbe8f2;background:var(--navy-ink);font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:24px;line-height:1.6;}
+  .footer strong{color:#fff;}
+  .actions{position:fixed;right:22px;bottom:22px;z-index:10;}
+  button{padding:11px 16px;color:#fff;background:var(--blue);border:0;border-radius:10px;box-shadow:0 8px 20px rgba(23,54,93,.3);cursor:pointer;font:inherit;font-weight:700;}
+  button:hover{background:var(--navy);}
+
+  @media (max-width:880px){
+    .document{width:100%;margin:0;border:0;border-radius:0;}
+    .hero,.content,.footer{padding-left:24px;padding-right:24px;}
+    .summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .config-grid,.conditions,.role-grid{grid-template-columns:1fr;}
+    .capacity-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .topline,.footer{align-items:flex-start;flex-direction:column;}
+    .meta{text-align:left;}
+  }
+  @media (max-width:520px){ .summary,.capacity-grid{grid-template-columns:1fr;} .section-head{align-items:flex-start;flex-direction:column;} .caption{text-align:left;} }
+  @media print{
+    @page{size:A4;margin:12mm;} body{background:#fff;font-size:9.5pt;}
+    .document{width:100%;margin:0;border:0;border-radius:0;box-shadow:none;}
+    .hero{padding:22px 28px;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+    .content{padding:20px 28px 26px;} section{margin-top:24px;}
+    .table-wrap,.panel,.note-block{break-inside:avoid;} th,td{padding:7px 9px;}
+    .footer{padding:14px 28px;print-color-adjust:exact;-webkit-print-color-adjust:exact;} .actions{display:none;}
+  }
+</style>
+</head>
+<body>
+<main class="document">
+  <header class="hero">
+    <div class="topline">
+      <div>
+        <div class="doc-kind">Proforma técnica y de implementación</div>
+        <div class="brand">Jorge Tuquinga y Franklin Lechon — Infraestructura y desarrollo de software financiero</div>
+      </div>
+      <div class="meta">
+        <div>Fecha de emisión: <b>13 de septiembre de 2026</b></div>
+        <div>Válida por: <b>15 días</b></div>
+        <div>Moneda: <b>Dólares de los Estados Unidos</b></div>
+      </div>
+    </div>
+    <h1>Proforma de infraestructura tecnológica para SISTEMA FINANCIERO EPS</h1>
+    <p class="lead">Servidor, red, respaldo y el trabajo de desarrollo — completar el esquema multi-tenant, adaptar los módulos de negocio y ponerlo en producción — necesarios para operar SISTEMA FINANCIERO EPS como servicio en la nube para diez empresas cliente, cada una con su propio enlace de acceso. Implementación mínima de diez meses, desde el desarrollo hasta la salida a producción.</p>
+  </header>
+
+  <div class="content">
+    <div class="summary">
+      <div class="metric">
+        <div class="label">Infraestructura</div>
+        <div class="value">$10.569,45</div>
+        <div class="note">Servidor puesto en Ecuador + red, energía, respaldo e internet redundante</div>
+      </div>
+      <div class="metric">
+        <div class="label">Mano de obra</div>
+        <div class="value">$14.000,00</div>
+        <div class="note">Diez meses de los dos desarrolladores a dedicación completa: esquema multi-tenant, adaptación de módulos, migración, infraestructura, hardening, documentación y entrega</div>
+      </div>
+      <div class="metric primary">
+        <div class="label">Inversión total</div>
+        <div class="value">$24.569,45</div>
+        <div class="note">Infraestructura + implementación completa de diez meses</div>
+      </div>
+      <div class="metric">
+        <div class="label">Sobre el tope acordado</div>
+        <div class="value">$4.569,45</div>
+        <div class="note">Excede el tope de $20.000,00; requiere aprobación expresa de los socios antes de comprometer el gasto</div>
+      </div>
+    </div>
+
+    <section>
+      <div class="section-num">Resumen ejecutivo para el inversionista</div>
+      <div class="section-head"><h2>Plan de inversión: de la compra del servidor a la entrega lista para vender</h2></div>
+      <p class="body-text">SISTEMA FINANCIERO EPS corre hoy en producción para una sola cooperativa, sobre un esquema mono-tenant. Llevarlo a un servicio para diez empresas exige completar primero el rediseño multi-tenant que ya existe en el repositorio y adaptar a él los módulos de negocio (créditos, contabilidad, reportería SEPS, cartera) — no es solo instalar un servidor. Ese trabajo de desarrollo toma seis meses antes de necesitar el equipo físico; el proyecto completo, hasta la entrega de un sistema en producción y listo para vender a nuevas cooperativas, toma un <strong>mínimo de diez meses</strong>.</p>
+      <p class="body-text">El gasto de capital (servidor puesto en Ecuador, red, energía, respaldo e internet redundante) se concentra en el mes 7, cuando arranca la fase de infraestructura física — no en el mes 1. Los primeros seis meses son desarrollo puro, sobre el entorno de pruebas ya disponible.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mes</th><th>Hito</th><th class="money">Desembolso del mes</th><th class="money">Acumulado</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Mes 1</strong></td><td>Fase 1 — arranque de la finalización y validación del esquema multi-tenant (GUTT_SYSTEM) contra datos reales de prueba.</td><td class="money">$1.400,00</td><td class="money">$1.400,00</td></tr>
+            <tr><td><strong>Mes 2</strong></td><td>Fase 1 — cierre: esquema multi-tenant validado, íntegro y con auditoría cubierta.</td><td class="money">$1.400,00</td><td class="money">$2.800,00</td></tr>
+            <tr><td><strong>Mes 3</strong></td><td>Fase 2 — adaptación de los módulos de créditos y contabilidad al esquema multi-tenant.</td><td class="money">$1.400,00</td><td class="money">$4.200,00</td></tr>
+            <tr><td><strong>Mes 4</strong></td><td>Fase 2 — adaptación de la reportería SEPS y del proceso de cartera al esquema multi-tenant.</td><td class="money">$1.400,00</td><td class="money">$5.600,00</td></tr>
+            <tr><td><strong>Mes 5</strong></td><td>Fase 2 — cierre de la adaptación de módulos. Se emite la orden de compra del servidor.</td><td class="money">$1.400,00</td><td class="money">$7.000,00</td></tr>
+            <tr><td><strong>Mes 6</strong></td><td>Fase 3 — migración de datos reales e integración de punta a punta; servidor en tránsito de importación.</td><td class="money">$1.400,00</td><td class="money">$8.400,00</td></tr>
+            <tr><td><strong>Mes 7</strong></td><td>Fase 4 — servidor recibido, instalado y aprovisionado; primeras empresas cliente activas. Pago del equipo físico.</td><td class="money">$1.400,00 + $10.569,45</td><td class="money">$20.369,45</td></tr>
+            <tr><td><strong>Mes 8</strong></td><td>Fase 5 — hardening y continuidad: firewall por subdominio, monitoreo, prueba de recuperación con el NAS.</td><td class="money">$1.400,00</td><td class="money">$21.769,45</td></tr>
+            <tr><td><strong>Mes 9</strong></td><td>Fase 6 — documentación y capacitación remota a cada cooperativa cliente.</td><td class="money">$1.400,00</td><td class="money">$23.169,45</td></tr>
+            <tr><td><strong>Mes 10</strong></td><td>Fase 7 — producción y entrega formal. Sistema operativo para las diez empresas y listo para incorporar nuevos clientes.</td><td class="money">$1.400,00</td><td class="money">$24.569,45</td></tr>
+            <tr class="grand-total"><td colspan="3">TOTAL PARA ENTREGAR EL SISTEMA LISTO PARA VENDER</td><td class="money">$24.569,45</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note-block teal" style="margin-top:16px"><strong>A partir del mes 11</strong>No hay nueva inversión de capital. El mismo equipo continúa a $700,00 mensuales como soporte y mantenimiento del sistema ya entregado, mientras se incorporan cooperativas adicionales sobre la misma infraestructura.</div>
+    </section>
+
+    <section>
+      <div class="section-num">Parte 1 de 2</div>
+      <div class="section-head"><h2>Infraestructura tecnológica</h2></div>
+      <p class="body-text">Dell PowerEdge T630 Tower 32SFF reacondicionado, con la red, energía y respaldo necesarios para operar en la oficina del proveedor. No incluye licencias de software.</p>
+
+      <h3 class="sub">Servidor: lista de materiales</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rubro</th><th>Concepto</th><th>Especificación</th><th class="qty">Cant.</th><th class="money">Unitario</th><th class="money">Subtotal</th></tr></thead>
+          <tbody>
+            <tr><td>Servidor</td><td><strong>Chasis T630 Tower 32SFF</strong></td><td>Reacondicionado, 32 bahías de 2,5"; sin CPU, RAM ni discos de fábrica.</td><td class="qty">1</td><td class="money">$1.499,00</td><td class="money">$1.499,00</td></tr>
+            <tr><td>Servidor</td><td>Procesadores Xeon E5-2699 v3</td><td>2,3 GHz, 18 núcleos c/u — 36 núcleos totales.</td><td class="qty">2</td><td class="money">$42,00</td><td class="money">$84,00</td></tr>
+            <tr><td>Servidor</td><td>Memoria RAM 64 GB DDR4 2400MHz ECC</td><td>128 GB totales con 2 módulos; quedan 22 bancos libres para llegar a 256 GB.</td><td class="qty">2</td><td class="money">$390,00</td><td class="money">$780,00</td></tr>
+            <tr><td>Servidor</td><td>Controladora RAID PERC H730p</td><td>2 GB de caché, RAID por hardware.</td><td class="qty">1</td><td class="money">$89,00</td><td class="money">$89,00</td></tr>
+            <tr><td>Servidor</td><td>SSD SATA 480 GB</td><td>Arranque y sistema operativo, RAID 1.</td><td class="qty">2</td><td class="money">$115,00</td><td class="money">$230,00</td></tr>
+            <tr><td>Servidor</td><td>SSD SAS 12Gb/s 1,92 TB</td><td>Bases de datos y aplicaciones de las empresas cliente, RAID 10 (~3,84 TB útiles).</td><td class="qty">4</td><td class="money">$495,00</td><td class="money">$1.980,00</td></tr>
+            <tr><td>Servidor</td><td>Tarjeta de red Intel X520-DA2</td><td>2x10GbE SFP+, para enlazar con el switch de la lista de red.</td><td class="qty">1</td><td class="money">$40,00</td><td class="money">$40,00</td></tr>
+            <tr><td>Servidor</td><td>Fuentes 750 W redundantes</td><td>Dimensionadas con margen sobre el consumo estimado del equipo configurado.</td><td class="qty">1</td><td class="money">$40,00</td><td class="money">$40,00</td></tr>
+            <tr><td>Servidor</td><td>Módulo TPM</td><td>Cifrado y arranque seguro.</td><td class="qty">1</td><td class="money">$15,00</td><td class="money">$15,00</td></tr>
+            <tr class="subtotal"><td colspan="5">Subtotal configurador (sin GPU, sin licencias)</td><td class="money">$4.757,00</td></tr>
+            <tr><td>Importación</td><td>Flete y seguro</td><td>Reserva de transporte Miami-Ecuador y seguro de carga. Por confirmar según peso y volumen reales del chasis torre.</td><td class="qty">1</td><td class="money">$520,00</td><td class="money">$520,00</td></tr>
+            <tr><td>Importación</td><td>FODINFA</td><td>0,5% sobre el valor CIF estimado.</td><td class="qty">1</td><td class="money">$26,39</td><td class="money">$26,39</td></tr>
+            <tr><td>Importación</td><td>ISD</td><td>5% sobre el pago al exterior.</td><td class="qty">1</td><td class="money">$237,85</td><td class="money">$237,85</td></tr>
+            <tr><td>Importación</td><td>Agente y manejo aduanero</td><td>Reserva para trámite, aforo y manejo ordinario.</td><td class="qty">1</td><td class="money">$480,00</td><td class="money">$480,00</td></tr>
+            <tr><td>Importación</td><td>IVA de importación</td><td>15% sobre CIF + FODINFA, escenario conservador.</td><td class="qty">1</td><td class="money">$795,51</td><td class="money">$795,51</td></tr>
+            <tr class="subtotal"><td colspan="5">Subtotal servidor puesto en Ecuador</td><td class="money">$6.816,75</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Red, energía y respaldo</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rubro</th><th>Concepto</th><th>Especificación</th><th class="qty">Cant.</th><th class="money">Unitario</th><th class="money">Subtotal</th></tr></thead>
+          <tbody>
+            <tr><td>Red</td><td>Router MikroTik RB4011</td><td>Enrutamiento, firewall físico, VPN y segmentación por empresa cliente.</td><td class="qty">1</td><td class="money">$458,85</td><td class="money">$458,85</td></tr>
+            <tr><td>Red</td><td>Switch TP-Link TL-SG3428XMP</td><td>24 puertos Gigabit PoE+ y cuatro SFP+ 10Gb, administrable.</td><td class="qty">1</td><td class="money">$460,69</td><td class="money">$460,69</td></tr>
+            <tr><td>Energía</td><td>UPS online CDP 3000VA</td><td>Doble conversión, 2700W.</td><td class="qty">1</td><td class="money">$301,97</td><td class="money">$301,97</td></tr>
+            <tr><td>Rack</td><td>Gabinete de piso</td><td>Mínimo 12U; aloja el router, switch, patch panel, UPS y NAS. El servidor torre queda a un lado.</td><td class="qty">1</td><td class="money">$450,00</td><td class="money">$450,00</td></tr>
+            <tr><td>Red</td><td>Patch panel Cat6</td><td>24 puertos para terminación y ordenamiento de red.</td><td class="qty">1</td><td class="money">$69,63</td><td class="money">$69,63</td></tr>
+            <tr><td>Respaldo</td><td>NAS Synology DS223j</td><td>Chasis de dos bahías para copias de seguridad locales.</td><td class="qty">1</td><td class="money">$305,50</td><td class="money">$305,50</td></tr>
+            <tr><td>Respaldo</td><td>WD Red Pro NAS 8 TB</td><td>Dos discos configurados en RAID 1.</td><td class="qty">2</td><td class="money">$388,03</td><td class="money">$776,06</td></tr>
+            <tr><td>Accesorios</td><td>PDU, patch cords y consumibles</td><td>Alimentación y conexión interna del rack.</td><td class="qty">1</td><td class="money">$180,00</td><td class="money">$180,00</td></tr>
+            <tr><td>Red</td><td>Internet redundante</td><td>Segundo proveedor de Internet con router de respaldo y conmutación automática (failover). Diez empresas dependiendo de un solo enlace necesitan continuidad. Estimado, por confirmar con proveedores locales.</td><td class="qty">1</td><td class="money">$750,00</td><td class="money">$750,00</td></tr>
+            <tr class="grand-total"><td colspan="5">TOTAL INFRAESTRUCTURA</td><td class="money">$10.569,45</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Dimensionamiento</h2></div>
+      <div class="capacity-grid">
+        <div class="panel stat"><div class="big">10</div><div class="lbl">empresas cliente proyectadas, año 1</div></div>
+        <div class="panel stat"><div class="big">50-100</div><div class="lbl">usuarios conectados a la vez, entre todas</div></div>
+        <div class="panel stat"><div class="big">36</div><div class="lbl">núcleos físicos disponibles</div></div>
+        <div class="panel stat"><div class="big">~25-30%</div><div class="lbl">de holgura reservada para picos y crecimiento</div></div>
+      </div>
+      <p class="body-text" style="margin-top:18px">Cada empresa recibe una instancia y una base de datos propias dentro del mismo equipo físico; no comparten datos entre sí. Con 128 GB de RAM y 36 núcleos hay margen para las diez instancias iniciales sin comprometer el desempeño; el almacenamiento queda en RAID 10 para tolerar la falla de un disco sin detener el servicio.</p>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Configuración recomendada frente a la alternativa evaluada</h2></div>
+      <div class="config-grid">
+        <article class="panel">
+          <span class="badge">Alternativa descartada</span>
+          <h3>640 GB de RAM + GPU dedicada</h3>
+          <ul>
+            <li>640 GB de RAM.</li>
+            <li>GPU NVIDIA Tesla P4 8GB.</li>
+            <li>Cinco discos de distinta capacidad y tipo, sin un arreglo RAID coherente.</li>
+            <li>Fuentes de 495 W frente a un consumo estimado de 570 W: insuficientes.</li>
+          </ul>
+          <p class="muted">Precio de configurador: <strong>$7.687,00</strong>. Puesta en Ecuador con la misma fórmula tributaria: <strong>$14.752,30</strong>.</p>
+        </article>
+        <article class="panel selected">
+          <span class="badge">Recomendada — usada en esta proforma</span>
+          <h3>128 GB de RAM, sin GPU, discos en RAID</h3>
+          <ul>
+            <li>128 GB de RAM, ampliable a 256 GB sin cambiar el chasis.</li>
+            <li>Sin GPU: un core bancario no hace cómputo gráfico ni de inteligencia artificial.</li>
+            <li>Seis discos SSD en dos arreglos limpios: RAID 1 para el sistema, RAID 10 para datos.</li>
+            <li>Fuentes de 750 W, con margen sobre el consumo real del equipo.</li>
+          </ul>
+          <p class="muted">Precio de configurador: <strong>$4.757,00</strong>. Puesta en Ecuador: <strong>$6.816,75</strong> — 24% menos que la alternativa, con mejor tolerancia a fallos de disco y de energía.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-num">Parte 2 de 2</div>
+      <div class="section-head"><h2>Desarrollo e implementación (mano de obra)</h2></div>
+      <p class="body-text">SISTEMA FINANCIERO EPS corre hoy en producción como un despliegue único para una sola cooperativa, sobre un esquema mono-tenant. Atender diez empresas de forma sostenible exige completar primero el rediseño multi-tenant que ya existe en el repositorio (con <code>CooperativaId</code>) y adaptar a él los módulos de negocio que hoy solo corren contra el esquema mono-tenant: créditos, contabilidad, reportería SEPS y el proceso de cartera. Recién con eso terminado tiene sentido aprovisionar el servidor y las diez empresas.</p>
+
+      <h3 class="sub">Estructura de trabajo por fases</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fase</th><th>Entregable</th><th>Duración</th></tr></thead>
+          <tbody>
+            <tr><td>1. Finalización del esquema multi-tenant</td><td>Esquema GUTT_SYSTEM completo y validado contra datos reales de prueba: integridad referencial, huecos de auditoría y de reportería regulatoria cubiertos.</td><td class="qty">2 meses</td></tr>
+            <tr><td>2. Adaptación de módulos de negocio</td><td>Créditos, contabilidad, reportería SEPS y proceso de cartera portados del esquema mono-tenant al multi-tenant, sin discrepancias entre ellos.</td><td class="qty">3 meses</td></tr>
+            <tr><td>3. Migración de datos e integración</td><td>Migración de datos reales de producción al esquema multi-tenant; pruebas de integración de punta a punta.</td><td class="qty">1 mes</td></tr>
+            <tr><td>4. Infraestructura física</td><td>Servidor recibido, con sistema operativo, RAID y red configurados; proxy inverso con certificado TLS automático por subdominio; primeras empresas cliente aprovisionadas.</td><td class="qty">1 mes</td></tr>
+            <tr><td>5. Hardening y continuidad</td><td>Reglas de firewall por subdominio en el router, monitoreo y alertas por instancia, prueba de recuperación con el NAS y los respaldos.</td><td class="qty">1 mes</td></tr>
+            <tr><td>6. Documentación y capacitación</td><td>Manual de administración multiempresa y capacitación remota a cada cooperativa cliente.</td><td class="qty">1 mes</td></tr>
+            <tr><td>7. Producción y entrega</td><td>Cierre formal de la implementación. Sistema operativo para las diez empresas y listo para incorporar nuevos clientes.</td><td class="qty">1 mes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Cronograma — diez meses, del desarrollo a la salida a producción</h3>
+      <div class="table-wrap">
+        <table class="gantt">
+          <thead><tr><th>Fase</th><th class="month">M1</th><th class="month">M2</th><th class="month">M3</th><th class="month">M4</th><th class="month">M5</th><th class="month">M6</th><th class="month">M7</th><th class="month">M8</th><th class="month">M9</th><th class="month">M10</th></tr></thead>
+          <tbody>
+            <tr><td class="phase-name">1. Esquema<span>multi-tenant</span></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">2. Adaptación<span>de módulos</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">3. Migración<span>e integración</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">4. Infraestructura<span>física</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">5. Hardening<span>y continuidad</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">6. Documentación<span>y capacitación</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td><td class="cell"><div class="bar"></div></td></tr>
+            <tr><td class="phase-name">7. Producción<span>y entrega</span></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar"></div></td><td class="cell"><div class="bar on"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Equipo y responsabilidades</h3>
+      <div class="role-grid">
+        <article class="panel">
+          <h3>Jorge Tuquinga</h3>
+          <div class="role">Backend, base de datos e infraestructura</div>
+          <ul>
+            <li>Finalización y validación del esquema multi-tenant; adaptación de créditos, contabilidad y cartera.</li>
+            <li>Migración de datos, instalación y hardening del servidor y la red.</li>
+            <li>Respaldos, monitoreo y recuperación ante fallos.</li>
+          </ul>
+          <div class="rate" style="margin-top:14px">$700,00 <span>/ mes</span></div>
+        </article>
+        <article class="panel">
+          <h3>Franklin Lechon</h3>
+          <div class="role">Frontend, pruebas y soporte a cliente</div>
+          <ul>
+            <li>Adaptación de la reportería SEPS; pruebas de integración por módulo.</li>
+            <li>Configuración y pruebas funcionales de cada cooperativa antes de la entrega.</li>
+            <li>Documentación y capacitación remota a los clientes.</li>
+          </ul>
+          <div class="rate" style="margin-top:14px">$700,00 <span>/ mes</span></div>
+        </article>
+      </div>
+      <p class="body-text" style="margin-top:16px">Los dos desarrolladores trabajan a dedicación completa durante los diez meses. Las fases 1 y 2 concentran el desarrollo, pero las fases 3 a 7 no son trabajo residual: comprenden la migración de datos reales con paridad numérica verificada, la instalación y el aprovisionamiento del servidor, el hardening y la prueba de recuperación, la documentación y la capacitación de cada cooperativa, y la salida a producción de las diez empresas. Cada desarrollador percibe $700,00 mensuales de principio a fin.</p>
+
+      <h3 class="sub">Costo de mano de obra</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mes</th><th>Fase cubierta</th><th>Dedicación</th><th class="money">Costo</th></tr></thead>
+          <tbody>
+            <tr><td>Mes 1</td><td>Fase 1 — finalización del esquema</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 2</td><td>Fase 1 — validación del esquema</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 3</td><td>Fase 2 — créditos y contabilidad</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 4</td><td>Fase 2 — reportería SEPS y cartera</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 5</td><td>Fase 2 — cierre de la adaptación</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 6</td><td>Fase 3 — migración e integración</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 7</td><td>Fase 4 — infraestructura física</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 8</td><td>Fase 5 — hardening y continuidad</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 9</td><td>Fase 6 — documentación y capacitación</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr><td>Mes 10</td><td>Fase 7 — producción y entrega</td><td>2 desarrolladores, completa</td><td class="money">$1.400,00</td></tr>
+            <tr class="grand-total"><td colspan="3">TOTAL IMPLEMENTACIÓN (10 MESES)</td><td class="money">$14.000,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="body-text" style="margin-top:16px">Entregado el sistema, la dedicación completa deja de ser necesaria. Desde el mes 11 el mismo equipo continúa a <strong>$700,00 mensuales entre ambos</strong> como soporte y mantenimiento de lo ya entregado — no es un costo del proyecto, sino la operación normal del servicio, mientras se incorporan cooperativas adicionales.</p>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Inversión total del proyecto</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Componente</th><th>Cubre</th><th class="money">Costo</th></tr></thead>
+          <tbody>
+            <tr><td>Infraestructura</td><td>Servidor puesto en Ecuador, red, energía, respaldo e internet redundante</td><td class="money">$10.569,45</td></tr>
+            <tr><td>Mano de obra</td><td>Implementación completa, 10 meses (Jorge Tuquinga y Franklin Lechon, $700,00 mensuales cada uno)</td><td class="money">$14.000,00</td></tr>
+            <tr class="grand-total"><td colspan="2">TOTAL DEL PROYECTO</td><td class="money">$24.569,45</td></tr>
+            <tr><td>Tope acordado</td><td>Límite establecido originalmente para el proyecto</td><td class="money">$20.000,00</td></tr>
+            <tr class="subtotal"><td colspan="2">Excedente sobre el tope acordado</td><td class="money">$4.569,45</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="body-text" style="margin-top:16px">Completar el esquema multi-tenant y adaptar los módulos de negocio, no solo instalar la infraestructura, es el trabajo real detrás de este número. El proyecto queda $4.569,45 por encima del tope de $20.000,00 fijado originalmente, y ese excedente requiere aprobación expresa de los socios antes de comprometer el gasto. La mano de obra ($14.000,00) supera por primera vez el costo de los materiales ($10.569,45): es la consecuencia de sostener a los dos desarrolladores a dedicación completa durante los diez meses, en lugar de reducir el equipo a media posición a partir del mes 6.</p>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Pendientes y supuestos</h2></div>
+      <h3 class="sub">De infraestructura</h3>
+      <div class="stack">
+        <div class="note-block numbered"><span class="n">1</span><strong>Cotización final del proveedor</strong>Esta lista debe volver a ingresarse en el configurador del fabricante para obtener precio y disponibilidad final, incluido el estado de cada componente reacondicionado y su garantía escrita.</div>
+        <div class="note-block numbered"><span class="n">2</span><strong>Flete real de un chasis torre</strong>La reserva de $520,00 corresponde a fletes típicos para equipos en formato 1U; un chasis torre pesa y ocupa más — cotizar con el agente de carga antes de cerrar el número.</div>
+        <div class="note-block numbered"><span class="n">3</span><strong>Internet redundante</strong>Incluido en esta proforma como estimado ($750,00): segundo proveedor con router de respaldo y conmutación automática. Falta cotizar con un proveedor real antes de cerrar el número.</div>
+        <div class="note-block numbered"><span class="n">4</span><strong>Ampliación a 256 GB de RAM</strong>Disponible como mejora de +$780,00 (2 módulos adicionales de 64 GB) si el uso real de las diez empresas lo exige, sin comprar chasis nuevo.</div>
+      </div>
+      <h3 class="sub">De implementación</h3>
+      <div class="stack">
+        <div class="note-block numbered"><span class="n">1</span><strong>Diez meses es el piso, no un techo fijo</strong>Es la duración mínima para completar el esquema multi-tenant, adaptar los módulos y aprovisionar las diez empresas. Un alcance mayor (más módulos, más empresas simultáneas) puede extender el plazo.</div>
+        <div class="note-block numbered"><span class="n">2</span><strong>Incorporación escalonada</strong>Se asume que las diez empresas se incorporan de forma progresiva durante los meses 7 a 10, no todas el mismo día. Un ritmo mayor al planeado puede requerir ampliar el equipo o el plazo.</div>
+        <div class="note-block numbered"><span class="n">3</span><strong>Alcance cerrado</strong>Este costo cubre completar el esquema multi-tenant, adaptar los módulos de negocio existentes y habilitar el modelo multiempresa; no incluye funcionalidades nuevas del sistema. Un cambio de alcance se cotiza aparte.</div>
+        <div class="note-block numbered"><span class="n">4</span><strong>Capacitación remota</strong>Las sesiones de capacitación a cada cooperativa se hacen de forma virtual; sesiones presenciales no están incluidas.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Condiciones y exclusiones</h2></div>
+      <div class="conditions">
+        <div class="note-block teal"><strong>Licencias no incluidas</strong>No incluye Windows Server, SQL Server, CAL, antivirus comercial ni suscripciones cloud. El servidor se cotizó explícitamente sin sistema operativo.</div>
+        <div class="note-block teal"><strong>Equipo reacondicionado</strong>El T630 y sus componentes son reacondicionados; exigir garantía escrita, diagnóstico previo y estado real de cada SSD antes de pagar.</div>
+        <div class="note-block teal"><strong>Tributos estimados</strong>FODINFA 0,5%, ISD 5% e IVA de importación 15%. La liquidación definitiva depende del CIF real y la subpartida.</div>
+        <div class="note-block teal"><strong>Costos recurrentes de infraestructura</strong>Internet, energía eléctrica, climatización y renovación de garantías del servidor y equipos de red no están incluidos en este presupuesto.</div>
+        <div class="note-block teal"><strong>Pago de la mano de obra</strong>Mensual anticipado y constante: $1.400,00 al mes durante los diez meses — $700,00 para cada desarrollador, a dedicación completa de principio a fin. Después del mes 10 continúa en $700,00 mensuales para el equipo mientras se mantenga el contrato de soporte.</div>
+        <div class="note-block teal"><strong>Alcance de la mano de obra</strong>Cubre completar el esquema multi-tenant, adaptar los módulos de negocio existentes y habilitar el modelo multiempresa. No incluye desarrollo de funcionalidades nuevas fuera de lo descrito en esta proforma.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Fuentes consultadas</h2>
+        <div class="caption">Precios y disponibilidad pueden cambiar</div>
+      </div>
+      <ol class="sources">
+        <li><a href="https://newserverlife.com/configure/dell-poweredge-t630_32sff/">Configurador Dell PowerEdge T630 Tower 32SFF</a>: base del chasis y precios de CPU, RAM, discos, red, RAID y fuentes, consultados el 11-sep-2026.</li>
+        <li><a href="https://i.dell.com/sites/doccontent/shared-content/data-sheets/en/Documents/Dell-PowerEdge-T630-Spec-Sheet.pdf">Ficha técnica oficial Dell PowerEdge T630</a>: soporte de doble Xeon E5-2600 v3/v4, 24 bancos de memoria y hasta 32 discos de 2,5".</li>
+        <li><a href="https://www.aduana.gob.ec/servicio-al-ciudadano/para-importar/">SENAE</a> y <a href="https://www.sri.gob.ec/impuesto-a-la-salida-de-divisas-isd">SRI</a>: referencias tributarias para importación.</li>
+      </ol>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div><strong>Jorge Tuquinga y Franklin Lechon</strong><br>Infraestructura y desarrollo de software financiero</div>
+    <div>Documento referencial sujeto a cotización y aprobación final.</div>
+  </footer>
+</main>
+<div class="actions"><button type="button" onclick="window.print()">Imprimir o guardar en PDF</button></div>
+</body>
+</html>

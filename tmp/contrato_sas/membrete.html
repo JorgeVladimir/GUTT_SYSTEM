@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hoja membretada — GUTT COMPANY S.A.S.</title>
+<!--
+  HOJA MEMBRETADA · GUTT COMPANY S.A.S.
+  Para usarla: escribe dentro de <div class="cuerpo"> … </div> e imprime con Ctrl+P
+  (Destino: Guardar como PDF · Márgenes: Ninguno · Gráficos de fondo: activado).
+  La primera hoja está en blanco; la segunda es un ejemplo de uso, bórrala si no la necesitas.
+-->
+<style>
+  @page { size: A4; margin: 0; }
+  *{ box-sizing:border-box; }
+  :root{
+    --navy:#1F3864; --cyan:#00BCD4; --cyan-dark:#00707E;
+    --ink:#262626; --muted:#595959; --line:#D6DCE5;
+  }
+  html,body{ margin:0; padding:0; background:#fff; color:var(--ink);
+    font-family:'Calibri','Carlito','Segoe UI',Arial,sans-serif; font-size:11pt; line-height:1.55; }
+
+  .hoja{ width:210mm; height:297mm; position:relative; overflow:hidden;
+    page-break-after:always; break-after:page; }
+  .hoja:last-child{ page-break-after:auto; break-after:auto; }
+
+  /* ── Encabezado ─────────────────────────────────────────── */
+  .mb-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10mm;
+    padding:16mm 20mm 0; }
+  .mb-logo{ width:58mm; height:23mm; flex:0 0 auto;
+    background-image:url('__LOGO__'); background-repeat:no-repeat;
+    background-size:contain; background-position:left center; }
+  .mb-datos{ text-align:right; font-size:8.5pt; color:var(--muted); line-height:1.6; padding-top:2mm; }
+  .mb-datos .razon{ color:var(--navy); font-weight:700; font-size:11pt; letter-spacing:.01em; }
+  .mb-datos .giro{ color:var(--cyan-dark); font-weight:700; font-size:8pt;
+    letter-spacing:.12em; text-transform:uppercase; margin-bottom:1.5mm; }
+  .mb-datos b{ color:var(--ink); }
+
+  .mb-rule{ margin:5mm 20mm 0; border-top:2.5pt solid var(--navy); position:relative; }
+  .mb-rule::after{ content:''; position:absolute; left:0; top:-2.5pt; width:38mm; height:2.5pt;
+    background:var(--cyan); }
+
+  /* ── Cuerpo editable ────────────────────────────────────── */
+  .cuerpo{ padding:14mm 20mm 0; min-height:186mm; text-align:justify; }
+  .cuerpo p{ margin:0 0 4mm; }
+  .cuerpo .fecha{ text-align:right; color:var(--muted); }
+  .cuerpo .dest{ margin-bottom:6mm; }
+  .cuerpo .dest b{ color:var(--navy); }
+  .cuerpo .asunto{ font-weight:700; color:var(--navy); margin-bottom:5mm; }
+  .cuerpo .firma{ margin-top:16mm; }
+  .cuerpo .firma .l{ border-top:.8pt solid var(--ink); width:70mm; padding-top:1.5mm; }
+  .cuerpo .firma .nm{ font-weight:700; }
+  .cuerpo .firma .rl{ color:var(--navy); font-size:9.5pt; font-weight:700; }
+  .cuerpo .guia{ color:#9AA3AF; font-style:italic; }
+
+  /* ── Pie ────────────────────────────────────────────────── */
+  .mb-foot{ position:absolute; left:0; right:0; bottom:0; }
+  .mb-foot .cinta{ height:2mm; background:var(--cyan); }
+  .mb-foot .banda{ background:var(--navy); color:#fff; font-size:8pt; letter-spacing:.02em;
+    padding:3.5mm 20mm; display:flex; justify-content:space-between; align-items:center; gap:6mm; }
+  .mb-foot .banda span{ white-space:nowrap; }
+  .mb-foot .banda .sep{ color:rgba(255,255,255,.45); }
+
+  @media print{ .cuerpo .guia{ display:none; } }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HOJA EN BLANCO ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+      <div>San Pedro 0015, Cumbayá · Quito, Ecuador</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+
+  <div class="cuerpo">
+    <p class="guia">— Área de contenido. Escribe aquí el texto del documento. —</p>
+  </div>
+
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span>
+      <span class="sep">|</span>
+      <span>San Pedro 0015, Cumbayá — Quito</span>
+      <span class="sep">|</span>
+      <span>+593 98 413 2326</span>
+      <span class="sep">|</span>
+      <span>vladitituana20@gmail.com</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ EJEMPLO DE USO ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+      <div>San Pedro 0015, Cumbayá · Quito, Ecuador</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+
+  <div class="cuerpo">
+    <p class="fecha">Quito, 13 de septiembre de 2026</p>
+
+    <div class="dest">
+      <div><b>Señor</b></div>
+      <div><b>Luis Alberto Santillán Amaguaña</b></div>
+      <div>Representante Legal</div>
+      <div>Cooperativa de Ahorro y Crédito 20 de Febrero Ltda.</div>
+      <div>Presente.—</div>
+    </div>
+
+    <p class="asunto">Asunto: Entrega de la propuesta técnica y económica GUTT SYSTEM</p>
+
+    <p>De mi consideración:</p>
+
+    <p>Por medio de la presente me permito remitir a usted la propuesta técnica y económica para el
+      diseño, desarrollo e implementación de la plataforma bancaria digital <b>GUTT SYSTEM</b>, conforme
+      al levantamiento de requerimientos realizado con su equipo técnico.</p>
+
+    <p>La propuesta contempla el portal web bancario multi-rol, la aplicación móvil para socios y la
+      capa de integración con el core transaccional de la cooperativa, con el detalle de alcance,
+      cronograma y condiciones comerciales que constan en el documento adjunto.</p>
+
+    <p>Quedo a disposición para ampliar cualquier punto de la propuesta o coordinar una reunión de
+      presentación con el consejo de administración.</p>
+
+    <p>Atentamente,</p>
+
+    <div class="firma">
+      <div class="l">
+        <div class="nm">Jorge Vladimir Tuquinga Tituaña</div>
+        <div class="rl">GUTT COMPANY S.A.S.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span>
+      <span class="sep">|</span>
+      <span>San Pedro 0015, Cumbayá — Quito</span>
+      <span class="sep">|</span>
+      <span>+593 98 413 2326</span>
+      <span class="sep">|</span>
+      <span>vladitituana20@gmail.com</span>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

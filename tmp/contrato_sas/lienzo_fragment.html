@@ -1,0 +1,1554 @@
+<title>Lienzo GUTT Móvil</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800;900&amp;display=swap">
+<style>
+/* ───────────────────────── Tokens del lienzo (chasis) ───────────────────────── */
+:root{
+  --navy:#002B67; --navy-600:#0A3D80; --navy-300:#6E9BD1; --navy-50:#EAF1F9;
+  --cyan:#03CED4; --cyan-600:#05AFB5; --cyan-700:#067A80; --cyan-50:#E6FBFC;
+  --amber:#F59E0B; --amber-700:#B45309; --amber-50:#FFFBEB;
+  --red:#EF4444; --red-700:#B91C1C; --red-50:#FEF2F2;
+  --slate:#94A3B8; --slate-700:#475569; --slate-50:#F1F5F9;
+
+  --ground:#EDF1F7; --panel:#FFFFFF; --panel-2:#F6F9FC;
+  --line:#D4DDE9; --line-soft:#E4EBF3;
+  --ink:#0B1929; --ink-2:#465870; --ink-3:#7889A0;
+  --grid:rgba(0,43,103,.06);
+  --shell:#2E333B;
+  --shadow-board:0 22px 44px -28px rgba(4,22,50,.55);
+  --shadow-bar:0 1px 0 var(--line), 0 10px 24px -20px rgba(4,22,50,.5);
+
+  --sans:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace;
+  --app:'Inter','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+    --line:#21314A; --line-soft:#1A2739;
+    --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+    --grid:rgba(3,206,212,.07);
+    --shell:#19202D;
+    --shadow-board:0 24px 50px -26px rgba(0,0,0,.8);
+    --shadow-bar:0 1px 0 var(--line), 0 12px 28px -18px rgba(0,0,0,.8);
+    --navy-50:#10233D;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#070D17; --panel:#0E1826; --panel-2:#131F31;
+  --line:#21314A; --line-soft:#1A2739;
+  --ink:#E3EBF7; --ink-2:#9BAFC9; --ink-3:#6B80A0;
+  --grid:rgba(3,206,212,.07);
+  --shell:#19202D;
+  --shadow-board:0 24px 50px -26px rgba(0,0,0,.8);
+  --shadow-bar:0 1px 0 var(--line), 0 12px 28px -18px rgba(0,0,0,.8);
+  --navy-50:#10233D;
+}
+
+*{box-sizing:border-box}
+body{
+  font-family:var(--sans); color:var(--ink);
+  background-color:var(--ground);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1360px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+svg.sprite{display:none}
+:where(a,button,[tabindex]):focus-visible{outline:2px solid var(--cyan-600);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ───────────────────────── Barra superior ───────────────────────── */
+.bar{
+  position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--panel) 88%,transparent);
+  backdrop-filter:blur(10px);box-shadow:var(--shadow-bar);
+}
+.bar__in{max-width:1360px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:11px;min-width:0}
+.mark img{width:34px;height:34px;object-fit:contain;flex:none}
+.mark b{display:block;font-size:13px;font-weight:700;letter-spacing:.02em}
+.mark span{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.04em}
+.bar__sp{flex:1 1 40px}
+.meter{display:flex;align-items:center;gap:10px}
+.meter__bar{width:168px;height:9px;border-radius:99px;overflow:hidden;display:flex;background:var(--line-soft);border:1px solid var(--line)}
+.meter__bar i{display:block;height:100%}
+.meter__txt{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.btn{
+  font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.02em;
+  padding:9px 15px;border-radius:9px;border:1px solid var(--navy);background:var(--navy);color:#fff;
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .18s,transform .18s
+}
+.btn:hover:not(:disabled){background:var(--navy-600)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn--ghost{background:transparent;color:var(--ink-2);border-color:var(--line)}
+.btn--ghost:hover{background:var(--panel-2);color:var(--ink)}
+.btn svg{width:14px;height:14px}
+.dirty{font-family:var(--mono);font-size:10px;color:var(--amber-700);background:var(--amber-50);border:1px solid #FDE9C2;padding:4px 8px;border-radius:99px}
+.dirty[hidden]{display:none!important}
+
+/* ───────────────────────── Portada ───────────────────────── */
+.hero{padding:44px 0 8px;display:grid;gap:22px;grid-template-columns:minmax(0,1fr) minmax(0,320px);align-items:end}
+@media (max-width:860px){.hero{grid-template-columns:1fr;align-items:start}}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-700);margin:0 0 12px}
+h1{font-size:clamp(30px,4.6vw,46px);line-height:1.04;letter-spacing:-.024em;margin:0 0 14px;text-wrap:balance;font-weight:700}
+.lede{font-size:15px;line-height:1.62;color:var(--ink-2);max-width:62ch;margin:0}
+.facts{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.facts div{display:flex;justify-content:space-between;gap:12px;padding:9px 13px;font-size:12px;border-bottom:1px solid var(--line-soft)}
+.facts div:last-child{border-bottom:0}
+.facts dt{color:var(--ink-3);font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase}
+.facts dd{margin:0;font-weight:600;text-align:right}
+.rule{height:1px;background:var(--line);margin:38px 0 0;border:0}
+
+/* ───────────────────────── Secciones ───────────────────────── */
+section{padding-top:46px}
+.sec__head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.sec__n{font-family:var(--mono);font-size:11px;color:var(--cyan-700);letter-spacing:.1em}
+h2{font-size:22px;letter-spacing:-.012em;margin:0;font-weight:700}
+.sec__sub{font-size:13.5px;line-height:1.6;color:var(--ink-2);max-width:70ch;margin:8px 0 26px}
+
+/* ───────────────────────── Fundamentos ───────────────────────── */
+.found{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.slab{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.slab h3{margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.01em}
+.slab p{margin:0 0 14px;font-size:12px;line-height:1.55;color:var(--ink-2)}
+.ramp{display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.ramp i{flex:1;height:34px}
+.ramp+.ramp{margin-top:8px}
+.keys{display:grid;gap:7px;margin-top:12px}
+.key{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.key b{width:13px;height:13px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.14)}
+.key em{font-style:normal;color:var(--ink-3);margin-left:auto}
+.warn{margin-top:14px;border-left:3px solid var(--cyan-600);background:var(--cyan-50);color:#0A3F43;padding:10px 12px;border-radius:0 8px 8px 0;font-size:11.5px;line-height:1.55}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .warn{background:#08282B;color:#A9E9EC}}
+:root[data-theme="dark"] .warn{background:#08282B;color:#A9E9EC}
+.warn--navy{border-left-color:var(--navy-600);background:var(--navy-50);color:var(--ink)}
+:root[data-theme="dark"] .warn--navy{background:#10233D;color:#CFE0F2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .warn--navy{background:#10233D;color:#CFE0F2}}
+.typerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--line-soft)}
+.typerow:last-child{border-bottom:0}
+.typerow span{font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:nowrap}
+.semaforo{width:100%;border-collapse:collapse;font-size:11.5px}
+.semaforo th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:0 0 7px;font-weight:500}
+.semaforo td{padding:5px 0;border-top:1px solid var(--line-soft)}
+.semaforo td:last-child{text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em}
+
+/* ───────────────────────── Rejilla de artboards ───────────────────────── */
+.flow{margin-top:26px}
+.flow__bar{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.flow__bar h3{margin:0;font-size:15px;font-weight:700;letter-spacing:-.008em}
+.flow__bar span{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,300px);justify-content:center;gap:40px 30px}
+@media (min-width:700px){.grid{justify-content:start}}
+.board{width:300px;display:flex;flex-direction:column;gap:10px}
+.board__head{display:flex;flex-direction:column;gap:6px}
+.board__t{display:flex;align-items:baseline;gap:8px}
+.board__t h4{margin:0;font-size:13.5px;font-weight:700;letter-spacing:-.006em}
+.board__t code{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-left:auto}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:2.5px 7px;border-radius:5px;border:1px solid}
+.tag--venta{color:var(--navy);background:var(--navy-50);border-color:#BFD5EC}
+.tag--nueva{color:var(--cyan-700);background:var(--cyan-50);border-color:#A8E7EA}
+:root[data-theme="dark"] .tag--venta{color:#9CC3EC;background:#0F2440;border-color:#1C3D66}
+:root[data-theme="dark"] .tag--nueva{color:#6FDDE2;background:#08282B;border-color:#11474B}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .tag--venta{color:#9CC3EC;background:#0F2440;border-color:#1C3D66}
+  :root:not([data-theme="light"]) .tag--nueva{color:#6FDDE2;background:#08282B;border-color:#11474B}
+}
+.board__desc{margin:0;font-size:11.5px;line-height:1.55;color:var(--ink-2)}
+.board__ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  padding:4px 9px;border-radius:99px;border:1px solid transparent;cursor:pointer;font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;transition:filter .15s
+}
+.chip:hover{filter:brightness(.96)}
+.chip::before{content:"";width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}
+.chip--fase{background:var(--panel-2);border-color:var(--line);color:var(--ink-2)}
+.chip--fase::before{display:none}
+.nota{
+  width:100%;min-height:34px;resize:vertical;font-family:var(--sans);font-size:11.5px;line-height:1.5;
+  color:var(--ink);background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:7px 9px
+}
+.nota::placeholder{color:var(--ink-3)}
+.nota:focus{outline:none;border-style:solid;border-color:var(--cyan-600);background:var(--panel-2)}
+
+/* ───────────────────────── Marco del teléfono ───────────────────────── */
+.frame{
+  width:300px;height:616px;border-radius:34px;background:var(--shell);padding:8px;
+  box-shadow:var(--shadow-board);flex:none;position:relative
+}
+.screen{
+  width:100%;height:100%;border-radius:27px;overflow:hidden;background:#F4F6F8;
+  font-family:var(--app);color:#1E293B;display:flex;flex-direction:column;position:relative;isolation:isolate
+}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:96px;height:19px;background:var(--shell);border-radius:0 0 13px 13px;z-index:9}
+.status{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;font-size:9px;font-weight:700;color:#1E293B;flex:none}
+.status u{text-decoration:none;display:inline-flex;gap:2px;align-items:flex-end}
+.status u i{display:block;width:2.5px;background:#1E293B;border-radius:1px}
+.body{flex:1;overflow:hidden;padding:8px 16px 16px;display:flex;flex-direction:column;gap:11px}
+.body--flush{padding:0}
+.body--dark{background:#002B67}
+
+/* Piezas de la app */
+.a-h{font-size:15px;font-weight:800;letter-spacing:-.01em;margin:0}
+.a-sub{font-size:10px;color:#64748B;margin:0;line-height:1.4}
+.a-lab{font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748B;display:block;margin-bottom:4px}
+.a-card{background:#fff;border:1px solid #E9EEF4;border-radius:16px;padding:12px}
+.a-navy{background:linear-gradient(152deg,#002B67 0%,#0A3D80 100%);border-radius:18px;padding:14px;color:#fff;position:relative;overflow:hidden}
+.a-navy::after{content:"";position:absolute;right:-26px;bottom:-34px;width:96px;height:96px;border-radius:99px;border:10px solid rgba(3,206,212,.22)}
+.a-field{background:#F8FAFC;border:1.5px solid #EEF2F7;border-radius:13px;padding:10px 11px;display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:#1E293B}
+.a-field svg{width:13px;height:13px;color:#94A3B8;flex:none}
+.a-field span.ph{color:#94A3B8;font-weight:500}
+.a-field--on{border-color:#002B67;background:#fff;box-shadow:0 0 0 3px rgba(0,43,103,.07)}
+.a-btn{background:#002B67;color:#fff;border:0;border-bottom:3px solid #03CED4;border-radius:14px;padding:11px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;text-align:center;font-family:var(--app)}
+.a-btn2{background:transparent;color:#002B67;border:1.5px solid #002B67;border-radius:14px;padding:10px;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;text-align:center;font-family:var(--app)}
+.a-money{font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.a-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.a-chip{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:99px}
+.a-vig{color:#067A80;background:#E6FBFC}
+.a-pen{color:#B45309;background:#FFFBEB}
+.a-rec{color:#B91C1C;background:#FEF2F2}
+.a-anu{color:#475569;background:#F1F5F9}
+.a-list{display:flex;flex-direction:column;gap:8px}
+.a-item{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #E9EEF4;border-radius:14px;padding:10px;position:relative;overflow:hidden}
+.a-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3.5px;background:var(--bar,#94A3B8)}
+.a-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;background:#EAF1F9;color:#002B67}
+.a-ico svg{width:14px;height:14px}
+.a-ico--c{background:#E6FBFC;color:#067A80}
+.a-ico--a{background:#FFFBEB;color:#B45309}
+.a-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.a-quick a{display:flex;flex-direction:column;align-items:center;gap:5px;background:#fff;border:1px solid #E9EEF4;border-radius:13px;padding:9px 3px;font-size:8px;font-weight:700;color:#334155;text-align:center;text-decoration:none;line-height:1.15}
+.a-quick svg{width:15px;height:15px;color:#002B67}
+.a-nav{flex:none;height:54px;background:#fff;border-top:1px solid #E9EEF4;display:flex;justify-content:space-around;align-items:center;padding-bottom:4px}
+.a-nav b{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:8px;font-weight:800;color:#94A3B8;letter-spacing:.02em}
+.a-nav b svg{width:16px;height:16px}
+.a-nav b.on{color:#002B67}
+.a-nav b.on svg{color:#03CED4}
+.a-tabs{display:flex;background:#E9EEF4;border-radius:12px;padding:3px;gap:3px}
+.a-tabs b{flex:1;text-align:center;font-size:9.5px;font-weight:800;padding:6px 4px;border-radius:9px;color:#64748B}
+.a-tabs b.on{background:#fff;color:#002B67;box-shadow:0 1px 3px rgba(0,43,103,.12)}
+.a-step{display:flex;align-items:center;gap:5px}
+.a-step i{width:19px;height:19px;border-radius:99px;display:grid;place-items:center;font-size:9px;font-weight:800;font-style:normal;background:#E9EEF4;color:#94A3B8;flex:none}
+.a-step i.on{background:#002B67;color:#fff}
+.a-step i.done{background:#E6FBFC;color:#067A80}
+.a-step u{flex:1;height:2px;background:#E9EEF4;text-decoration:none}
+.a-track{height:6px;border-radius:99px;background:#E9EEF4;overflow:hidden}
+.a-track i{display:block;height:100%;background:#05AFB5;border-radius:99px}
+.a-slider{height:4px;border-radius:99px;background:#E9EEF4;position:relative;margin:9px 2px 4px}
+.a-slider i{position:absolute;left:0;top:0;bottom:0;background:#002B67;border-radius:99px}
+.a-slider u{position:absolute;top:50%;width:15px;height:15px;border-radius:99px;background:#fff;border:3px solid #03CED4;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,43,103,.25)}
+.a-tab{width:100%;border-collapse:collapse;font-size:8.5px;font-variant-numeric:tabular-nums}
+.a-tab th{font-size:7.5px;text-transform:uppercase;letter-spacing:.05em;color:#64748B;text-align:right;padding:0 0 5px;font-weight:800;border-bottom:1px solid #E9EEF4}
+.a-tab th:first-child,.a-tab td:first-child{text-align:left}
+.a-tab td{text-align:right;padding:4px 0;border-bottom:1px solid #F1F5F9;font-weight:600}
+.a-tab tr.tot td{border-bottom:0;border-top:1.5px solid #002B67;font-weight:800;color:#002B67;padding-top:5px}
+.a-dl{display:flex;flex-direction:column;gap:6px}
+.a-dl div{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding-bottom:6px;border-bottom:1px dashed #EEF2F7}
+.a-dl div:last-child{border-bottom:0;padding-bottom:0}
+.a-dl dt{color:#64748B}
+.a-dl dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.a-bub{max-width:82%;font-size:10px;line-height:1.5;padding:9px 11px;border-radius:14px}
+.a-bub--ia{background:#fff;border:1px solid #E9EEF4;border-left:3px solid #03CED4;border-radius:4px 14px 14px 14px;align-self:flex-start;color:#1E293B}
+.a-bub--yo{background:#002B67;color:#fff;border-radius:14px 14px 4px 14px;align-self:flex-end}
+.a-sug{display:flex;gap:5px;flex-wrap:wrap}
+.a-sug b{font-size:8.5px;font-weight:700;color:#067A80;background:#E6FBFC;border:1px solid #BEEFF1;border-radius:99px;padding:4px 8px}
+.a-auto{font-size:7.5px;color:#94A3B8;text-align:center;letter-spacing:.02em;font-weight:600}
+.a-codes{display:flex;gap:6px}
+.a-codes i{flex:1;height:38px;border-radius:11px;border:1.5px solid #EEF2F7;background:#F8FAFC;display:grid;place-items:center;font-size:15px;font-weight:800;font-style:normal;color:#002B67}
+.a-codes i.on{border-color:#03CED4;background:#fff}
+.a-codes i.mt{color:#CBD5E1}
+.a-logo{width:52px;height:52px;border-radius:18px;background:#002B67;border-bottom:4px solid #03CED4;display:grid;place-items:center;color:#fff;font-size:19px;font-weight:900;font-style:italic;letter-spacing:-1.5px;margin:0 auto}
+.a-mask{position:absolute;inset:0;background:rgba(15,23,42,.62);z-index:5;display:flex;align-items:center;justify-content:center;padding:14px}
+.a-modal{background:#fff;border-radius:22px;border:1.5px solid #03CED4;overflow:hidden;display:flex;flex-direction:column;max-height:100%;width:100%}
+.a-modal header{background:#002B67;color:#fff;padding:14px;text-align:center;border-bottom:3px solid #03CED4}
+.a-modal header h5{margin:0;font-size:12px;font-weight:900;letter-spacing:.06em}
+.a-modal header p{margin:3px 0 0;font-size:8.5px;color:#03CED4;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.a-modal .in{padding:13px;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.a-modal .in h6{margin:0 0 2px;font-size:10px;font-weight:800;color:#002B67}
+.a-modal .in p{margin:0;font-size:9px;line-height:1.5;color:#64748B}
+.a-modal footer{padding:12px 13px;background:#F8FAFC;border-top:1px solid #E9EEF4;display:flex;flex-direction:column;gap:9px}
+.a-check{display:flex;gap:8px;align-items:flex-start;font-size:8.5px;font-weight:700;color:#64748B;line-height:1.4}
+.a-check b{width:14px;height:14px;border-radius:4px;background:#002B67;color:#fff;display:grid;place-items:center;flex:none}
+.a-check b svg{width:9px;height:9px}
+.a-ok{width:54px;height:54px;border-radius:99px;background:#E6FBFC;border:3px solid #03CED4;display:grid;place-items:center;color:#067A80;margin:0 auto}
+.a-ok svg{width:25px;height:25px}
+.a-fade{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(to top,#F4F6F8,rgba(244,246,248,0));pointer-events:none;z-index:3}
+
+/* ───────────────────────── Fuera de alcance ───────────────────────── */
+.out{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.out div{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--slate);border-radius:0 10px 10px 0;padding:12px 14px}
+.out h4{margin:0 0 4px;font-size:12.5px;font-weight:700}
+.out p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-2)}
+
+/* ───────────────────────── Pie ───────────────────────── */
+footer.pie{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+footer.pie p{margin:0;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);line-height:1.6}
+
+/* ───────────────────────── Aviso flotante ───────────────────────── */
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translate(-50%,14px);z-index:90;opacity:0;pointer-events:none;
+  background:var(--navy);color:#fff;font-size:12px;font-weight:600;padding:11px 17px;border-radius:10px;
+  border-bottom:3px solid var(--cyan);box-shadow:0 16px 36px -18px rgba(0,0,0,.7);transition:opacity .2s,transform .2s;
+  max-width:calc(100vw - 40px);text-align:center
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+
+<svg class="sprite" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v13M4 14l3 3 3-3M17 20V7M14 10l3-3 3 3"></path></symbol>
+<symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"></path><path d="M14 3v4h4M9 13h6M9 17h4"></path></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5 1.5 5h-15S6 13 6 9z"></path><path d="M10.5 18.5a2 2 0 0 0 3 0"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></symbol>
+<symbol id="i-id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><circle cx="8.5" cy="11" r="2"></circle><path d="M5 16c.6-1.6 2-2.2 3.5-2.2S11.4 14.4 12 16M15 10h4M15 14h4"></path></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.2-8 9-4.6-.8-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5.2l3.2 2"></path></symbol>
+<symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 11.5L12 16l4.5-4.5M5 19h14"></path></symbol>
+<symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path><rect x="7" y="14" width="10" height="7" rx="1"></rect></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"></path></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5M5 9v9M9.7 9v9M14.3 9v9M19 9v9M3 21h18"></path></symbol>
+<symbol id="i-vault" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="11" cy="12" r="3.4"></circle><path d="M11 4v2.5M18 12h-1.5"></path></symbol>
+<symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></symbol>
+<symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></symbol>
+<symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"></path><path d="M8 3v6h8V3M8 21v-6h8v6"></path></symbol>
+<symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h9M18 12v3M15.5 12v2.4"></path></symbol>
+<symbol id="i-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"></path></symbol>
+</defs></svg>
+
+<div class="bar">
+  <div class="bar__in">
+    <div class="mark">
+      <img src="logo.png" alt="">
+      <div><b>LIENZO GUTT MÓVIL</b><span>v1 · 14-sep-2026</span></div>
+    </div>
+    <div class="bar__sp"></div>
+    <div class="meter">
+      <div class="meter__bar" id="medidor" role="img" aria-label="Avance de las pantallas"></div>
+      <span class="meter__txt" id="medidorTxt">—</span>
+    </div>
+    <span class="dirty" id="sucio" hidden="">cambios sin guardar</span>
+    <button class="btn" id="guardar" type="button"><svg><use href="#i-save"></use></svg>Guardar versión</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Entregable D · Diseño del aplicativo móvil</p>
+      <h1>El móvil del socio, pantalla por pantalla</h1>
+      <p class="lede">Diecisiete pantallas para <strong>GUTT MÓVIL</strong>, el canal del socio del SISTEMA
+      FINANCIERO EPS, dibujadas con la marca nueva de GUTT COMPANY S.A.S. Este documento no describe el
+      diseño: <em>es</em> el diseño, y es la referencia contra la que se construye el móvil durante las
+      fases 2 y 3 del cronograma. Cada pantalla lleva su estado y su fase, y ambos se editan aquí mismo:
+      cuando una pantalla se implementa o el comité la acepta, se marca y se guarda una versión nueva, de
+      modo que el lienzo avanza junto con los entregables en vez de quedarse congelado.</p>
+    </div>
+    <dl class="facts">
+      <div><dt>Pantallas</dt><dd>17</dd></div>
+      <div><dt>Paleta</dt><dd>#002B67 · #03CED4</dd></div>
+      <div><dt>Tipografía</dt><dd>Inter</dd></div>
+      <div><dt>Lienzo base</dt><dd>430 × 900 px</dd></div>
+      <div><dt>Fases de construcción</dt><dd>2 y 3</dd></div>
+      <div><dt>Backend</dt><dd>server.js · puerto 5005</dd></div>
+    </dl>
+  </header>
+
+  <hr class="rule">
+
+  <!-- ══════════════════ FUNDAMENTOS ══════════════════ -->
+  <section id="fundamentos">
+    <div class="sec__head"><span class="sec__n">01</span><h2>Fundamentos</h2></div>
+    <p class="sec__sub">Lo que toda pantalla hereda. Estos valores son los mismos que ya viven en
+    <code>index.html</code> y <code>constants.tsx</code> del portal web y en <code>index.css</code> del móvil:
+    el lienzo no inventa una paleta paralela, refleja la que el código ya usa.</p>
+
+    <div class="found">
+      <div class="slab">
+        <h3>Color</h3>
+        <p>Dos escalas derivadas del logo. El navy manda; el cian acentúa y nunca gobierna una pantalla entera.</p>
+        <div class="ramp">
+          <i style="background:#EAF1F9"></i><i style="background:#CFE0F2"></i><i style="background:#A5C4E6"></i><i style="background:#6E9BD1"></i><i style="background:#3D72B8"></i><i style="background:#17509C"></i><i style="background:#0A3D80"></i><i style="background:#002B67"></i><i style="background:#002253"></i><i style="background:#00193D"></i>
+        </div>
+        <div class="ramp">
+          <i style="background:#E6FBFC"></i><i style="background:#C2F5F7"></i><i style="background:#8DEBEE"></i><i style="background:#4FDEE3"></i><i style="background:#03CED4"></i><i style="background:#05AFB5"></i><i style="background:#068E93"></i><i style="background:#067A80"></i><i style="background:#085F63"></i><i style="background:#094B4E"></i>
+        </div>
+        <div class="keys">
+          <span class="key"><b style="background:#002B67"></b>brand-700 · primario<em>#002B67</em></span>
+          <span class="key"><b style="background:#0A3D80"></b>brand-600 · hover<em>#0A3D80</em></span>
+          <span class="key"><b style="background:#03CED4"></b>accent-400 · acento<em>#03CED4</em></span>
+          <span class="key"><b style="background:#067A80"></b>accent-700 · texto<em>#067A80</em></span>
+        </div>
+        <p class="warn"><strong>Regla dura.</strong> El cian del logo da 1,95:1 sobre blanco: sirve de fondo,
+        borde, subrayado y relleno de gráfico, nunca de color de texto. El texto en cian va siempre en
+        <code>#067A80</code>, que da 5,12:1 y cumple WCAG AA.</p>
+      </div>
+
+      <div class="slab">
+        <h3>Tipografía</h3>
+        <p>Inter en todo el aplicativo. Los pesos altos hacen el trabajo de jerarquía; el tamaño casi nunca sube de 22 px.</p>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:900;font-size:21px;letter-spacing:-.02em">$ 1.284,55</span><span>900 · 21 px · saldo</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:800;font-size:15px">Mis solicitudes</span><span>800 · 15 px · título</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:700;font-size:12px">Crédito de consumo</span><span>700 · 12 px · ítem</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:400;font-size:11px;color:var(--ink-2)">Cuota 4 de 24 · vence 01-oct-2026</span><span>400 · 11 px · apoyo</span></div>
+        <div class="typerow"><span style="font-family:var(--app);font-weight:800;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)">Cuenta de ahorros</span><span>800 · 9 px · etiqueta</span></div>
+        <p class="warn warn--navy">
+        Las cifras llevan <code>tabular-nums</code> y formato ecuatoriano: punto de miles, coma decimal,
+        el símbolo separado del número — <strong>$ 1.284,55</strong>.</p>
+      </div>
+
+      <div class="slab">
+        <h3>Semáforo de estados</h3>
+        <p>Un solo mapa para toda la aplicación. El verde salió del sistema con la marca nueva: lo positivo
+        vive ahora en la familia cian. Borde de tarjeta y etiqueta salen del mismo renglón, que es justo lo
+        que antes no ocurría.</p>
+        <table class="semaforo">
+          <thead><tr><th>Estado</th><th>Etiqueta</th><th>Barra</th></tr></thead>
+          <tbody>
+            <tr><td>Aprobado · Vigente · Pagado</td><td><span class="pill" style="color:#067A80;background:#E6FBFC">VIGENTE</span></td><td>#05AFB5</td></tr>
+            <tr><td>Solicitado · Por vencer</td><td><span class="pill" style="color:#B45309;background:#FFFBEB">SOLICITADO</span></td><td>#F59E0B</td></tr>
+            <tr><td>Rechazado · Vencido</td><td><span class="pill" style="color:#B91C1C;background:#FEF2F2">RECHAZADO</span></td><td>#EF4444</td></tr>
+            <tr><td>Anulado · Inactivo</td><td><span class="pill" style="color:#475569;background:#F1F5F9">ANULADO</span></td><td>#94A3B8</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="slab">
+        <h3>Piezas</h3>
+        <p>Radios generosos (13–18 px), un solo nivel de sombra y el filo cian bajo el botón primario como
+        firma de marca. Nada lleva borde, relleno y sombra a la vez.</p>
+        <div style="display:flex;flex-direction:column;gap:9px;font-family:var(--app)">
+          <div class="a-btn">Transferir</div>
+          <div class="a-btn2">Ver tabla de amortización</div>
+          <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>1804567890</div>
+          <div class="a-field"><svg><use href="#i-lock"></use></svg><span class="ph">Clave de acceso</span></div>
+          <div class="a-item" style="--bar:#05AFB5">
+            <span class="a-ico a-ico--c"><svg><use href="#i-file"></use></svg></span>
+            <div style="flex:1;min-width:0">
+              <div class="a-row"><b style="font-size:11px">Crédito de consumo</b><span class="a-chip a-vig">Vigente</span></div>
+              <p class="a-sub" style="margin-top:2px">Cuota 4 de 24 · <span class="a-money">$ 236,17</span></p>
+            </div>
+          </div>
+        </div>
+        <p class="warn">Los teléfonos de este lienzo muestran siempre el tema claro porque es el único que el
+        aplicativo tiene hoy. El tema oscuro del móvil no está en alcance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PANTALLAS ══════════════════ -->
+  <section id="pantallas">
+    <div class="sec__head"><span class="sec__n">02</span><h2>Las diecisiete pantallas</h2></div>
+    <p class="sec__sub">Agrupadas por el recorrido real del socio, no por orden de construcción. Las etiquetas
+    dicen de dónde viene cada pantalla: <span class="tag tag--venta">Vendida</span> es un compromiso escrito en
+    la propuesta PRF-2026-GUTT-002 y <span class="tag tag--nueva">Nueva</span> es ampliación con datos que el
+    backend ya tiene. Las que no llevan etiqueta ya existen y aquí se rediseñan.</p>
+
+    <!-- ─── Flujo 1 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Acceso y consentimiento</h3><span>3 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-acceso">
+          <div class="board__head">
+            <div class="board__t"><h4>Acceso</h4><code>01</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:14px">
+              <div style="margin-bottom:4px">
+                <div class="a-logo">GC</div>
+                <p style="text-align:center;margin:10px 0 2px;font-size:13px;font-weight:900;letter-spacing:2px;color:#002B67">GUTT MÓVIL</p>
+                <p class="a-sub" style="text-align:center">Canal del socio · Sistema Financiero EPS</p>
+              </div>
+              <div>
+                <span class="a-lab">Cédula o RUC</span>
+                <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>1804567890</div>
+              </div>
+              <div>
+                <span class="a-lab">Clave de acceso</span>
+                <div class="a-field"><svg><use href="#i-lock"></use></svg>••••••••</div>
+              </div>
+              <div class="a-btn">Ingresar</div>
+              <p style="text-align:center;font-size:10px;font-weight:700;color:#067A80;margin:0">¿Olvidaste tu clave?</p>
+              <div style="flex:1"></div>
+              <p class="a-auto">Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Identificación y clave contra <code>/api/socios/login</code>. El sello de
+            autoría vive aquí y en el pie del menú, no como marca de agua.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="acceso"></div>
+        </figure>
+
+        <figure class="board" id="b-consentimiento">
+          <div class="board__head">
+            <div class="board__t"><h4>Consentimiento de datos</h4><code>02</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="filter:blur(1.2px);opacity:.55;justify-content:center;gap:14px">
+              <div class="a-logo">GC</div>
+              <div class="a-field"><svg><use href="#i-id"></use></svg>1804567890</div>
+              <div class="a-field"><svg><use href="#i-lock"></use></svg>••••••••</div>
+              <div class="a-btn">Ingresar</div>
+            </div>
+            <div class="a-mask">
+              <div class="a-modal">
+                <header>
+                  <svg style="width:20px;height:20px;color:#03CED4" aria-hidden="true"><use href="#i-shield"></use></svg>
+                  <h5>PROTECCIÓN DE DATOS</h5>
+                  <p>LOPDP · Registro Oficial 459</p>
+                </header>
+                <div class="in">
+                  <div><h6>Responsable del tratamiento</h6><p>GUTT COMPANY S.A.S., en calidad de operador del sistema de la cooperativa.</p></div>
+                  <div><h6>Finalidad</h6><p>Consultar tus productos, solicitar crédito y transferir entre cuentas del sistema.</p></div>
+                  <div><h6>Tus derechos</h6><p>Acceso, rectificación, eliminación, oposición y portabilidad, por escrito en cualquier oficina.</p></div>
+                </div>
+                <footer>
+                  <span class="a-check"><b><svg><use href="#i-check"></use></svg></b>He leído y acepto el tratamiento de mis datos personales.</span>
+                  <div class="a-btn">Aceptar y continuar</div>
+                </footer>
+              </div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Bloquea el ingreso hasta que el socio acepta. Se muestra una sola vez y
+            queda registrada la fecha de aceptación.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="consentimiento"></div>
+        </figure>
+
+        <figure class="board" id="b-activacion">
+          <div class="board__head">
+            <div class="board__t"><h4>Activación por correo</h4><code>03</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:15px">
+              <div class="a-ok"><svg><use href="#i-mail"></use></svg></div>
+              <div>
+                <h2 class="a-h" style="text-align:center;font-size:16px">Verifica tu correo</h2>
+                <p class="a-sub" style="text-align:center;margin-top:5px">Enviamos un código de seis dígitos a<br><b style="color:#002B67">v•••••••@gmail.com</b></p>
+              </div>
+              <div class="a-codes">
+                <i class="on">4</i><i class="on">8</i><i class="on">2</i><i class="on">9</i><i class="on">1</i><i class="mt">—</i>
+              </div>
+              <div class="a-btn">Validar código</div>
+              <p style="text-align:center;font-size:10px;color:#64748B;margin:0">Reenviar código en <b style="color:#067A80" class="a-money">00:42</b></p>
+              <div style="flex:1"></div>
+              <p class="a-auto">El código caduca a los 10 minutos</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Un socio sin correo confirmado no ve saldos ni puede transferir. El código
+            sale del mismo SMTP que el resto del sistema.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="activacion"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 2 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Inicio y consulta</h3><span>4 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-inicio">
+          <div class="board__head">
+            <div class="board__t"><h4>Inicio</h4><code>04</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <div><p class="a-sub">Buenos días</p><h2 class="a-h">Jorge Tuquinga</h2></div>
+                <span class="a-ico" style="border-radius:99px;position:relative"><svg><use href="#i-bell"></use></svg><i style="position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:99px;background:#F59E0B;border:1.5px solid #EAF1F9"></i></span>
+              </div>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">AHORROS A LA VISTA</p>
+                <p class="a-money" style="font-size:10px;opacity:.72;margin:2px 0 8px;letter-spacing:.05em">2201-0004512</p>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:0">$ 1.284,55</p>
+                <p style="font-size:9px;opacity:.78;margin:5px 0 0">Disponible · corte 14-sep 09:30</p>
+              </div>
+              <div class="a-quick">
+                <a><svg><use href="#i-swap"></use></svg>Transferir</a>
+                <a><svg><use href="#i-file"></use></svg>Crédito</a>
+                <a><svg><use href="#i-vault"></use></svg>Plazo fijo</a>
+                <a><svg><use href="#i-list"></use></svg>Movimientos</a>
+              </div>
+              <p class="a-lab" style="margin:2px 0 0">Mis productos</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-file"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:11px">Crédito de consumo</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:2px">Cuota 4 de 24 · <span class="a-money">$ 236,17</span></p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#05AFB5">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-vault"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:11px">Plazo fijo 120 días</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:2px">Vence 12-dic-2026 · <span class="a-money">$ 2.000,00</span></p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b class="on"><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Saldo primero, acciones después, productos al final. Las cuatro acciones
+            rápidas son las cuatro cosas que un socio abre la app a hacer.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="inicio"></div>
+        </figure>
+
+        <figure class="board" id="b-movimientos">
+          <div class="board__head">
+            <div class="board__t"><h4>Movimientos</h4><code>05</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Movimientos</h2><span class="a-chip a-anu">2201-0004512</span></div>
+              <div class="a-tabs"><b class="on">Todos</b><b>Ingresos</b><b>Egresos</b></div>
+              <p class="a-lab" style="margin:0">Hoy · 14 de septiembre</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;padding:9px 10px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-down"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Transferencia recibida</b><b class="a-money" style="font-size:11px;color:#067A80">+ 150,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">De María F. Chimbo · 09:12</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;padding:9px 10px">
+                  <span class="a-ico"><svg><use href="#i-file"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Pago de cuota de crédito</b><b class="a-money" style="font-size:11px">− 236,17</b></div>
+                    <p class="a-sub" style="margin-top:1px">Cuota 4 de 24 · 08:40</p>
+                  </div>
+                </div>
+              </div>
+              <p class="a-lab" style="margin:2px 0 0">Viernes 12 de septiembre</p>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;padding:9px 10px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-bank"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Depósito en ventanilla</b><b class="a-money" style="font-size:11px;color:#067A80">+ 400,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">Caja 2 · comprobante 184390</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;padding:9px 10px">
+                  <span class="a-ico"><svg><use href="#i-swap"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Retiro</b><b class="a-money" style="font-size:11px">− 60,00</b></div>
+                    <p class="a-sub" style="margin-top:1px">Ventanilla · 16:05</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b class="on"><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Agrupado por día, signo y color en la misma línea. El estado de cuenta
+            del período se descarga desde el menú de la cabecera.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="movimientos"></div>
+        </figure>
+
+        <figure class="board" id="b-comprobante">
+          <div class="board__head">
+            <div class="board__t"><h4>Comprobante</h4><code>06</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body" style="justify-content:center;gap:14px">
+              <div class="a-ok"><svg><use href="#i-check"></use></svg></div>
+              <div>
+                <h2 class="a-h" style="text-align:center;font-size:16px">Transferencia realizada</h2>
+                <p class="a-money" style="text-align:center;font-size:26px;font-weight:900;color:#002B67;margin:7px 0 0">$ 150,00</p>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Para</dt><dd>María F. Chimbo T.</dd></div>
+                  <div><dt>Cuenta destino</dt><dd>2201-0007788</dd></div>
+                  <div><dt>Desde</dt><dd>2201-0004512</dd></div>
+                  <div><dt>Fecha y hora</dt><dd>14-sep-2026 · 09:41</dd></div>
+                  <div><dt>N.º de comprobante</dt><dd>TRF-000184521</dd></div>
+                </dl>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div class="a-btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:12px;height:12px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar</div>
+                <div class="a-btn2" style="flex:1">Compartir</div>
+              </div>
+              <div style="flex:1"></div>
+              <p class="a-auto">Desarrollado por Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Una sola plantilla sirve a transferencias, pagos y depósitos: cambia el
+            título y el juego de filas. El PDF sale con el mismo pie de autoría.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="comprobante"></div>
+        </figure>
+
+        <figure class="board" id="b-notificaciones">
+          <div class="board__head">
+            <div class="board__t"><h4>Notificaciones</h4><code>07</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Notificaciones</h2><span style="font-size:9.5px;font-weight:800;color:#067A80">Marcar leídas</span></div>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#05AFB5;align-items:flex-start">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-check"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Crédito aprobado</b><span class="a-sub" style="font-size:8.5px">hoy</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">Tu solicitud de <span class="a-money">$ 3.500,00</span> a 24 meses fue aprobada. Acércate a cualquier oficina a firmar.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <span class="a-ico a-ico--a"><svg><use href="#i-clock"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Cuota por vencer</b><span class="a-sub" style="font-size:8.5px">ayer</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">La cuota 5 vence el 01-oct-2026 por <span class="a-money">$ 236,17</span>.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <span class="a-ico a-ico--a"><svg><use href="#i-vault"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Tu plazo fijo vence pronto</b><span class="a-sub" style="font-size:8.5px">10-sep</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">DPF-2026-0087 vence el 12-dic-2026. Puedes renovarlo o acreditarlo a tus ahorros.</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;align-items:flex-start;opacity:.68">
+                  <span class="a-ico"><svg><use href="#i-list"></use></svg></span>
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b style="font-size:10.5px">Estado de cuenta de agosto</b><span class="a-sub" style="font-size:8.5px">01-sep</span></div>
+                    <p class="a-sub" style="margin-top:3px;line-height:1.45">Ya puedes descargarlo desde Movimientos.</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Tres avisos que el sistema ya sabe generar: crédito aprobado, cuota por
+            vencer y DPF por vencer. La barra de color repite el semáforo, sin inventar otro código.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="notificaciones"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 3 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Transferencias</h3><span>2 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-transferencia">
+          <div class="board__head">
+            <div class="board__t"><h4>Transferencia entre socios</h4><code>08</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Transferir</h2>
+              <div class="a-tabs"><b class="on">Entre socios</b><b>Otros bancos</b></div>
+              <div>
+                <span class="a-lab">Desde</span>
+                <div class="a-card" style="padding:10px 11px">
+                  <div class="a-row">
+                    <div><b style="font-size:10.5px">Ahorros a la vista</b><p class="a-money a-sub" style="margin-top:1px">2201-0004512</p></div>
+                    <b class="a-money" style="font-size:12.5px;color:#002B67">$ 1.284,55</b>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <span class="a-lab">Cuenta destino</span>
+                <div class="a-field a-field--on"><svg><use href="#i-id"></use></svg>2201-0007788</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:9.5px;font-weight:700;color:#067A80">
+                  <svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-check"></use></svg>MARÍA F. CHIMBO TIBÁN
+                </div>
+              </div>
+              <div>
+                <span class="a-lab">Monto</span>
+                <div class="a-field a-field--on" style="padding:12px 11px"><b class="a-money" style="font-size:19px;font-weight:900;color:#002B67">$ 150,00</b></div>
+              </div>
+              <div>
+                <span class="a-lab">Concepto</span>
+                <div class="a-field"><span class="ph">Aporte mensual</span></div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Transferir</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">El nombre del beneficiario aparece antes de escribir el monto: es la
+            confirmación que evita el error más caro de este flujo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="transferencia"></div>
+        </figure>
+
+        <figure class="board" id="b-interbancaria">
+          <div class="board__head">
+            <div class="board__t"><h4>Transferencia interbancaria</h4><code>09</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Transferir</h2>
+              <div class="a-tabs"><b>Entre socios</b><b class="on">Otros bancos</b></div>
+              <div>
+                <span class="a-lab">Institución destino</span>
+                <div class="a-field a-field--on"><svg><use href="#i-bank"></use></svg>Banco Pichincha<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div>
+                <span class="a-lab">Tipo de cuenta</span>
+                <div class="a-tabs" style="background:#F8FAFC;border:1.5px solid #EEF2F7"><b class="on">Ahorros</b><b>Corriente</b></div>
+              </div>
+              <div>
+                <span class="a-lab">Número de cuenta</span>
+                <div class="a-field"><span class="ph">2100xxxxxx</span></div>
+              </div>
+              <div>
+                <span class="a-lab">Cédula del beneficiario</span>
+                <div class="a-field"><svg><use href="#i-id"></use></svg><span class="ph">Obligatorio para el SPI</span></div>
+              </div>
+              <div>
+                <span class="a-lab">Monto</span>
+                <div class="a-field"><b class="a-money" style="font-size:17px;font-weight:900;color:#94A3B8">$ 0,00</b></div>
+              </div>
+              <div class="a-card" style="background:#E6FBFC;border-color:#BEEFF1;padding:9px 11px">
+                <p style="margin:0;font-size:9px;line-height:1.5;color:#0A4F53"><b>Comisión SPI $ 0,45.</b> Las órdenes recibidas hasta las 14:00 se acreditan el mismo día hábil.</p>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Continuar</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Un mismo módulo con dos pestañas, no dos módulos. Exige cédula del
+            beneficiario porque el SPI del Banco Central la valida contra el nombre.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="interbancaria"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 4 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Crédito</h3><span>5 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-simulador">
+          <div class="board__head">
+            <div class="board__t"><h4>Simulador de crédito</h4><code>10</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Simulador</h2>
+              <div class="a-tabs"><b class="on">Consumo</b><b>Microcrédito</b><b>Vivienda</b></div>
+              <div>
+                <div class="a-row"><span class="a-lab" style="margin:0">Monto</span><b class="a-money" style="font-size:14px;color:#002B67">$ 3.500</b></div>
+                <div class="a-slider"><i style="width:17%"></i><u style="left:17%"></u></div>
+                <div class="a-row"><span class="a-sub">$ 500</span><span class="a-sub">$ 20.000</span></div>
+              </div>
+              <div>
+                <div class="a-row"><span class="a-lab" style="margin:0">Plazo</span><b class="a-money" style="font-size:14px;color:#002B67">24 meses</b></div>
+                <div class="a-slider"><i style="width:42%"></i><u style="left:42%"></u></div>
+                <div class="a-row"><span class="a-sub">6</span><span class="a-sub">48</span></div>
+              </div>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">CUOTA MENSUAL ESTIMADA</p>
+                <p class="a-money" style="font-size:27px;font-weight:900;margin:4px 0 10px">$ 236,17</p>
+                <div style="display:flex;gap:14px;font-size:9px">
+                  <div><p style="opacity:.7;margin:0">Tasa nominal</p><b class="a-money" style="font-size:11px">15,20% anual</b></div>
+                  <div><p style="opacity:.7;margin:0">Total a pagar</p><b class="a-money" style="font-size:11px">$ 5.668,08</b></div>
+                </div>
+              </div>
+              <div class="a-btn2" style="display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-list"></use></svg>Ver tabla de amortización</div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Solicitar este crédito</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Sistema francés, cuota fija. La tasa no se escribe a mano: viene del
+            producto y del plazo, igual que en ventanilla.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="simulador"></div>
+        </figure>
+
+        <figure class="board" id="b-solicitud">
+          <div class="board__head">
+            <div class="board__t"><h4>Solicitud de crédito</h4><code>11</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Solicitud de crédito</h2>
+              <div class="a-step">
+                <i class="done"><svg style="width:9px;height:9px" aria-hidden="true"><use href="#i-check"></use></svg></i><u></u>
+                <i class="on">2</i><u></u>
+                <i>3</i>
+              </div>
+              <p class="a-sub" style="margin-top:-4px">Paso 2 de 3 · Destino y capacidad de pago</p>
+              <div>
+                <span class="a-lab">Destino del crédito</span>
+                <div class="a-field a-field--on">Capital de trabajo<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div>
+                <span class="a-lab">Actividad económica</span>
+                <div class="a-field">Comercio al por menor<svg style="margin-left:auto" aria-hidden="true"><use href="#i-right"></use></svg></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1"><span class="a-lab">Ingresos</span><div class="a-field" style="padding:9px"><b class="a-money" style="font-size:11.5px">$ 1.150,00</b></div></div>
+                <div style="flex:1"><span class="a-lab">Egresos</span><div class="a-field" style="padding:9px"><b class="a-money" style="font-size:11.5px">$ 620,00</b></div></div>
+              </div>
+              <div class="a-card" style="padding:11px">
+                <div class="a-row" style="margin-bottom:7px">
+                  <b style="font-size:10px">Capacidad de pago</b>
+                  <b class="a-money" style="font-size:11px;color:#067A80">46%</b>
+                </div>
+                <div class="a-track"><i style="width:46%"></i></div>
+                <p class="a-sub" style="margin-top:6px;font-size:9px">Excedente <span class="a-money">$ 530,00</span> frente a una cuota de <span class="a-money">$ 236,17</span>.</p>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Continuar</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">La capacidad de pago se calcula mientras el socio escribe, con la misma
+            fórmula que usa el oficial. Nadie envía una solicitud que ya sabe que no pasa.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="solicitud"></div>
+        </figure>
+
+        <figure class="board" id="b-solicitudes">
+          <div class="board__head">
+            <div class="board__t"><h4>Mis solicitudes</h4><code>12</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Mis solicitudes</h2><span class="a-chip a-anu">4</span></div>
+              <div class="a-list">
+                <div class="a-item" style="--bar:#F59E0B;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 3.500,00</b><span class="a-chip a-pen">Solicitado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 24 meses · 12-sep-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#B45309">En revisión por el oficial de crédito</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#05AFB5;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 1.200,00</b><span class="a-chip a-vig">Vigente</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 12 meses · 02-jun-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#067A80">Desembolsado · saldo <span class="a-money">$ 512,40</span></p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#EF4444;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#002B67">$ 5.000,00</b><span class="a-chip a-rec">Rechazado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Microcrédito · 36 meses · 18-abr-2026</p>
+                    <p class="a-sub" style="margin-top:2px;color:#B91C1C">Capacidad de pago insuficiente</p>
+                  </div>
+                </div>
+                <div class="a-item" style="--bar:#94A3B8;align-items:flex-start">
+                  <div style="flex:1;min-width:0">
+                    <div class="a-row"><b class="a-money" style="font-size:13px;color:#64748B">$ 800,00</b><span class="a-chip a-anu">Anulado</span></div>
+                    <p class="a-sub" style="margin-top:3px">Consumo · 6 meses · 05-mar-2026</p>
+                    <p class="a-sub" style="margin-top:2px">Anulada por el socio</p>
+                  </div>
+                </div>
+              </div>
+              <span class="a-fade"></span>
+            </div>
+            <div class="a-nav">
+              <b><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b class="on"><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Los cuatro estados que el backend devuelve, cada uno con su motivo.
+            La barra izquierda y la etiqueta salen del mismo renglón del semáforo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="solicitudes"></div>
+        </figure>
+
+        <figure class="board" id="b-credito">
+          <div class="board__head">
+            <div class="board__t"><h4>Detalle del crédito</h4><code>13</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <h2 class="a-h">Crédito de consumo</h2>
+              <div class="a-navy">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">SALDO DE CAPITAL</p>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:4px 0 10px">$ 2.126,53</p>
+                <div class="a-track" style="background:rgba(255,255,255,.22)"><i style="width:17%;background:#03CED4"></i></div>
+                <p style="font-size:9px;opacity:.8;margin:6px 0 0">4 de 24 cuotas pagadas · desembolsado <span class="a-money">$ 2.500,00</span></p>
+              </div>
+              <div class="a-item" style="--bar:#F59E0B">
+                <span class="a-ico a-ico--a"><svg><use href="#i-clock"></use></svg></span>
+                <div style="flex:1;min-width:0">
+                  <div class="a-row"><b style="font-size:10.5px">Próxima cuota</b><span class="a-chip a-pen">01-oct</span></div>
+                  <p class="a-sub" style="margin-top:2px">Cuota 5 · <b class="a-money" style="color:#002B67">$ 236,17</b></p>
+                </div>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Tasa nominal</dt><dd>15,20% anual</dd></div>
+                  <div><dt>Desembolso</dt><dd>01-jun-2026</dd></div>
+                  <div><dt>Vencimiento</dt><dd>01-jun-2028</dd></div>
+                  <div><dt>Días de mora</dt><dd>0</dd></div>
+                  <div><dt>Cuenta contable</dt><dd>140205</dd></div>
+                </dl>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;gap:8px">
+                <div class="a-btn2" style="flex:1">Ver tabla</div>
+                <div class="a-btn" style="flex:1">Pagar cuota</div>
+              </div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Muestra la cuenta contable del crédito (<code>1402</code>, consumo por
+            vencer) porque es lo que el socio necesita citar en ventanilla.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="credito"></div>
+        </figure>
+
+        <figure class="board" id="b-amortizacion">
+          <div class="board__head">
+            <div class="board__t"><h4>Tabla de amortización</h4><code>14</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <h2 class="a-h">Tabla de amortización</h2>
+                <span class="a-ico"><svg><use href="#i-print"></use></svg></span>
+              </div>
+              <div class="a-card" style="padding:11px">
+                <p style="margin:0;font-size:9.5px;font-weight:900;color:#002B67;letter-spacing:.04em">GUTT COMPANY S.A.S.</p>
+                <p class="a-sub" style="margin-top:2px">Sistema francés · cuota fija · 15,20% anual</p>
+                <div style="height:1px;background:#E9EEF4;margin:9px 0"></div>
+                <table class="a-tab">
+                  <thead><tr><th>N.º</th><th>Vence</th><th>Capital</th><th>Interés</th><th>Cuota</th><th>Saldo</th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>01-jul-26</td><td>204,50</td><td>31,67</td><td>236,17</td><td>2.295,50</td></tr>
+                    <tr><td>2</td><td>01-ago-26</td><td>207,09</td><td>29,08</td><td>236,17</td><td>2.088,41</td></tr>
+                    <tr><td>3</td><td>01-sep-26</td><td>209,71</td><td>26,46</td><td>236,17</td><td>1.878,70</td></tr>
+                    <tr><td>4</td><td>01-oct-26</td><td>212,37</td><td>23,80</td><td>236,17</td><td>1.666,33</td></tr>
+                    <tr><td colspan="6" style="text-align:center;color:#94A3B8;font-weight:700;padding:6px 0">20 cuotas más</td></tr>
+                    <tr class="tot"><td colspan="2">Totales</td><td>2.500,00</td><td>3.168,08</td><td>5.668,08</td><td>0,00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="a-btn" style="display:flex;align-items:center;justify-content:center;gap:6px"><svg style="width:12px;height:12px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar en PDF</div>
+              <div style="flex:1"></div>
+              <p class="a-auto">Documento generado el 14-sep-2026 · Jorge Tuquinga · GUTT COMPANY S.A.S.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">El documento oficial, no un resumen. La columna de saldo cierra en 0,00 y
+            los totales cuadran contra el desembolso: así se verifica de un vistazo.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="amortizacion"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 5 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Ahorro e inversión</h3><span>1 pantalla</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-dpf">
+          <div class="board__head">
+            <div class="board__t"><h4>Certificados a plazo fijo</h4><code>15</code></div>
+            <div class="tags"><span class="tag tag--nueva">Nueva</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row"><h2 class="a-h">Plazo fijo</h2><span class="a-chip a-vig">1 vigente</span></div>
+              <div class="a-navy">
+                <div class="a-row">
+                  <p style="font-size:8px;font-weight:800;letter-spacing:.1em;opacity:.72;margin:0">DPF-2026-0087</p>
+                  <span class="a-chip" style="background:rgba(3,206,212,.22);color:#8DEBEE">Vigente</span>
+                </div>
+                <p class="a-money" style="font-size:25px;font-weight:900;margin:5px 0 8px">$ 2.000,00</p>
+                <p style="font-size:9px;opacity:.8;margin:0">120 días al 8,25% anual</p>
+              </div>
+              <div class="a-card">
+                <dl class="a-dl">
+                  <div><dt>Apertura</dt><dd>14-ago-2026</dd></div>
+                  <div><dt>Vencimiento</dt><dd>12-dic-2026</dd></div>
+                  <div><dt>Interés a recibir</dt><dd>$ 67,81</dd></div>
+                  <div><dt>Cuenta contable</dt><dd>210315 · 91-180 días</dd></div>
+                  <div><dt>Al vencer</dt><dd>Acreditar a ahorros</dd></div>
+                </dl>
+              </div>
+              <div class="a-btn2" style="display:flex;align-items:center;justify-content:center;gap:5px"><svg style="width:11px;height:11px" aria-hidden="true"><use href="#i-down"></use></svg>Descargar certificado</div>
+              <p class="a-lab" style="margin:3px 0 0">Anteriores</p>
+              <div class="a-item" style="--bar:#94A3B8;padding:9px 10px;opacity:.75">
+                <div style="flex:1;min-width:0">
+                  <div class="a-row"><b class="a-money" style="font-size:11px">$ 1.500,00</b><span class="a-chip a-anu">Cancelado</span></div>
+                  <p class="a-sub" style="margin-top:2px">90 días · venció 20-may-2026</p>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <div class="a-btn">Abrir un plazo fijo</div>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Cita la subcuenta del tramo (<code>210315</code>, 91 a 180 días) porque es
+            la misma que el sistema contabiliza al abrir el depósito.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="dpf"></div>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- ─── Flujo 6 ─── -->
+    <div class="flow">
+      <div class="flow__bar"><h3>Asistencia y cuenta</h3><span>2 pantallas</span></div>
+      <div class="grid">
+
+        <figure class="board" id="b-asistente">
+          <div class="board__head">
+            <div class="board__t"><h4>Asistente virtual</h4><code>16</code></div>
+            <div class="tags"><span class="tag tag--venta">Vendida en PRF-2026-GUTT-002</span></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div class="a-row">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="a-ico a-ico--c"><svg><use href="#i-spark"></use></svg></span>
+                  <div><h2 class="a-h" style="font-size:13px">Asistente</h2><p class="a-sub">Consulta, no ejecuta</p></div>
+                </div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+                <div class="a-bub a-bub--ia">Hola Jorge. Puedo consultar tus saldos, explicarte una cuota o ayudarte a simular un crédito.</div>
+                <div class="a-bub a-bub--yo">¿Cuánto me falta para terminar mi crédito?</div>
+                <div class="a-bub a-bub--ia">Te quedan <b>20 cuotas</b> de <span class="a-money">$ 236,17</span>. El saldo de capital es <span class="a-money">$ 2.126,53</span> y la última cuota vence el <b>01-jun-2028</b>.</div>
+                <div class="a-bub a-bub--yo">¿Y si abono $500?</div>
+              </div>
+              <div class="a-sug"><b>Mi próxima cuota</b><b>Simular un crédito</b><b>Abrir un plazo fijo</b></div>
+              <div class="a-field a-field--on"><svg style="color:#03CED4"><use href="#i-spark"></use></svg><span class="ph">Escribe tu consulta…</span><svg style="margin-left:auto;color:#002B67"><use href="#i-right"></use></svg></div>
+              <p class="a-auto">El asistente no ejecuta transacciones ni entrega asesoría financiera.</p>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Responde sobre los datos del socio que ya tiene en pantalla. El límite
+            está escrito en la propia interfaz, no escondido en los términos.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="asistente"></div>
+        </figure>
+
+        <figure class="board" id="b-perfil">
+          <div class="board__head">
+            <div class="board__t"><h4>Perfil del socio</h4><code>17</code></div>
+          </div>
+          <div class="frame"><div class="screen">
+            <span class="notch"></span>
+            <div class="status"><span>09:41</span><u><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i></u></div>
+            <div class="body">
+              <div style="text-align:center;padding:6px 0 2px">
+                <div class="a-logo" style="border-radius:99px;font-style:normal;letter-spacing:0;font-size:17px">JT</div>
+                <h2 class="a-h" style="margin-top:9px">Jorge Tuquinga</h2>
+                <p class="a-sub" style="margin-top:2px">Socio 100067 · desde marzo de 2019</p>
+                <span class="a-chip a-vig" style="margin-top:7px">Certificados de aportación $ 120,00</span>
+              </div>
+              <div class="a-list" style="gap:6px">
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-id"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Datos personales</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-key"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Cambiar clave de acceso</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-bell"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Notificaciones</b>
+                  <span style="width:30px;height:17px;border-radius:99px;background:#05AFB5;position:relative;flex:none"><i style="position:absolute;top:2px;right:2px;width:13px;height:13px;border-radius:99px;background:#fff"></i></span>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico"><svg><use href="#i-shield"></use></svg></span>
+                  <b style="flex:1;font-size:11px">Protección de datos</b>
+                  <svg style="width:13px;height:13px;color:#CBD5E1" aria-hidden="true"><use href="#i-right"></use></svg>
+                </div>
+                <div class="a-item" style="--bar:transparent;padding:11px 10px">
+                  <span class="a-ico" style="background:#FEF2F2;color:#B91C1C"><svg><use href="#i-out"></use></svg></span>
+                  <b style="flex:1;font-size:11px;color:#B91C1C">Cerrar sesión</b>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <p class="a-auto">GUTT MÓVIL 1.4.0 · Desarrollado por Jorge Tuquinga<br>GUTT COMPANY S.A.S.</p>
+            </div>
+            <div class="a-nav">
+              <b><svg><use href="#i-home"></use></svg>Inicio</b>
+              <b><svg><use href="#i-swap"></use></svg>Transferir</b>
+              <b><svg><use href="#i-file"></use></svg>Crédito</b>
+              <b class="on"><svg><use href="#i-user"></use></svg>Perfil</b>
+            </div>
+          </div></div>
+          <figcaption class="board__foot">
+            <p class="board__desc">Cerrar sesión es la única fila en rojo de toda la aplicación: el rojo
+            queda reservado para lo que el socio no debe tocar por accidente.</p>
+          </figcaption>
+          <div class="board__ctl" data-id="perfil"></div>
+        </figure>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ FUERA DE ALCANCE ══════════════════ -->
+  <section id="limites">
+    <div class="sec__head"><span class="sec__n">03</span><h2>Fuera de alcance</h2></div>
+    <p class="sec__sub">Dicho por escrito para que no reaparezca a mitad de la fase 2. Nada de esto se diseña
+    ni se construye en este contrato; si el comité lo quiere, entra como adenda con su propio plazo.</p>
+    <div class="out">
+      <div><h4>Pago de servicios básicos</h4><p>Exige convenio de recaudación con un agregador y conciliación diaria propia.</p></div>
+      <div><h4>Biometría</h4><p>Huella y rostro dependen del dispositivo y de una política de riesgo que la cooperativa aún no tiene.</p></div>
+      <div><h4>Apertura de cuenta 100% digital</h4><p>Requiere validación de identidad contra el Registro Civil y firma electrónica.</p></div>
+      <div><h4>Geolocalización del socio</h4><p>El croquis de domicilio y de trabajo se levanta en ventanilla, donde ya funciona.</p></div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <p>Lienzo de diseño · GUTT MÓVIL<br>Entregable D del plan de implementación</p>
+    <p style="text-align:right">Desarrollado por Jorge Tuquinga<br>GUTT COMPANY S.A.S. · 14-sep-2026</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="estado-lienzo" type="application/json">
+{
+  "acceso": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "consentimiento": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "activacion": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "inicio": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "movimientos": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "comprobante": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "notificaciones": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "transferencia": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "interbancaria": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "simulador": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "solicitud": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "solicitudes": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  },
+  "credito": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "amortizacion": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "dpf": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "asistente": {
+    "estado": "por-construir",
+    "fase": 3,
+    "nota": ""
+  },
+  "perfil": {
+    "estado": "implementada",
+    "fase": 2,
+    "nota": ""
+  }
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* La plantilla se captura ANTES de pintar nada: es el documento tal como se
+     escribió, sin una sola marca del estado en vivo. Al guardar se reemplaza
+     únicamente el bloque JSON dentro de ella. */
+  var PLANTILLA = document.body.innerHTML;
+  var CABEZA = document.head.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, "");
+
+  var ESTADO = JSON.parse(document.getElementById("estado-lienzo").textContent);
+  var sucio = false;
+  var arte = null;
+
+  var ESTADOS = [
+    { id:"por-construir", txt:"Por construir", fg:"#475569", bg:"#F1F5F9", bd:"#DDE4EC" },
+    { id:"en-desarrollo", txt:"En desarrollo", fg:"#B45309", bg:"#FFFBEB", bd:"#FBE3B6" },
+    { id:"implementada",  txt:"Implementada",  fg:"#067A80", bg:"#E6FBFC", bd:"#B6EDEF" },
+    { id:"verificada",    txt:"Verificada",    fg:"#FFFFFF", bg:"#002B67", bd:"#002B67" }
+  ];
+  var FASES = {
+    1:"Fase 1 · Esquema", 2:"Fase 2 · Módulos", 3:"Fase 3 · Integración",
+    4:"Fase 4 · Infraestructura", 5:"Fase 5 · Continuidad",
+    6:"Fase 6 · Capacitación", 7:"Fase 7 · Producción"
+  };
+
+  function porId(id){ for(var i=0;i<ESTADOS.length;i++){ if(ESTADOS[i].id===id) return ESTADOS[i]; } return ESTADOS[0]; }
+
+  function aviso(texto){
+    var t = document.getElementById("toast");
+    t.textContent = texto; t.classList.add("on");
+    clearTimeout(aviso._t);
+    aviso._t = setTimeout(function(){ t.classList.remove("on"); }, 2600);
+  }
+
+  function marcarSucio(){
+    sucio = true;
+    document.getElementById("sucio").hidden = false;
+  }
+
+  function medidor(){
+    var cuenta = {};
+    ESTADOS.forEach(function(e){ cuenta[e.id] = 0; });
+    var total = 0;
+    Object.keys(ESTADO).forEach(function(k){ cuenta[porId(ESTADO[k].estado).id]++; total++; });
+
+    var barra = document.getElementById("medidor");
+    barra.textContent = "";
+    ESTADOS.slice().reverse().forEach(function(e){
+      if(!cuenta[e.id]) return;
+      var i = document.createElement("i");
+      i.style.width = (cuenta[e.id] / total * 100) + "%";
+      i.style.background = e.id === "por-construir" ? "#C3CDDB" : e.bg === "#FFFBEB" ? "#F59E0B" : e.id === "implementada" ? "#05AFB5" : "#002B67";
+      i.title = e.txt + ": " + cuenta[e.id];
+      barra.appendChild(i);
+    });
+    document.getElementById("medidorTxt").textContent =
+      (cuenta["implementada"] + cuenta["verificada"]) + " de " + total + " listas";
+  }
+
+  function pintarChip(boton, id){
+    var e = porId(ESTADO[id].estado);
+    boton.textContent = e.txt;
+    boton.style.color = e.fg;
+    boton.style.background = e.bg;
+    boton.style.borderColor = e.bd;
+    boton.setAttribute("aria-label", "Estado de la pantalla: " + e.txt + ". Pulsa para cambiar.");
+  }
+
+  function construir(){
+    var cajas = document.querySelectorAll(".board__ctl");
+    Array.prototype.forEach.call(cajas, function(caja){
+      var id = caja.getAttribute("data-id");
+      if(!ESTADO[id]) ESTADO[id] = { estado:"por-construir", fase:2, nota:"" };
+
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.id = "estado-" + id;
+      pintarChip(chip, id);
+      chip.addEventListener("click", function(){
+        var i = 0;
+        for(var k=0;k<ESTADOS.length;k++){ if(ESTADOS[k].id===ESTADO[id].estado){ i = k; break; } }
+        ESTADO[id].estado = ESTADOS[(i+1) % ESTADOS.length].id;
+        pintarChip(chip, id);
+        medidor();
+        marcarSucio();
+      });
+
+      var fase = document.createElement("button");
+      fase.type = "button";
+      fase.className = "chip chip--fase";
+      fase.id = "fase-" + id;
+      fase.textContent = FASES[ESTADO[id].fase] || FASES[2];
+      fase.addEventListener("click", function(){
+        ESTADO[id].fase = (ESTADO[id].fase % 7) + 1;
+        fase.textContent = FASES[ESTADO[id].fase];
+        marcarSucio();
+      });
+
+      var nota = document.createElement("textarea");
+      nota.className = "nota";
+      nota.id = "nota-" + id;
+      nota.rows = 1;
+      nota.placeholder = "Nota de diseño o de avance…";
+      nota.value = ESTADO[id].nota || "";
+      nota.addEventListener("input", function(){
+        ESTADO[id].nota = nota.value;
+        marcarSucio();
+      });
+
+      caja.appendChild(chip);
+      caja.appendChild(fase);
+      caja.appendChild(nota);
+    });
+    medidor();
+  }
+
+  function documento(){
+    var json = JSON.stringify(ESTADO, null, 2).replace(/</g, "\\u003c");
+    var cuerpo = PLANTILLA.replace(
+      /(<script id="estado-lienzo"[^>]*>)[\s\S]*?(<\/script>)/,
+      function(_, abre, cierra){ return abre + "\n" + json + "\n" + cierra; }
+    );
+    return "<!doctype html>\n<html lang=\"es\">\n<head>\n" + CABEZA + "\n</head>\n<body>\n" + cuerpo + "\n</body>\n</html>";
+  }
+
+  function guardar(){
+    var boton = document.getElementById("guardar");
+    if(!arte){ aviso("Esta vista es de solo lectura: no se puede guardar."); return; }
+    boton.disabled = true;
+    arte.publish(documento()).then(function(){
+      sucio = false;
+      document.getElementById("sucio").hidden = true;
+      aviso("Versión guardada. Todos los que tengan el lienzo abierto la verán.");
+    }).catch(function(err){
+      var c = err && err.code;
+      if(c === "conflict"){
+        aviso("Alguien guardó antes que tú. La página se actualiza sola con esa versión.");
+      } else if(c === "not_granted" || c === "not_writer"){
+        aviso("No tienes permiso de edición sobre este lienzo.");
+      } else {
+        aviso("No se pudo guardar. Vuelve a intentarlo.");
+      }
+    }).then(function(){ boton.disabled = false; });
+  }
+
+  function arrancar(datos){
+    if(datos && datos.estado){
+      Object.keys(datos.estado).forEach(function(k){ ESTADO[k] = datos.estado[k]; });
+    }
+    construir();
+    if(datos && datos.sucio) marcarSucio();
+
+    document.getElementById("guardar").addEventListener("click", guardar);
+    window.addEventListener("beforeunload", function(e){
+      if(sucio){ e.preventDefault(); e.returnValue = ""; }
+    });
+
+    if(window.claude && window.claude.use){
+      window.claude.use("artifact").then(function(a){
+        arte = a;
+        if(!a){
+          var b = document.getElementById("guardar");
+          b.classList.add("btn--ghost");
+          b.title = "Solo lectura";
+        }
+      }).catch(function(){});
+    }
+  }
+
+  if(window.claude && window.claude.hot && window.claude.hot.snapshot){
+    window.claude.hot.snapshot(function(){ return { estado: ESTADO, sucio: sucio }; });
+  }
+  if(window.claude && window.claude.hot && window.claude.hot.ready){
+    window.claude.hot.ready(arrancar);
+  } else {
+    arrancar((window.claude && window.claude.hot && window.claude.hot.data) || {});
+  }
+})();
+</script>

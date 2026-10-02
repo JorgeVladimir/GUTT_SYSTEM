@@ -1,0 +1,622 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#faf9f5}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Tablero de Avance</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --navy:#1F3864; --navy-600:#14294A; --navy-50:#EEF2F8; --navy-100:#DCE5F2;
+  --cyan:#00BCD4; --cyan-dark:#00707E; --cyan-50:#E3F8FA; --cyan-100:#C3EFF3;
+  --amber:#B45309; --amber-50:#FFF6E9; --amber-100:#FBE7C6;
+  --red:#B91C1C; --red-50:#FDECEC; --red-100:#F8D3D3;
+  --slate:#64748B; --slate-50:#F1F3F7; --slate-100:#E2E6ED;
+
+  --ground:#F2F4F9; --panel:#FFFFFF; --panel-2:#F8F9FC;
+  --line:#DCE3EE; --line-soft:#E9EDF4;
+  --ink:#1B2436; --ink-2:#4A5670; --ink-3:#7C879C;
+  --shadow:0 16px 34px -22px rgba(19,32,60,.35);
+  --shadow-sm:0 1px 2px rgba(19,32,60,.06);
+
+  --serif:'Source Serif 4',Georgia,serif;
+  --sans:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --mono:'IBM Plex Mono','Cascadia Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#8FB0DE; --navy-600:#B7CCEA; --navy-50:#152238; --navy-100:#1C2C48;
+    --cyan:#3FD4E6; --cyan-dark:#6FE3EF; --cyan-50:#0C2A2E; --cyan-100:#123A3F;
+    --amber:#F0A94E; --amber-50:#2E2211; --amber-100:#3D2D15;
+    --red:#F0807D; --red-50:#301415; --red-100:#3E1B1C;
+    --slate:#93A0B8; --slate-50:#171F2E; --slate-100:#1F2A3C;
+
+    --ground:#0A1120; --panel:#111A2C; --panel-2:#0D1524;
+    --line:#233150; --line-soft:#1A2540;
+    --ink:#E7ECF7; --ink-2:#AEBAD1; --ink-3:#7C879C;
+    --shadow:0 20px 40px -22px rgba(0,0,0,.6);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#8FB0DE; --navy-600:#B7CCEA; --navy-50:#152238; --navy-100:#1C2C48;
+  --cyan:#3FD4E6; --cyan-dark:#6FE3EF; --cyan-50:#0C2A2E; --cyan-100:#123A3F;
+  --amber:#F0A94E; --amber-50:#2E2211; --amber-100:#3D2D15;
+  --red:#F0807D; --red-50:#301415; --red-100:#3E1B1C;
+  --slate:#93A0B8; --slate-50:#171F2E; --slate-100:#1F2A3C;
+
+  --ground:#0A1120; --panel:#111A2C; --panel-2:#0D1524;
+  --line:#233150; --line-soft:#1A2540;
+  --ink:#E7ECF7; --ink-2:#AEBAD1; --ink-3:#7C879C;
+  --shadow:0 20px 40px -22px rgba(0,0,0,.6);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--ground);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 56px}
+:where(a,button,[tabindex]):focus-visible{outline:2px solid var(--cyan-dark);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important;animation-duration:.001ms!important}}
+
+/* ── Barra superior ─────────────────────────────────── */
+.bar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--panel) 90%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.bar__in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:11px;min-width:0}
+.mark img{width:32px;height:32px;object-fit:contain;flex:none;border-radius:6px}
+.mark b{display:block;font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:-.005em;color:var(--navy)}
+.mark span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase}
+.bar__sp{flex:1 1 30px}
+.live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.03em}
+.live i{width:6px;height:6px;border-radius:99px;background:var(--cyan-dark);flex:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--cyan-dark) 20%,transparent)}
+.toast{font-family:var(--mono);font-size:10.5px;color:var(--cyan-dark);opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+
+/* ── Portada del tablero ────────────────────────────── */
+.hero{padding:30px 0 6px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-dark);margin:0 0 8px}
+h1{font-family:var(--serif);font-size:clamp(22px,3.2vw,30px);font-weight:600;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance;color:var(--navy)}
+.lede{font-size:13px;line-height:1.6;color:var(--ink-2);max-width:66ch;margin:0 0 22px}
+
+/* ── Métricas ───────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+@media (max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.stats{grid-template-columns:1fr}}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+.stat__head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:10px}
+.stat__lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.stat__num{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat__bar{height:10px;border-radius:99px;background:var(--slate-50);overflow:hidden;border:1px solid var(--line-soft)}
+.stat__bar i{display:block;height:100%;background:var(--cyan-dark);border-radius:99px;transition:width .4s ease}
+.stat__foot{margin-top:8px;font-size:11px;color:var(--ink-3)}
+
+/* ── Layout de dos columnas ─────────────────────────── */
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden}
+.panel__head{padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+.panel__head h2{font-family:var(--serif);font-size:16px;font-weight:600;margin:0 0 3px;color:var(--navy)}
+.panel__head p{font-size:11.5px;color:var(--ink-3);margin:0}
+.panel__body{padding:6px 20px 18px}
+
+/* ── Línea de fases ─────────────────────────────────── */
+.fase{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line-soft);position:relative}
+.fase:last-child{border-bottom:none}
+.fase__rail{flex:none;display:flex;flex-direction:column;align-items:center;width:26px}
+.fase__num{width:26px;height:26px;border-radius:99px;background:var(--navy-50);color:var(--navy);
+  display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;flex:none;
+  border:1.5px solid var(--navy-100)}
+.fase__line{width:1.5px;flex:1;background:var(--line);margin-top:4px}
+.fase:last-child .fase__line{display:none}
+.fase__body{flex:1;min-width:0;padding-top:1px}
+.fase__top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.fase__name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;margin:0}
+.fase__meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:3px}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  padding:4px 10px;border-radius:99px;border:1px solid transparent;cursor:pointer;flex:none;
+  display:inline-flex;align-items:center;gap:5px;transition:filter .15s}
+.pill:hover{filter:brightness(.97)}
+.pill::before{content:"";width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}
+.pill--pendiente{color:var(--slate);background:var(--slate-50);border-color:var(--slate-100)}
+.pill--en-curso{color:var(--navy);background:var(--navy-50);border-color:var(--navy-100)}
+.pill--aceptada{color:var(--cyan-dark);background:var(--cyan-50);border-color:var(--cyan-100)}
+.pill--observada{color:var(--red);background:var(--red-50);border-color:var(--red-100)}
+.pill--sin-dimensionar{color:var(--amber);background:var(--amber-50);border-color:var(--amber-100)}
+.pill--dimensionando{color:var(--navy);background:var(--navy-50);border-color:var(--navy-100)}
+.pill--dimensionado{color:var(--cyan-dark);background:var(--cyan-50);border-color:var(--cyan-100)}
+.fase__row2{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
+.acta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-2);cursor:pointer;user-select:none}
+.acta input{width:14px;height:14px;accent-color:var(--navy);cursor:pointer;flex:none}
+.nota{flex:1;min-width:140px;font-family:var(--sans);font-size:11.5px;color:var(--ink);background:var(--panel-2);
+  border:1px dashed var(--line);border-radius:7px;padding:5px 8px;resize:vertical;min-height:30px}
+.nota::placeholder{color:var(--ink-3)}
+.nota:focus{outline:none;border-style:solid;border-color:var(--cyan-dark);background:var(--panel)}
+
+/* ── Calendario de desembolsos ──────────────────────── */
+.des{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+.des:last-child{border-bottom:none}
+.des__chk{flex:none}
+.des__chk input{width:16px;height:16px;accent-color:var(--cyan-dark);cursor:pointer}
+.des__body{flex:1;min-width:0}
+.des__lab{font-size:12px;font-weight:600;color:var(--ink);line-height:1.35}
+.des__lab.done{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line);font-weight:500}
+.des__fecha{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:1px}
+.des__monto{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums;
+  white-space:nowrap;flex:none;text-align:right}
+.des.equipo{background:var(--amber-50);margin:2px -20px;padding:9px 20px;border-radius:8px;border-bottom:none}
+.des.equipo .des__monto{color:var(--amber)}
+.des__total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 2px;margin-top:4px;
+  border-top:1.5px solid var(--navy);font-family:var(--mono)}
+.des__total b{font-size:13px;color:var(--navy);font-variant-numeric:tabular-nums}
+.des__total span{font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── Módulos de la migración ─────────────────────────── */
+.mod{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.mod:last-child{border-bottom:none}
+.mod__num{width:26px;height:26px;border-radius:8px;background:var(--slate-50);color:var(--ink-2);
+  display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;font-weight:600;flex:none;
+  border:1.5px solid var(--slate-100);margin-top:1px}
+.mod__body{flex:1;min-width:0}
+.mod__top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.mod__name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;margin:0}
+.mod__meta{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:3px}
+.owner{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-2);margin-top:7px}
+.owner b{color:var(--navy);font-weight:600}
+.mod__row2{display:flex;align-items:center;gap:14px;margin-top:7px;flex-wrap:wrap}
+.dep{font-size:10.5px;color:var(--ink-3)}
+
+/* ── Otros frentes (tracks sin dimensionar) ─────────── */
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.track{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.track__top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.track__name{font-size:12.5px;font-weight:600;color:var(--ink);margin:0;line-height:1.4}
+.track__meta{font-size:11px;color:var(--ink-2);line-height:1.5;margin:6px 0 0}
+.track__meta b{color:var(--ink)}
+.track .nota{margin-top:9px;font-size:11px;min-height:26px}
+/* ── Riesgo principal ───────────────────────────────── */
+.risk{margin-top:20px;background:var(--amber-50);border:1px solid var(--amber-100);border-left:3px solid var(--amber);
+  border-radius:0 12px 12px 0;padding:14px 18px}
+.risk__lab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:5px}
+.risk p{font-size:12px;line-height:1.55;color:var(--ink-2);margin:0}
+
+/* ── Pie ────────────────────────────────────────────── */
+footer.pie{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+[hidden]{display:none!important}
+</style>
+
+<div class="bar">
+  <div class="bar__in">
+    <div class="mark">
+      <img src="logo.png" alt="">
+      <div><b>Tablero de Avance</b><span>SISTEMA FINANCIERO EPS</span></div>
+    </div>
+    <div class="bar__sp"></div>
+    <span class="toast" id="toast"></span>
+    <div class="live" id="live"><i></i>conectando…</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Entregable F · Seguimiento del proyecto</p>
+    <h1>Avance real, no reportado — cada quien marca lo suyo</h1>
+    <p class="lede">Las siete fases del Contrato de Socios CTR-2026-GUTT-001, los once desembolsos, los
+      ocho módulos de la migración a PostgreSQL (ya fusionada con el esquema multi-tenant) y los otros
+      tres frentes que corren en paralelo — integración operativa, app móvil y página web — en un
+      solo lugar que el comité actualiza cada sábado. Se ve en vivo para todos.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Avance del proyecto</span><span class="stat__num" id="numFases">0 / 7 fases</span></div>
+      <div class="stat__bar"><i id="barFases" style="width:0%"></i></div>
+      <div class="stat__foot" id="footFases">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Avance del presupuesto</span><span class="stat__num" id="numPresu">$0,00</span></div>
+      <div class="stat__bar"><i id="barPresu" style="width:0%"></i></div>
+      <div class="stat__foot" id="footPresu">Cargando…</div>
+    </div>
+    <div class="stat">
+      <div class="stat__head"><span class="stat__lab">Migración a PostgreSQL</span><span class="stat__num" id="numMod">0 / 8 módulos</span></div>
+      <div class="stat__bar"><i id="barMod" style="width:0%"></i></div>
+      <div class="stat__foot" id="footMod">Cargando…</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Fases del proyecto</h2>
+        <p>Pulsa el estado para avanzarlo. La casilla es el acta de aceptación firmada (cláusula 7.3).</p>
+      </div>
+      <div class="panel__body" id="listaFases">
+        <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando fases…</p>
+      </div>
+      <div class="panel__body" style="padding-top:0">
+        <div class="risk">
+          <div class="risk__lab">Riesgo principal</div>
+          <p>Las fases 1 y 2 concentran la migración completa a PostgreSQL sin ampliar plazo ni
+            presupuesto. Alerta si al cierre del mes 2 el esquema no está validado, o al cierre del
+            mes 5 los módulos no pasan la prueba de paridad numérica.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2>Calendario de desembolsos</h2>
+        <p>USD 700,00 mensuales para cada desarrollador. Marca lo que ya se pagó.</p>
+      </div>
+      <div class="panel__body" id="listaDesembolsos">
+        <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando desembolsos…</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="panel__head">
+      <h2>Track A · Migración a PostgreSQL <em style="font-style:normal;color:var(--ink-3);font-weight:400;font-size:12px">— fusionado con multi-tenant</em></h2>
+      <p>Cada módulo se porta YA con CooperativaId sobre PostgreSQL, no primero mono-tenant y multi-tenant después. Tamaño medido en server.js, no estimado.</p>
+    </div>
+    <div class="panel__body" id="listaModulos">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando módulos…</p>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="panel__head">
+      <h2>Otros frentes del proyecto</h2>
+      <p>Corren en paralelo al Track A. Sin fecha todavía — dimensionarlos con números reales, no a ojo, es el paso pendiente de cada uno.</p>
+    </div>
+    <div class="panel__body" id="listaTracks">
+      <p style="padding:16px 0;color:var(--ink-3);font-size:12px">Cargando…</p>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <span>GUTT COMPANY S.A.S. · Contrato CTR-2026-GUTT-001</span>
+    <span>Desarrollado por Jorge Tuquinga</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var MONEY = new Intl.NumberFormat('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2});
+  var fmt = function(n){ return '$ ' + MONEY.format(n); };
+  var fmtFecha = function(iso){
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('es-EC', {day:'2-digit', month:'short', year:'numeric'}).replace('.', '');
+  };
+
+  var ESTADOS = ['pendiente','en-curso','aceptada','observada'];
+  var ESTADO_TXT = {pendiente:'Pendiente', 'en-curso':'En curso', aceptada:'Aceptada', observada:'Observada'};
+
+  var FASES_SEED = [
+    {id:'f1', numero:1, nombre:'Esquema multi-tenant finalizado y validado', meses:'1–2', entrega:'2026-11-13'},
+    {id:'f2', numero:2, nombre:'Módulos de negocio adaptados al esquema multi-tenant', meses:'3–5', entrega:'2027-02-13'},
+    {id:'f3', numero:3, nombre:'Datos migrados e integración probada de punta a punta', meses:'6', entrega:'2027-03-13'},
+    {id:'f4', numero:4, nombre:'Servidor instalado, aprovisionado y primeras empresas activas', meses:'7', entrega:'2027-04-13'},
+    {id:'f5', numero:5, nombre:'Hardening, monitoreo y prueba de recuperación superada', meses:'8', entrega:'2027-05-13'},
+    {id:'f6', numero:6, nombre:'Manuales entregados y capacitación impartida', meses:'9', entrega:'2027-06-13'},
+    {id:'f7', numero:7, nombre:'Sistema en producción para las diez empresas y acta de cierre', meses:'10', entrega:'2027-07-13'}
+  ];
+  var DESEMB_SEED = [
+    {id:'d1', numero:1, etiqueta:'Mes 1 · Arranque', fecha:'2026-09-14', monto:1400, tipo:'mensual'},
+    {id:'d2', numero:2, etiqueta:'Mes 2 · Cierre Fase 1', fecha:'2026-10-01', monto:1400, tipo:'mensual'},
+    {id:'d3', numero:3, etiqueta:'Mes 3 · Créditos y contabilidad', fecha:'2026-11-01', monto:1400, tipo:'mensual'},
+    {id:'d4', numero:4, etiqueta:'Mes 4 · Reportería SEPS y cartera', fecha:'2026-12-01', monto:1400, tipo:'mensual'},
+    {id:'d5', numero:5, etiqueta:'Mes 5 · Cierre Fase 2 · orden de compra del servidor', fecha:'2027-01-01', monto:1400, tipo:'mensual'},
+    {id:'d6', numero:6, etiqueta:'Mes 6 · Migración e integración', fecha:'2027-02-01', monto:1400, tipo:'mensual'},
+    {id:'d7', numero:7, etiqueta:'Mes 7 · Servidor instalado', fecha:'2027-03-01', monto:1400, tipo:'mensual'},
+    {id:'equipo', numero:7.5, etiqueta:'Pago del equipo físico', fecha:'2027-03-15', monto:10569.45, tipo:'equipo'},
+    {id:'d8', numero:8, etiqueta:'Mes 8 · Hardening y continuidad', fecha:'2027-04-01', monto:1400, tipo:'mensual'},
+    {id:'d9', numero:9, etiqueta:'Mes 9 · Documentación y capacitación', fecha:'2027-05-01', monto:1400, tipo:'mensual'},
+    {id:'d10', numero:10, etiqueta:'Mes 10 · Producción y entrega formal', fecha:'2027-06-01', monto:1400, tipo:'mensual'}
+  ];
+  var TOTAL = 24569.45;
+
+  var TRACK_ESTADOS = ['sin-dimensionar','dimensionando','dimensionado'];
+  var TRACK_ESTADO_TXT = {'sin-dimensionar':'Sin dimensionar', 'dimensionando':'Dimensionando', 'dimensionado':'Dimensionado'};
+
+  var TRACKS_SEED = [
+    {id:'trackB', nombre:'Integración y dureza operativa', meta:'Ambos sistemas, misma prioridad: revisar errores, terminar reportería, conectar módulos entre sí. <b>server.gutt_system.js</b>: 52/76 endpoints, 13 pendientes, 0 pruebas conectadas. <b>server.js</b>: 76/76, 55/55 pruebas — LISTO PARA PRODUCCIÓN el 07-sep, pero puede necesitar revisión operativa igual.'},
+    {id:'trackC', nombre:'App móvil — construcción', meta:'El diseño ya existe (17 pantallas, ver el lienzo GUTT Móvil). Falta construirlo de verdad contra el backend. Depende de qué módulos del Track A ya estén listos.'},
+    {id:'trackD', nombre:'Página web de GUTT COMPANY', meta:'No existe ningún archivo. No está en el Contrato de Socios CTR-2026-GUTT-001 — falta decidir alcance y si entra en el presupuesto y el tiempo actual.'}
+  ];
+
+  var MODULOS_SEED = [
+    {id:'m0', numero:0, nombre:'Esquema multi-tenant + Plataforma y autenticación', responsable:'Jorge · prueba: Franklin',
+      endpoints:12, lineas:553, params:29, rango:'19-sep (fecha a revisar: creció de alcance)', dep:'—'},
+    {id:'m1', numero:1, nombre:'Socios y cuentas', responsable:'Jorge · prueba: Franklin',
+      endpoints:18, lineas:1598, params:233, rango:'26-sep → 10-oct', dep:'Módulo 0'},
+    {id:'m2', numero:2, nombre:'Caja y ventanilla', responsable:'Jorge · prueba: Franklin',
+      endpoints:4, lineas:135, params:12, rango:'17-oct', dep:'Módulo 1'},
+    {id:'m3', numero:3, nombre:'Créditos', responsable:'Jorge · prueba: Franklin',
+      endpoints:13, lineas:1521, params:270, rango:'24-oct → 07-nov', dep:'Módulo 1'},
+    {id:'m4', numero:4, nombre:'Plazo fijo (DPF)', responsable:'Jorge · prueba: Franklin',
+      endpoints:10, lineas:435, params:112, rango:'14-nov → 21-nov', dep:'Módulo 1'},
+    {id:'m5', numero:5, nombre:'Contabilidad (verificación cruzada)', responsable:'Jorge · prueba: Franklin',
+      endpoints:3, lineas:128, params:3, rango:'28-nov', dep:'Módulos 1, 3, 4'},
+    {id:'m6', numero:6, nombre:'Cartera SEPS', responsable:'Jorge · prueba: Franklin',
+      endpoints:6, lineas:459, params:37, rango:'05-dic → 12-dic', dep:'Módulo 3'},
+    {id:'m7', numero:7, nombre:'Reportes SEPS', responsable:'Franklin (su módulo por contrato)',
+      endpoints:6, lineas:820, params:2, rango:'19-dic → 26-dic', dep:'Módulos 5, 6'}
+  ];
+
+  var db = null;
+  var toastTimer = null;
+  function aviso(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2200);
+  }
+  function marcarVivo(){
+    var el = document.getElementById('live');
+    el.innerHTML = '<i></i>en vivo';
+  }
+
+  function pintarFases(porId){
+    var cont = document.getElementById('listaFases');
+    cont.innerHTML = '';
+    var aceptadas = 0;
+    FASES_SEED.forEach(function(seed, i){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'pendiente';
+      var acta = !!doc.acta;
+      var nota = doc.nota || '';
+      if (estado === 'aceptada') aceptadas++;
+
+      var row = document.createElement('div');
+      row.className = 'fase';
+      row.innerHTML =
+        '<div class="fase__rail"><div class="fase__num">' + seed.numero + '</div><div class="fase__line"></div></div>' +
+        '<div class="fase__body">' +
+          '<div class="fase__top">' +
+            '<p class="fase__name">' + seed.nombre + '</p>' +
+            '<button type="button" class="pill pill--' + estado + '" data-fase="' + seed.id + '">' + ESTADO_TXT[estado] + '</button>' +
+          '</div>' +
+          '<div class="fase__meta">Meses ' + seed.meses + ' · entrega máxima ' + fmtFecha(seed.entrega) + '</div>' +
+          '<div class="fase__row2">' +
+            '<label class="acta"><input type="checkbox" data-acta="' + seed.id + '"' + (acta ? ' checked' : '') + '> Acta firmada</label>' +
+            '<textarea class="nota" rows="1" placeholder="Nota de avance…" data-nota="' + seed.id + '">' + nota + '</textarea>' +
+          '</div>' +
+        '</div>';
+      cont.appendChild(row);
+    });
+
+    var pct = Math.round(aceptadas / FASES_SEED.length * 100);
+    document.getElementById('numFases').textContent = aceptadas + ' / ' + FASES_SEED.length + ' fases';
+    document.getElementById('barFases').style.width = pct + '%';
+    document.getElementById('footFases').textContent = pct + '% de las fases aceptadas por el Jefe de Proyecto';
+
+    cont.querySelectorAll('[data-fase]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        var id = btn.getAttribute('data-fase');
+        var actual = (porId[id] || {}).estado || 'pendiente';
+        var siguiente = ESTADOS[(ESTADOS.indexOf(actual) + 1) % ESTADOS.length];
+        db.collection('fases').doc(id).set(Object.assign({}, FASES_SEED.find(function(f){return f.id===id;}), porId[id] || {}, {estado: siguiente}))
+          .catch(function(){ aviso('No se pudo guardar el estado.'); });
+      });
+    });
+    cont.querySelectorAll('[data-acta]').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        var id = chk.getAttribute('data-acta');
+        db.collection('fases').doc(id).set(Object.assign({}, FASES_SEED.find(function(f){return f.id===id;}), porId[id] || {}, {acta: chk.checked}))
+          .catch(function(){ aviso('No se pudo guardar el acta.'); });
+      });
+    });
+    cont.querySelectorAll('[data-nota]').forEach(function(area){
+      var id = area.getAttribute('data-nota');
+      var valorPrevio = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === valorPrevio) return;
+        valorPrevio = area.value;
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        db.collection('fases').doc(id).set(Object.assign({}, FASES_SEED.find(function(f){return f.id===id;}), porId[id] || {}, {nota: area.value}))
+          .catch(function(){ aviso('No se pudo guardar la nota.'); });
+      });
+    });
+  }
+
+  function pintarModulos(porId){
+    var cont = document.getElementById('listaModulos');
+    cont.innerHTML = '';
+    var aceptados = 0;
+    MODULOS_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'pendiente';
+      var nota = doc.nota || '';
+      if (estado === 'aceptada') aceptados++;
+
+      var row = document.createElement('div');
+      row.className = 'mod';
+      row.innerHTML =
+        '<div class="mod__num">' + seed.numero + '</div>' +
+        '<div class="mod__body">' +
+          '<div class="mod__top">' +
+            '<p class="mod__name">' + seed.nombre + '</p>' +
+            '<button type="button" class="pill pill--' + estado + '" data-mod="' + seed.id + '">' + ESTADO_TXT[estado] + '</button>' +
+          '</div>' +
+          '<div class="mod__meta">' + seed.endpoints + ' endpoints · ' + seed.lineas + ' líneas · ' + seed.params + ' parámetros a traducir · semana ' + seed.rango + '</div>' +
+          '<div class="mod__row2">' +
+            '<span class="owner">' + seed.responsable + '</span>' +
+            '<span class="dep">Depende de: ' + seed.dep + '</span>' +
+          '</div>' +
+          '<textarea class="nota" rows="1" style="margin-top:7px" placeholder="Nota de avance…" data-modnota="' + seed.id + '">' + nota + '</textarea>' +
+        '</div>';
+      cont.appendChild(row);
+    });
+
+    var pct = Math.round(aceptados / MODULOS_SEED.length * 100);
+    document.getElementById('numMod').textContent = aceptados + ' / ' + MODULOS_SEED.length + ' módulos';
+    document.getElementById('barMod').style.width = pct + '%';
+    document.getElementById('footMod').textContent = pct + '% portados y con prueba de paridad en verde';
+
+    cont.querySelectorAll('[data-mod]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        var id = btn.getAttribute('data-mod');
+        var actual = (porId[id] || {}).estado || 'pendiente';
+        var siguiente = ESTADOS[(ESTADOS.indexOf(actual) + 1) % ESTADOS.length];
+        db.collection('modulos').doc(id).set(Object.assign({}, MODULOS_SEED.find(function(m){return m.id===id;}), porId[id] || {}, {estado: siguiente}))
+          .catch(function(){ aviso('No se pudo guardar el estado.'); });
+      });
+    });
+    cont.querySelectorAll('[data-modnota]').forEach(function(area){
+      var id = area.getAttribute('data-modnota');
+      var valorPrevio = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === valorPrevio) return;
+        valorPrevio = area.value;
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        db.collection('modulos').doc(id).set(Object.assign({}, MODULOS_SEED.find(function(m){return m.id===id;}), porId[id] || {}, {nota: area.value}))
+          .catch(function(){ aviso('No se pudo guardar la nota.'); });
+      });
+    });
+  }
+
+  function pintarTracks(porId){
+    var cont = document.getElementById('listaTracks');
+    cont.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'tracks';
+    TRACKS_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var estado = doc.estado || 'sin-dimensionar';
+      var nota = doc.nota || '';
+
+      var card = document.createElement('div');
+      card.className = 'track';
+      card.innerHTML =
+        '<div class="track__top">' +
+          '<p class="track__name">' + seed.nombre + '</p>' +
+          '<button type="button" class="pill pill--' + estado + '" data-track="' + seed.id + '">' + TRACK_ESTADO_TXT[estado] + '</button>' +
+        '</div>' +
+        '<p class="track__meta">' + seed.meta + '</p>' +
+        '<textarea class="nota" rows="1" placeholder="Nota…" data-tracknota="' + seed.id + '">' + nota + '</textarea>';
+      wrap.appendChild(card);
+    });
+    cont.appendChild(wrap);
+
+    cont.querySelectorAll('[data-track]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        var id = btn.getAttribute('data-track');
+        var actual = (porId[id] || {}).estado || 'sin-dimensionar';
+        var siguiente = TRACK_ESTADOS[(TRACK_ESTADOS.indexOf(actual) + 1) % TRACK_ESTADOS.length];
+        db.collection('tracks').doc(id).set(Object.assign({}, TRACKS_SEED.find(function(t){return t.id===id;}), porId[id] || {}, {estado: siguiente}))
+          .catch(function(){ aviso('No se pudo guardar el estado.'); });
+      });
+    });
+    cont.querySelectorAll('[data-tracknota]').forEach(function(area){
+      var id = area.getAttribute('data-tracknota');
+      var valorPrevio = area.value;
+      area.addEventListener('blur', function(){
+        if (area.value === valorPrevio) return;
+        valorPrevio = area.value;
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        db.collection('tracks').doc(id).set(Object.assign({}, TRACKS_SEED.find(function(t){return t.id===id;}), porId[id] || {}, {nota: area.value}))
+          .catch(function(){ aviso('No se pudo guardar la nota.'); });
+      });
+    });
+  }
+
+  function pintarDesembolsos(porId){
+    var cont = document.getElementById('listaDesembolsos');
+    cont.innerHTML = '';
+    var ejecutado = 0;
+    DESEMB_SEED.forEach(function(seed){
+      var doc = porId[seed.id] || {};
+      var hecho = !!doc.ejecutado;
+      if (hecho) ejecutado += seed.monto;
+
+      var row = document.createElement('div');
+      row.className = 'des' + (seed.tipo === 'equipo' ? ' equipo' : '');
+      row.innerHTML =
+        '<span class="des__chk"><input type="checkbox" data-des="' + seed.id + '"' + (hecho ? ' checked' : '') + '></span>' +
+        '<span class="des__body">' +
+          '<div class="des__lab' + (hecho ? ' done' : '') + '">' + seed.etiqueta + '</div>' +
+          '<div class="des__fecha">' + fmtFecha(seed.fecha) + '</div>' +
+        '</span>' +
+        '<span class="des__monto">' + fmt(seed.monto) + '</span>';
+      cont.appendChild(row);
+    });
+
+    var total = document.createElement('div');
+    total.className = 'des__total';
+    total.innerHTML = '<span>Ejecutado sobre ' + fmt(TOTAL) + '</span><b>' + fmt(ejecutado) + '</b>';
+    cont.appendChild(total);
+
+    var pct = Math.round(ejecutado / TOTAL * 100);
+    document.getElementById('numPresu').textContent = fmt(ejecutado);
+    document.getElementById('barPresu').style.width = pct + '%';
+    document.getElementById('footPresu').textContent = pct + '% del presupuesto de $ ' + MONEY.format(TOTAL) + ' desembolsado';
+
+    cont.querySelectorAll('[data-des]').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        if (!db) { aviso('Sin conexión al tablero todavía.'); return; }
+        var id = chk.getAttribute('data-des');
+        db.collection('desembolsos').doc(id).set(Object.assign({}, DESEMB_SEED.find(function(d){return d.id===id;}), porId[id] || {}, {ejecutado: chk.checked}))
+          .catch(function(){ aviso('No se pudo guardar el desembolso.'); });
+      });
+    });
+  }
+
+  function arrancar(){
+    // Estado local por si aún no hay conexión a la base
+    var fasesPorId = {};
+    var desembPorId = {};
+    var modulosPorId = {};
+    var tracksPorId = {};
+    pintarFases(fasesPorId);
+    pintarDesembolsos(desembPorId);
+    pintarModulos(modulosPorId);
+    pintarTracks(tracksPorId);
+
+    if (!(window.claude && window.claude.use)) return;
+    window.claude.use('db').then(function(d){
+      if (!d) { aviso('El tablero abrió sin conexión a datos compartidos.'); return; }
+      db = d;
+      marcarVivo();
+      db.collection('fases').onSnapshot(function(snap){
+        var map = {};
+        snap.docs.forEach(function(doc){ map[doc.id] = doc.data(); });
+        fasesPorId = map;
+        pintarFases(fasesPorId);
+      }, function(){ aviso('Se perdió la conexión en vivo de las fases.'); });
+      db.collection('desembolsos').onSnapshot(function(snap){
+        var map = {};
+        snap.docs.forEach(function(doc){ map[doc.id] = doc.data(); });
+        desembPorId = map;
+        pintarDesembolsos(desembPorId);
+      }, function(){ aviso('Se perdió la conexión en vivo de los desembolsos.'); });
+      db.collection('modulos').onSnapshot(function(snap){
+        var map = {};
+        snap.docs.forEach(function(doc){ map[doc.id] = doc.data(); });
+        modulosPorId = map;
+        pintarModulos(modulosPorId);
+      }, function(){ aviso('Se perdió la conexión en vivo de los módulos.'); });
+      db.collection('tracks').onSnapshot(function(snap){
+        var map = {};
+        snap.docs.forEach(function(doc){ map[doc.id] = doc.data(); });
+        tracksPorId = map;
+        pintarTracks(tracksPorId);
+      }, function(){ aviso('Se perdió la conexión en vivo de los otros frentes.'); });
+    }).catch(function(){ aviso('No se pudo abrir la conexión de datos.'); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', arrancar);
+  } else {
+    arrancar();
+  }
+})();
+</script>
+<script>window.addEventListener("load",()=>{setTimeout(()=>{const fases = document.querySelectorAll("#listaFases .fase").length;const des = document.querySelectorAll("#listaDesembolsos .des").length;const mods = document.querySelectorAll("#listaModulos .mod").length;const tracks = document.querySelectorAll("#listaTracks .track").length;const scrollX = document.documentElement.scrollWidth > document.documentElement.clientWidth;document.title = "SONDA|fases="+fases+"|des="+des+"|mods="+mods+"|tracks="+tracks+"|scrollX="+(scrollX?"SI":"no");},600)});</script></body></html>

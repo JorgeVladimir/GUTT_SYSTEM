@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Plan de Gestión del Proyecto — GUTT COMPANY S.A.S.</title>
+<style>
+  @page { size: A4; margin: 0; }
+  *{ box-sizing:border-box; }
+  :root{
+    --navy:#1F3864; --cyan:#00BCD4; --cyan-dark:#00707E; --ink:#262626; --muted:#595959;
+    --line:#D6DCE5; --box:#EEF2F8; --amber:#B45309; --amber-bg:#FFF6E9;
+  }
+  html,body{ margin:0; padding:0; background:#fff; color:var(--ink);
+    font-family:'Calibri','Carlito','Segoe UI',Arial,sans-serif; font-size:10pt; line-height:1.45; }
+
+  .hoja{ width:210mm; height:297mm; position:relative; overflow:hidden;
+    page-break-after:always; break-after:page; display:flex; flex-direction:column; }
+  .hoja:last-child{ page-break-after:auto; break-after:auto; }
+
+  .logo, .mark{ background-repeat:no-repeat; background-size:contain; background-position:left center; }
+
+  /* ── Encabezado tipo hoja membretada ───────────────────── */
+  .mb-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:8mm;
+    padding:13mm 18mm 0; flex:none; }
+  .mb-logo{ width:46mm; height:18.2mm; flex:0 0 auto; }
+  .mb-datos{ text-align:right; font-size:8pt; color:var(--muted); line-height:1.5; padding-top:1mm; }
+  .mb-datos .razon{ color:var(--navy); font-weight:700; font-size:10.5pt; }
+  .mb-datos .giro{ color:var(--cyan-dark); font-weight:700; font-size:7.5pt;
+    letter-spacing:.10em; text-transform:uppercase; margin-bottom:1mm; }
+  .mb-rule{ margin:3mm 18mm 0; border-top:2.5pt solid var(--navy); position:relative; flex:none; }
+  .mb-rule::after{ content:''; position:absolute; left:0; top:-2.5pt; width:34mm; height:2.5pt; background:var(--cyan); }
+
+  /* ── Pie tipo hoja membretada ───────────────────────────── */
+  .mb-foot{ flex:none; }
+  .mb-foot .cinta{ height:1.6mm; background:var(--cyan); }
+  .mb-foot .banda{ background:var(--navy); color:#fff; font-size:7.3pt; letter-spacing:.02em;
+    padding:2.6mm 18mm; display:flex; justify-content:space-between; align-items:center; gap:4mm; }
+  .mb-foot .banda span{ white-space:nowrap; }
+  .mb-foot .banda .sep{ color:rgba(255,255,255,.45); }
+  .mb-foot .banda .pg{ font-weight:700; }
+
+  /* ── Cuerpo ─────────────────────────────────────────────── */
+  .cuerpo{ padding:9mm 18mm 0; flex:1; min-height:0; overflow:hidden; }
+
+  .doc-title{ text-align:center; margin:0 0 6mm; }
+  .doc-title .t{ color:var(--navy); font-size:16pt; font-weight:700;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:2.5mm 0; }
+
+  h2{ color:var(--navy); font-size:12pt; font-weight:700; margin:0 0 3mm; }
+  h2 .num{ color:var(--cyan-dark); }
+  h3{ color:var(--navy); font-size:10pt; font-weight:700; margin:3.5mm 0 1.5mm; }
+  p{ margin:0 0 2.5mm; text-align:justify; }
+  ul{ margin:0 0 2.5mm; padding-left:5.5mm; }
+  li{ margin:1mm 0; text-align:justify; }
+
+  table{ width:100%; border-collapse:collapse; margin:2mm 0 3.5mm; font-size:8.3pt; }
+  th{ background:var(--navy); color:#fff; text-align:left; padding:1.8mm 2.3mm; font-size:8pt; font-weight:700; }
+  td{ padding:1.6mm 2.3mm; border-bottom:.5pt solid var(--line); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .money{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .center{ text-align:center; }
+  tr.sum td{ background:var(--box); font-weight:700; color:var(--navy); }
+  tr.total td{ background:var(--navy); color:#fff; font-weight:700; font-size:9pt; }
+  tr.risk-main td{ background:var(--amber-bg); border-top:1.5pt solid var(--amber); border-bottom:1.5pt solid var(--amber); }
+  tr.risk-main td:first-child{ border-left:1.5pt solid var(--amber); }
+  tr.risk-main td:last-child{ border-right:1.5pt solid var(--amber); }
+
+  .kbox{ background:var(--box); border-left:3pt solid var(--navy); padding:2.6mm 3.8mm; margin:2mm 0 3.5mm; }
+  .kbox.warn{ background:var(--amber-bg); border-left-color:var(--amber); }
+  .kbox .k{ color:var(--navy); font-weight:700; font-size:9pt; margin-bottom:1mm; }
+  .kbox.warn .k{ color:var(--amber); }
+  .kbox p{ margin:0; font-size:9pt; }
+
+  .figures{ display:flex; gap:3.5mm; margin:1mm 0 3mm; }
+  .fig{ flex:1; border:.5pt solid var(--line); border-top:2.5pt solid var(--navy); padding:2.6mm; text-align:center; }
+  .fig .l{ font-size:7pt; color:var(--muted); font-weight:700; letter-spacing:.06em; }
+  .fig .v{ font-size:12.5pt; font-weight:700; color:var(--navy); font-variant-numeric:tabular-nums; margin-top:.8mm; }
+  .fig .n{ font-size:7pt; color:var(--muted); margin-top:.6mm; }
+
+  .rolebox{ display:flex; gap:3.5mm; border:.5pt solid var(--line); border-radius:1mm; padding:3mm; margin-bottom:2.5mm; }
+  .rolebox .who{ width:38mm; flex:none; }
+  .rolebox .who .nm{ font-weight:700; font-size:9.3pt; color:var(--ink); }
+  .rolebox .who .rl{ color:var(--cyan-dark); font-weight:700; font-size:8pt; text-transform:uppercase; letter-spacing:.03em; }
+  .rolebox .desc{ font-size:8.8pt; color:var(--muted); }
+  .rolebox .desc b{ color:var(--ink); }
+
+  .timeline{ display:flex; flex-direction:column; gap:0; margin:1mm 0 2mm; }
+  .tl-row{ display:flex; align-items:stretch; border-bottom:.5pt solid var(--line); }
+  .tl-row:last-child{ border-bottom:none; }
+  .tl-mes{ width:14mm; flex:none; padding:1.8mm 0; font-weight:700; color:var(--navy); font-size:8.3pt; }
+  .tl-bar{ width:3mm; flex:none; background:var(--cyan); margin:1.8mm 3mm 1.8mm 0; border-radius:1mm; }
+  .tl-body{ flex:1; padding:1.8mm 0; }
+  .tl-body .h{ font-weight:700; font-size:8.6pt; color:var(--ink); }
+  .tl-body .d{ font-size:8pt; color:var(--muted); }
+  .tl-fecha{ width:26mm; flex:none; text-align:right; padding:1.8mm 0; font-size:8pt; color:var(--muted); }
+  .tl-fecha b{ color:var(--navy); }
+
+  .signs{ display:flex; flex-wrap:wrap; gap:9mm 8mm; margin-top:8mm; }
+  .sign{ width:calc(50% - 4mm); }
+  .sign .line{ border-top:.8pt solid var(--ink); margin-top:13mm; padding-top:1.2mm; }
+  .sign .nm{ font-weight:700; font-size:9.5pt; }
+  .sign .rl{ color:var(--navy); font-size:8.5pt; font-weight:700; }
+
+  .foot-note{ font-size:7.6pt; color:var(--muted); text-align:center; font-style:italic; margin-top:2mm; }
+
+  .cover-body{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 18mm; }
+  .cover-body .cover-logo{ width:100mm; height:39.6mm; margin:0 auto 8mm; }
+  .cover-body .eyebrow{ color:var(--cyan-dark); font-size:9.5pt; font-weight:700; letter-spacing:.26em; margin-bottom:6mm; }
+  .cover-body h1{ color:var(--navy); font-size:23pt; line-height:1.16; font-weight:700; margin:0 0 5mm; letter-spacing:-.01em; }
+  .cover-body .proj{ font-size:12.5pt; font-weight:700; color:var(--ink); margin-bottom:3mm; }
+  .cover-body .proj em{ font-style:normal; color:var(--cyan-dark); }
+  .cover-body .sub{ color:var(--muted); font-size:9.5pt; max-width:140mm; margin:0 auto; }
+  .cover-meta{ display:flex; justify-content:center; gap:10mm; font-size:8.3pt; color:var(--muted); margin-top:10mm; }
+  .cover-meta b{ color:var(--navy); }
+</style>
+</head>
+<body>
+
+<!-- ══════════ 1 · PORTADA ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cover-body">
+    <div class="eyebrow">PLAN DE GESTIÓN DEL PROYECTO</div>
+    <h1>Diez meses, siete fases,<br>un sistema para diez empresas</h1>
+    <div class="proj">Proyecto: <em>SISTEMA FINANCIERO EPS</em></div>
+    <p class="sub">Gobierno, cronograma, ritmo de trabajo, riesgos y seguimiento para ejecutar el
+      compromiso fijado en el Contrato de Socios CTR-2026-GUTT-001: migrar el sistema a un esquema
+      multi-tenant sobre PostgreSQL, instalar la infraestructura propia y entregarlo listo para vender
+      a diez cooperativas.</p>
+    <div class="cover-meta">
+      <div><b>Referencia:</b> CTR-2026-GUTT-001</div>
+      <div><b>Inicio:</b> 14 de septiembre de 2026</div>
+      <div><b>Entrega:</b> 13 de julio de 2027</div>
+    </div>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>San Pedro 0015, Cumbayá — Quito</span><span class="sep">|</span>
+      <span>+593 98 413 2326</span><span class="sep">|</span>
+      <span class="pg">1 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 2 · OBJETIVO Y ALCANCE ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <div class="doc-title"><div class="t">PLAN DE GESTIÓN DEL PROYECTO</div></div>
+
+    <h2><span class="num">1.</span> Objetivo y alcance</h2>
+    <p>Llevar <b>SISTEMA FINANCIERO EPS</b> de un despliegue mono-cooperativa sobre SQL Server a un
+      servicio multi-tenant sobre <b>PostgreSQL</b> para diez empresas cliente, con la aplicación móvil
+      GUTT MÓVIL integrada y la marca GUTT COMPANY S.A.S. aplicada en todo el producto, dentro de un
+      plazo de diez meses y una inversión de <b>USD 24.569,45</b>.</p>
+
+    <div class="figures">
+      <div class="fig"><div class="l">INFRAESTRUCTURA</div><div class="v">$10.569,45</div><div class="n">Servidor, red, energía, respaldo</div></div>
+      <div class="fig"><div class="l">MANO DE OBRA</div><div class="v">$14.000,00</div><div class="n">10 meses · 2 desarrolladores</div></div>
+      <div class="fig"><div class="l">INVERSIÓN TOTAL</div><div class="v">$24.569,45</div><div class="n">Hasta la entrega en producción</div></div>
+    </div>
+
+    <h3>1.1. Incluido en el alcance</h3>
+    <ul>
+      <li>Migración del esquema y de las consultas del backend de SQL Server a PostgreSQL, sobre el
+        diseño multi-tenant ya existente en el repositorio.</li>
+      <li>Adaptación de los módulos de negocio — créditos, contabilidad, reportería SEPS, proceso de
+        cartera — al esquema nuevo, con paridad numérica verificada contra el sistema actual.</li>
+      <li>Diseño y construcción de GUTT MÓVIL conforme al lienzo de pantallas aprobado, incluidas las
+        funciones comprometidas en la propuesta comercial: asistente con IA, transferencias
+        interbancarias y tabla de amortización imprimible.</li>
+      <li>Compra, importación, instalación y aprovisionamiento del servidor T630 y su red.</li>
+      <li>Hardening, monitoreo, prueba de recuperación, documentación y capacitación a cada
+        cooperativa cliente.</li>
+      <li>Continuidad sin interrupciones del sistema que hoy ya está en producción, durante toda la
+        ejecución del proyecto (cláusula 7.6 del contrato de socios).</li>
+    </ul>
+
+    <h3>1.2. Fuera de alcance</h3>
+    <p>Pago de servicios básicos, biometría, apertura de cuenta 100% digital y geolocalización del
+      socio en el móvil — quedan fuera del lienzo de diseño aprobado y de este plan. Cualquier
+      incorporación de estos puntos, así como todo cambio de alcance, plazo o monto, requiere acta
+      firmada conforme a la cláusula 7.7 del contrato de socios.</p>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">2 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 3 · GOBIERNO Y ROLES ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">2.</span> Gobierno del proyecto</h2>
+    <p>Cuatro personas designadas y un asiento reservado para el inversionista que se incorpore,
+      conforme a la cláusula 10 del contrato de socios. Cada rol tiene una función de gobierno y,
+      cuando corresponde, una función de ejecución técnica.</p>
+
+    <div class="rolebox">
+      <div class="who"><div class="nm">Victor Cuenca</div><div class="rl">Gerente</div></div>
+      <div class="desc">Representación de la sociedad en formación frente a terceros. Aprueba el
+        excedente sobre el tope de <b>USD 20.000,00</b> y mantiene la relación con el inversionista.</div>
+    </div>
+    <div class="rolebox">
+      <div class="who"><div class="nm">Franklin Lechon</div><div class="rl">Presidente · Desarrollador</div></div>
+      <div class="desc">Gobierno societario y ejecución técnica de <b>frontend, pruebas y soporte a
+        cliente</b>: reportería SEPS, pruebas de integración por módulo, configuración de cada
+        cooperativa antes de la entrega, documentación y capacitación remota.</div>
+    </div>
+    <div class="rolebox">
+      <div class="who"><div class="nm">Christian Cuenca</div><div class="rl">Jefe de Proyecto</div></div>
+      <div class="desc">Recibe la notificación de cada entrega y dispone de <b>5 días hábiles</b> para
+        aceptarla u observarla por escrito (cláusula 7.3). Lleva el registro de actas y de
+        observaciones, y es quien eleva un riesgo a cambio de alcance conforme a la cláusula 7.7.</div>
+    </div>
+    <div class="rolebox">
+      <div class="who"><div class="nm">Jorge Tuquinga</div><div class="rl">Desarrollador</div></div>
+      <div class="desc">Ejecución técnica de <b>backend, base de datos e infraestructura</b>: esquema
+        multi-tenant, migración a PostgreSQL, adaptación de créditos y contabilidad, instalación y
+        hardening del servidor, respaldos y recuperación.</div>
+    </div>
+    <div class="rolebox">
+      <div class="who"><div class="nm">Inversionista</div><div class="rl">Por designar</div></div>
+      <div class="desc">Espacio reservado en la firma del contrato de socios (cláusula 10). Se
+        incorpora al comité de proyecto desde el momento en que aporta capital.</div>
+    </div>
+
+    <div class="kbox">
+      <div class="k">Obligación solidaria de los desarrolladores</div>
+      <p>Jorge Tuquinga y Franklin Lechon se obligan de manera solidaria e indivisible a entregar las
+        siete fases (cláusula 7 del contrato). La ausencia temporal de uno no exime al otro de
+        sostener el cronograma.</p>
+    </div>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">3 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4 · CRONOGRAMA ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">3.</span> Cronograma por fases</h2>
+    <p>Los meses del proyecto corren del día 14 al día 13. El plazo total es de diez meses desde el
+      primer desembolso (cláusula 7.2 del contrato de socios).</p>
+    <table>
+      <thead><tr><th class="center">Fase</th><th>Entregable sujeto a aceptación</th><th class="center">Meses</th><th class="center">Entrega máxima</th></tr></thead>
+      <tbody>
+        <tr><td class="center"><b>1</b></td><td>Esquema multi-tenant finalizado y validado</td><td class="center">1 – 2</td><td class="center"><b>13-nov-2026</b></td></tr>
+        <tr><td class="center"><b>2</b></td><td>Módulos de negocio adaptados al esquema multi-tenant</td><td class="center">3 – 5</td><td class="center"><b>13-feb-2027</b></td></tr>
+        <tr><td class="center"><b>3</b></td><td>Datos migrados e integración probada de punta a punta</td><td class="center">6</td><td class="center"><b>13-mar-2027</b></td></tr>
+        <tr><td class="center"><b>4</b></td><td>Servidor instalado, aprovisionado y primeras empresas activas</td><td class="center">7</td><td class="center"><b>13-abr-2027</b></td></tr>
+        <tr><td class="center"><b>5</b></td><td>Hardening, monitoreo y prueba de recuperación superada</td><td class="center">8</td><td class="center"><b>13-may-2027</b></td></tr>
+        <tr><td class="center"><b>6</b></td><td>Manuales entregados y capacitación impartida</td><td class="center">9</td><td class="center"><b>13-jun-2027</b></td></tr>
+        <tr><td class="center"><b>7</b></td><td>Sistema en producción para las diez empresas y acta de cierre</td><td class="center">10</td><td class="center"><b>13-jul-2027</b></td></tr>
+      </tbody>
+    </table>
+
+    <h3>3.1. Hitos de arranque e infraestructura</h3>
+    <div class="timeline">
+      <div class="tl-row"><div class="tl-mes">14-sep</div><div class="tl-bar"></div><div class="tl-body"><div class="h">Arranque del proyecto</div><div class="d">Corre el plazo de 10 meses desde el primer día hábil posterior al primer desembolso</div></div><div class="tl-fecha"><b>2026</b></div></div>
+      <div class="tl-row"><div class="tl-mes">12-feb</div><div class="tl-bar"></div><div class="tl-body"><div class="h">Orden de compra del servidor</div><div class="d">Se emite al cerrar el mes 5, cuando cierra la adaptación de módulos</div></div><div class="tl-fecha"><b>2027</b></div></div>
+      <div class="tl-row"><div class="tl-mes">15-mar</div><div class="tl-bar"></div><div class="tl-body"><div class="h">Pago del equipo físico — $10.569,45</div><div class="d">Contra recepción, en el mes 7</div></div><div class="tl-fecha"><b>2027</b></div></div>
+      <div class="tl-row"><div class="tl-mes">13-jul</div><div class="tl-bar"></div><div class="tl-body"><div class="h">Entrega final y acta de cierre</div><div class="d">Sistema en producción para las diez empresas</div></div><div class="tl-fecha"><b>2027</b></div></div>
+    </div>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">4 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 5 · RITMO DE TRABAJO Y ACEPTACIÓN ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">4.</span> Ritmo de trabajo</h2>
+
+    <h3>4.1. Comité semanal</h3>
+    <p>Todos los sábados de 10:00 a 10:45, desde el 19 de septiembre de 2026 hasta el 17 de julio de
+      2027. Orden del día fijo:</p>
+    <ul>
+      <li>Qué se cerró esta semana y contra qué entregable de la fase en curso.</li>
+      <li>Qué está bloqueado y quién lo desbloquea.</li>
+      <li>Riesgos abiertos — en especial la sobrecarga de las fases 1 y 2 (ver sección 6).</li>
+      <li>Compromisos de la semana siguiente.</li>
+    </ul>
+    <p>El comité no puede modificar por sí solo alcance, plazos o montos: eso requiere acta firmada
+      conforme a la cláusula 7.7 del contrato de socios.</p>
+
+    <h3>4.2. Revisión mensual del entregable</h3>
+    <p>El día 13 de cada mes a las 18:00, diez ocurrencias entre octubre de 2026 y julio de 2027.
+      Es el evento que dispara el procedimiento de aceptación de la cláusula 7.3.</p>
+
+    <h2 style="margin-top:5mm"><span class="num">5.</span> Proceso de aceptación de entregables</h2>
+    <div class="kbox">
+      <div class="k">Cláusula 7.3 del contrato de socios</div>
+      <p>Concluida cada fase, los desarrolladores notifican la entrega al Jefe de Proyecto. Él dispone
+        de <b>5 días hábiles</b> para aceptarla u observarla por escrito. Transcurrido ese plazo sin
+        pronunciamiento, la fase se entiende aceptada. Las observaciones fundadas se subsanan dentro
+        de los <b>10 días hábiles</b> siguientes, sin costo adicional.</p>
+    </div>
+    <p>Cada desembolso mensual depende de esta aceptación: se realiza dentro de los primeros cinco
+      días del mes, contra la aceptación del avance del mes inmediatamente anterior (cláusula 6.4).</p>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">5 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 6 · PLAN FINANCIERO ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">6.</span> Plan financiero y calendario de desembolsos</h2>
+    <p>Desembolso mensual constante de <b>USD 1.400,00</b> — USD 700,00 para cada desarrollador, a
+      dedicación completa durante los diez meses (cláusula 7.4). El gasto de capital se concentra en
+      el mes 7, cuando se recibe el equipo físico.</p>
+    <table>
+      <thead><tr><th class="center">Mes</th><th>Hito</th><th class="money">Desembolso</th><th class="money">Acumulado</th></tr></thead>
+      <tbody>
+        <tr><td class="center">1</td><td>Fase 1 — arranque</td><td class="money">1.400,00</td><td class="money">1.400,00</td></tr>
+        <tr><td class="center">2</td><td>Fase 1 — cierre</td><td class="money">1.400,00</td><td class="money">2.800,00</td></tr>
+        <tr><td class="center">3</td><td>Fase 2 — créditos y contabilidad</td><td class="money">1.400,00</td><td class="money">4.200,00</td></tr>
+        <tr><td class="center">4</td><td>Fase 2 — reportería SEPS y cartera</td><td class="money">1.400,00</td><td class="money">5.600,00</td></tr>
+        <tr><td class="center">5</td><td>Fase 2 — cierre de la adaptación</td><td class="money">1.400,00</td><td class="money">7.000,00</td></tr>
+        <tr><td class="center">6</td><td>Fase 3 — migración e integración</td><td class="money">1.400,00</td><td class="money">8.400,00</td></tr>
+        <tr><td class="center">7</td><td>Fase 4 — servidor instalado + pago del equipo</td><td class="money">1.400,00<br>+ 10.569,45</td><td class="money">20.369,45</td></tr>
+        <tr><td class="center">8</td><td>Fase 5 — hardening y continuidad</td><td class="money">1.400,00</td><td class="money">21.769,45</td></tr>
+        <tr><td class="center">9</td><td>Fase 6 — documentación y capacitación</td><td class="money">1.400,00</td><td class="money">23.169,45</td></tr>
+        <tr><td class="center">10</td><td>Fase 7 — producción y entrega formal</td><td class="money">1.400,00</td><td class="money">24.569,45</td></tr>
+        <tr class="total"><td colspan="2">TOTAL DE LA INVERSIÓN</td><td class="money">24.569,45</td><td class="money">100 %</td></tr>
+      </tbody>
+    </table>
+    <div class="kbox warn">
+      <div class="k">Excedente sobre el tope acordado</div>
+      <p>El presupuesto referencial de los socios fue USD 20.000,00. La inversión total lo excede en
+        <b>USD 4.569,45</b>, íntegramente por mano de obra: ambos desarrolladores a dedicación completa
+        los diez meses. Los socios lo aceptan expresamente al suscribir el contrato (cláusula 6.2).</p>
+    </div>
+    <p>A partir del mes 11 no se requiere nueva inversión de capital. El equipo continúa a
+      <b>USD 700,00 mensuales entre ambos</b> por soporte y mantenimiento, mientras se incorporan
+      cooperativas adicionales sobre la misma infraestructura (cláusula 6.3).</p>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">6 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 7 · RIESGOS ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">7.</span> Registro de riesgos</h2>
+    <table>
+      <thead><tr><th style="width:8%">#</th><th style="width:30%">Riesgo</th><th style="width:30%">Disparador de alerta</th><th>Respuesta</th></tr></thead>
+      <tbody>
+        <tr class="risk-main">
+          <td class="center"><b>R1<br>PRINCIPAL</b></td>
+          <td>Las fases 1 y 2 concentran la migración completa de motor (SQL Server → PostgreSQL)
+            sin ampliar plazo ni presupuesto.</td>
+          <td>Al cierre del mes 2 el esquema no está validado, o al cierre del mes 5 los módulos no
+            pasan la prueba de paridad numérica.</td>
+          <td>Seguimiento semanal prioritario. Un desvío detectado antes del mes 3 se eleva como
+            cambio de alcance (cláusula 7.7) en vez de absorberse en silencio.</td>
+        </tr>
+        <tr>
+          <td class="center">R2</td>
+          <td>Demora en la importación o nacionalización del servidor.</td>
+          <td>A mediados de marzo de 2027 el equipo no ha llegado a aduana.</td>
+          <td>No es retraso imputable a los desarrolladores (cláusula 7.5.ii). Evaluar cómputo
+            temporal si el retraso supera 15 días.</td>
+        </tr>
+        <tr>
+          <td class="center">R3</td>
+          <td>El excedente de USD 4.569,45 no se aprueba a tiempo.</td>
+          <td>No existe acta de aceptación del excedente antes del primer desembolso.</td>
+          <td>Presentarlo en la primera sesión de comité; sin acta firmada no se ejecuta el
+            desembolso del mes 1.</td>
+        </tr>
+        <tr>
+          <td class="center">R4</td>
+          <td>Ausencia prolongada de uno de los dos desarrolladores.</td>
+          <td>Inasistencia a dos comités semanales consecutivos sin aviso.</td>
+          <td>La obligación es solidaria e indivisible (cláusula 7): el otro desarrollador cubre
+            mientras se resuelve.</td>
+        </tr>
+        <tr>
+          <td class="center">R5</td>
+          <td>Discrepancia de paridad numérica al portar cartera o reportería SEPS.</td>
+          <td>Los reportes no cuadran (Activo ≠ Pasivo + Patrimonio, o morosidad distinta) tras
+            portar un módulo.</td>
+          <td>Ningún módulo se da por portado sin la prueba de paridad. Bloquea el cierre de la
+            fase 3.</td>
+        </tr>
+        <tr>
+          <td class="center">R6</td>
+          <td>El Jefe de Proyecto no se pronuncia dentro del plazo.</td>
+          <td>Pasan 5 días hábiles sin observación tras la notificación de entrega.</td>
+          <td>La cláusula 7.3 lo resuelve: silencio equivale a aceptación tácita; no bloquea el
+            desembolso.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">7 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 8 · SEGUIMIENTO ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">8.</span> Seguimiento y control</h2>
+    <p>Cuatro señales que el comité revisa cada semana, todas verificables sin opinión:</p>
+    <ul>
+      <li><b>Fases entregadas a tiempo</b> sobre el total de fases vencidas — la métrica que dice si
+        el cronograma de la sección 3 se está cumpliendo.</li>
+      <li><b>Desembolsos ejecutados</b> dentro de los primeros cinco días del mes, contra el
+        calendario de la sección 6.</li>
+      <li><b>Pruebas pasadas</b> de la suite del sistema (55 pruebas, 8 conjuntos) tras cada módulo
+        portado a PostgreSQL, y los 6 reportes SEPS cuadrando (Activo = Pasivo + Patrimonio, Debe =
+        Haber).</li>
+      <li><b>Paridad numérica verificada</b> por módulo migrado: la clasificación de cartera, las
+        provisiones y la solvencia deben dar los mismos números en PostgreSQL que en SQL Server con
+        los mismos datos de prueba.</li>
+    </ul>
+    <p>El <b>tablero de avance</b> publicado junto con este plan es la herramienta operativa de este
+      seguimiento: las siete fases con su estado y sus fechas, el control de actas firmadas, el
+      control de los diez desembolsos más el pago del equipo, y las barras de avance del proyecto y
+      del presupuesto.</p>
+
+    <div class="kbox">
+      <div class="k">Documentos que rigen este plan</div>
+      <p>Contrato de Socios y Compromiso de Ejecución (CTR-2026-GUTT-001) · Proforma de
+        Infraestructura Tecnológica del 13-sep-2026 (Anexo A) · Lienzo de diseño de GUTT MÓVIL ·
+        Calendario del proyecto en Google Calendar.</p>
+    </div>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">8 / 9</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 9 · APROBACIÓN ══════════ -->
+<section class="hoja">
+  <div class="mb-head">
+    <div class="mb-logo" style="background-image:url('C:/GUTT_SYSTEM/tmp/contrato_sas/logo_limpio.png')"></div>
+    <div class="mb-datos">
+      <div class="giro">Soluciones tecnológicas y financieras</div>
+      <div class="razon">GUTT COMPANY S.A.S.</div>
+      <div>RUC: 1720884012001 · Cel: 0984132326</div>
+      <div>vladitituana20@gmail.com</div>
+    </div>
+  </div>
+  <div class="mb-rule"></div>
+  <div class="cuerpo">
+    <h2><span class="num">9.</span> Aprobación del plan</h2>
+    <p>Este plan de gestión desarrolla, sin modificarlas, las obligaciones fijadas en el Contrato de
+      Socios y Compromiso de Ejecución CTR-2026-GUTT-001. Cualquier conflicto entre ambos documentos
+      se resuelve a favor del contrato.</p>
+    <p>Los abajo firmantes lo reciben conforme, como marco de gobierno y seguimiento del proyecto
+      desde el arranque el 14 de septiembre de 2026.</p>
+
+    <div class="signs">
+      <div class="sign"><div class="line"><div class="nm">Victor Cuenca</div><div class="rl">Gerente</div></div></div>
+      <div class="sign"><div class="line"><div class="nm">Franklin Lechon</div><div class="rl">Presidente · Desarrollador</div></div></div>
+      <div class="sign"><div class="line"><div class="nm">Christian Cuenca</div><div class="rl">Jefe de Proyecto</div></div></div>
+      <div class="sign"><div class="line"><div class="nm">Jorge Tuquinga</div><div class="rl">Desarrollador</div></div></div>
+    </div>
+    <p class="foot-note">Plan de Gestión del Proyecto SISTEMA FINANCIERO EPS · Elaborado el 14 de
+      septiembre de 2026 · Documento interno de gobierno, complementario al CTR-2026-GUTT-001</p>
+  </div>
+  <div class="mb-foot">
+    <div class="cinta"></div>
+    <div class="banda">
+      <span>GUTT COMPANY S.A.S.</span><span class="sep">|</span>
+      <span>Plan de Gestión — SISTEMA FINANCIERO EPS</span><span class="sep">|</span>
+      <span class="pg">9 / 9</span>
+    </div>
+  </div>
+</section>
+
+<script>window.addEventListener("load",()=>{setTimeout(()=>{
+  const r=[...document.querySelectorAll(".hoja")].map((h,i)=>{
+    const inner = h.querySelector(".cuerpo, .cover-body");
+    const bad = inner && inner.scrollHeight > inner.clientHeight + 1;
+    return (i+1)+":"+(bad?("DESBORDA+"+(inner.scrollHeight-inner.clientHeight)):"ok");
+  });
+  document.title="CHK "+r.join(" | ");
+},300)});</script></body>
+</html>
